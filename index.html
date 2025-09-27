@@ -10,37 +10,44 @@
 <body class="bg-gray-50 antialiased min-h-screen">
   <div id="app" class="mx-auto w-full max-w-5xl p-4 sm:p-8">
     <!-- HEADER -->
-    <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 leading-tight">✅ Kuis PMK — Review Jawaban 10s</h1>
-        <p class="text-gray-600 mt-1 text-sm md:text-base">Pilih dataset → <span class="font-semibold">Tampil</span> (insert) atau <span class="font-semibold">Load</span> (fetch). Submit → tampil jawaban benar selama 10 detik.</p>
-      </div>
+ <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+  <div class="flex-1 min-w-0">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 leading-tight">✅ Belajar Soal</h1>
+    <p class="text-gray-600 mt-1 text-sm md:text-base">tampil jawaban benar selama 10 detik.</p>
+  </div>
 
-      <div class="flex-shrink-0 w-full md:w-auto flex items-center gap-2">
-        <!-- dataset select -->
-        <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300">
-          <option value="" disabled>-- pilih dataset --</option>
-          <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
-        </select>
+  <div class="flex-shrink-0 w-full md:w-auto flex items-center gap-2">
+    <!-- dataset select -->
+    <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300">
+      <option value="" disabled>-- pilih dataset --</option>
+      <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
+    </select>
 
-        <button
-          @click="insertThenFetch"
-          :disabled="loading || !selectedDataset"
-          class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
-          type="button"
-        >
-          Tampil
-        </button>
+    <button
+      @click="insertThenFetch"
+      :disabled="loading || !selectedDataset"
+      class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+      type="button"
+    >
+      Tampil
+    </button>
 
-        <button
-          @click="loadPage"
-          :disabled="loading || !selectedDataset"
-          class="px-3 py-2 text-sm md:text-base rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition"
-        >
-          Load
-        </button>
-      </div>
-    </header>
+    <!-- Settings button (ikon) -->
+    <button
+      @click="openSettings"
+      type="button"
+      class="ml-1 p-2 rounded-md border hover:bg-gray-100 transition"
+      title="Pengaturan Soal"
+    >
+      <!-- gear icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M11.3 1.046a1 1 0 00-2.6 0l-.2.657a7.002 7.002 0 00-1.78.846l-.6-.35a1 1 0 00-1.22.18L2.84 5.34a1 1 0 00.18 1.41l.613.49a7.017 7.017 0 000 2.78l-.613.49a1 1 0 00-.18 1.41l1.17 1.37a1 1 0 001.22.18l.6-.35a7.002 7.002 0 001.78.846l.2.657a1 1 0 002.6 0l.2-.657a7.002 7.002 0 001.78-.846l.6.35a1 1 0 001.22-.18l1.17-1.37a1 1 0 00-.18-1.41l-.613-.49a7.017 7.017 0 000-2.78l.613-.49a1 1 0 00.18-1.41L15.7 2.73a1 1 0 00-1.22-.18l-.6.35a7.002 7.002 0 00-1.78-.846L11.3 1.046zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+
 
     <!-- MAIN CARD -->
     <div class="bg-white p-6 md:p-8 rounded-xl shadow-xl">
@@ -198,6 +205,91 @@
       </div>
     </div>
 
+    
+<!-- Modal: Pengaturan Soal -->
+<div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+    <div class="p-4 border-b flex items-center justify-between">
+      <h3 class="font-bold text-lg">Pengaturan Soal</h3>
+      <div class="flex items-center gap-2">
+        <button @click="closeSettings" class="px-3 py-1 bg-gray-200 rounded-md">Batal</button>
+      </div>
+    </div>
+
+    <!-- Isi modal -->
+    <div class="p-4 space-y-6">
+      <!-- Input jumlah soal -->
+      <div class="flex items-center gap-4">
+        <div>
+          <label class="block font-medium mb-1">Jumlah Soal per Batch</label>
+          <input
+            type="number"
+            v-model.number="jumlahSoalDraft"
+            min="1"
+            class="w-32 border rounded px-2 py-1"
+          />
+        </div>
+
+        <div class="flex items-end gap-2">
+          <!-- Submit / Apply -->
+          <button
+            :disabled="!canApplyJumlahSoal"
+            @click="applySettings"
+            class="px-3 py-1 rounded-md bg-indigo-600 text-white disabled:opacity-60"
+          >
+            Simpan
+          </button>
+
+          <!-- Optional: apply & pilih batch pertama langsung -->
+          <button
+            @click="applySettings(true)"
+            class="px-3 py-1 rounded-md border bg-white"
+            title="Simpan dan pilih batch pertama"
+          >
+            Simpan & Pilih
+          </button>
+        </div>
+      </div>
+
+      <!-- Tombol batch soal (preview) -->
+      <div>
+        <label class="block font-medium mb-2">Preview Batch:</label>
+<div class="flex flex-wrap gap-2">
+<button
+  v-for="(batch, idx) in batches"
+  :key="idx"
+  @click="pilihBatch(idx)"
+  :class="[
+    'px-3 py-1 rounded-md text-sm',
+    idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100'
+  ]"
+>
+  Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
+</button>
+
+</div>
+      </div>
+
+      <!-- Optional: tombol pilih batch berikutnya (jika ada batch aktif) -->
+      <div v-if="currentBatchIndex != null" class="pt-2">
+        <button
+          v-if="currentBatchIndex < (batches.length - 1)"
+          @click="applyAndSelectNextBatch"
+          class="px-3 py-1 rounded-md bg-green-500 text-white"
+        >
+          Pilih Batch Berikutnya
+        </button>
+        <span v-else class="text-sm text-gray-500">Tidak ada batch berikutnya.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
   </div>
 
 <script>
@@ -224,213 +316,336 @@ new Vue({
       // insert URL base: beri base (action=insert). _doInsert akan menambahkan &table=request&data=...
       insertUrlBase: 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec?action=insert',
 
-      loading: false,
-      dataAwal: [],
-      currentIndex: 0,
-      tampilIndex: 0,
-      jawabanTerpilih: null,
-      jawabanSudahDikirim: false,
-      riwayatJawaban: [],
-      wrongQuestions: [],
-      showWrongModal: false,
-      // display copy of soal after submit (soal tidak berubah sampai next)
-      submittedSoal: null,
-      // countdown
-      countdown: 10,
-      countdownActive: false,
-      _countdownTimer: null,
-      raw: null
+        // umum / UI
+    loading: false,
+    raw: null,
+    showWrongModal: false,
+    showSettings: false,
+
+    // pool & indices
+    dataAwal: [],           // seluruh soal (source) — pastikan hanya 1 definisi
+    originalQuestions: [],  // copy fallback dari dataAwal jika diperlukan
+    currentIndex: 0,        // kompatibilitas kode lama (optional)
+    tampilIndex: 0,         // indeks saat ini di currentQuestions
+
+    // batch
+    jumlahSoal: 15,
+    jumlahSoalDraft: 15,
+    batches: [],            // hasil pembagian dataAwal menjadi group
+    currentBatchIndex: null,// null = belum pilih batch
+    currentQuestions: [],   // slice dari batches[currentBatchIndex]
+
+    // jawaban & riwayat
+    jawabanTerpilih: null,
+    jawabanSudahDikirim: false,
+    submittedSoal: null,    // salinan soal yang sedang direview
+    riwayatJawaban: [],
+    wrongQuestions: [],
+
+    // countdown
+    countdown: 10,
+    countdownActive: false,
+    _countdownTimer: null,
+
+    // helper/ui
+    optionLabels: ['A','B','C','D','E'],
+
     };
   },
   computed: {
-    poolEmpty() {
-      return this.dataAwal.length === 0 && !this.submittedSoal;
-    },
-    totalPool() {
-      return this.dataAwal.length + (this.submittedSoal ? 1 : 0);
-    },
-    displaySoal() {
-      return this.submittedSoal || (this.dataAwal[this.currentIndex] || {});
-    },
-    displayOptions() {
-      const s = this.displaySoal && this.displaySoal.shuffledOptions;
-      if (!s) return [];
-      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object' && ('text' in s[0] || 'key' in s[0])) {
-        return s.map((o, i) => ({ key: o.key ?? String.fromCharCode(97 + i), text: o.text ?? '' }));
+  // apakah pool soal kosong (memperhitungkan batch jika ada)
+  poolEmpty() {
+    const poolSize = (this.currentQuestions && this.currentQuestions.length)
+      ? this.currentQuestions.length
+      : (this.dataAwal ? this.dataAwal.length : 0);
+    return poolSize === 0 && !this.submittedSoal;
+  },
+
+  // total soal yang bisa dinavigasi (pakai batch bila ada, fallback ke dataAwal)
+  totalPool() {
+    const poolSize = (this.currentQuestions && this.currentQuestions.length)
+      ? this.currentQuestions.length
+      : (this.dataAwal ? this.dataAwal.length : 0);
+    return poolSize + (this.submittedSoal ? 1 : 0);
+  },
+
+  // soal yang sedang ditampilkan: prioritas ke submittedSoal,
+  // lalu ke currentQuestions[tampilIndex], lalu fallback ke dataAwal[tampilIndex]
+  displaySoal() {
+    if (this.submittedSoal) return this.submittedSoal;
+
+    // prefer batch (currentQuestions) jika ada
+    if (this.currentQuestions && this.currentQuestions.length) {
+      return this.currentQuestions[this.tampilIndex] || {};
+    }
+
+    // fallback ke dataAwal (mis. saat belum memilih batch)
+    return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
+  },
+
+  // bangun opsi jawaban dari struktur soal yang berbeda-beda
+  displayOptions() {
+    const s = this.displaySoal && this.displaySoal.shuffledOptions;
+    if (!s) return [];
+
+    if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object' && ('text' in s[0] || 'key' in s[0])) {
+      return s.map((o, i) => ({ key: o.key ?? String.fromCharCode(97 + i), text: o.text ?? '' }));
+    }
+    if (s && typeof s === 'object' && !Array.isArray(s)) {
+      return Object.keys(s).map(k => ({ key: k, text: s[k] }));
+    }
+    if (Array.isArray(s) && typeof s[0] === 'string') {
+      return s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
+    }
+    return [];
+  },
+
+  isLastAnswerCorrect() {
+    const last = this.riwayatJawaban && this.riwayatJawaban[this.riwayatJawaban.length - 1];
+    return !!last && last.benar === true;
+  },
+
+  correctAnswerText() {
+    const soal = this.displaySoal;
+    if (!soal) return '';
+    return this.getAnswerTextByKey(soal, soal.kunciKey);
+  }
+},
+methods: {
+  // Bagi dataAwal menjadi batch resmi berdasarkan jumlahSoal
+  rebuildBatches() {
+    if (!this.dataAwal || this.dataAwal.length === 0) {
+      this.batches = [];
+      this.currentBatchIndex = null;
+      this.currentQuestions = [];
+      return;
+    }
+    const chunkSize = this.jumlahSoal || 15;
+    this.batches = [];
+    for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
+      this.batches.push(this.dataAwal.slice(i, i + chunkSize));
+    }
+    this.currentBatchIndex = 0;
+    this.currentQuestions = this.batches[0] || [];
+  },
+
+  // -------------------------
+  // Buka modal settings, inisialisasi draft dan rebuild batches
+  openSettings() {
+    // simpan salinan dataAwal jika belum ada
+    if (!this.originalQuestions || this.originalQuestions.length === 0) {
+      this.originalQuestions = (this.dataAwal || []).slice();
+    }
+
+    // rebuild batches untuk preview saja, berdasarkan jumlah soal draft
+    if (typeof this.rebuildBatchesFromDraft === 'function') {
+      this.rebuildBatchesFromDraft();
+    } else {
+      const chunk = this.jumlahSoalDraft && this.jumlahSoalDraft > 0 ? Math.floor(this.jumlahSoalDraft) : 15;
+      this.batches = [];
+      for (let i = 0; i < (this.dataAwal || []).length; i += chunk) {
+        this.batches.push((this.dataAwal || []).slice(i, i + chunk));
       }
-      if (s && typeof s === 'object' && !Array.isArray(s)) {
-        return Object.keys(s).map(k => ({ key: k, text: s[k] }));
-      }
-      if (Array.isArray(s) && typeof s[0] === 'string') {
-        return s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
-      }
-      return [];
-    },
-    isLastAnswerCorrect() {
-      const last = this.riwayatJawaban[this.riwayatJawaban.length - 1];
-      return !!last && last.benar === true;
-    },
-    correctAnswerText() {
-      const soal = this.displaySoal;
-      if (!soal) return '';
-      return this.getAnswerTextByKey(soal, soal.kunciKey);
+    }
+
+    // buka modal settings
+    this.showSettings = true;
+  },
+
+  // -------------------------
+  // Rebuild batch sementara menggunakan jumlah soal draft untuk preview
+  rebuildBatchesFromDraft() {
+    this.batches = [];
+    const chunkSize = (this.jumlahSoalDraft && this.jumlahSoalDraft > 0) ? Math.floor(this.jumlahSoalDraft) : 15;
+    if (!Array.isArray(this.dataAwal) || this.dataAwal.length === 0) return;
+    for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
+      this.batches.push(this.dataAwal.slice(i, i + chunkSize));
     }
   },
-  methods: {
-    // ambil teks jawaban berdasarkan key (a/b/c/d)
-    getAnswerTextByKey(soal, key) {
-      if (!soal || !soal.shuffledOptions) return '';
-      const s = soal.shuffledOptions;
-      let opts = [];
-      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object') {
-        opts = s;
-      } else if (s && typeof s === 'object' && !Array.isArray(s)) {
-        opts = Object.keys(s).map(k => ({ key: k, text: s[k] }));
-      } else if (Array.isArray(s) && typeof s[0] === 'string') {
-        opts = s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
+
+  // -------------------------
+  // Guard sederhana untuk validasi jumlah soal draft
+  canApplyJumlahSoal() {
+    return Number.isInteger(this.jumlahSoalDraft) && this.jumlahSoalDraft > 0;
+  },
+
+  // -------------------------
+  // Apply settings: simpan jumlah soal, rebuild batches, opsional auto-select batch pertama
+  applySettings(autoSelectFirst = false) {
+    if (!this.canApplyJumlahSoal()) {
+      alert('Masukkan jumlah soal valid (>=1).');
+      return;
+    }
+    this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
+    this.rebuildBatches();
+    if (autoSelectFirst) {
+      if (this.batches && this.batches.length) {
+        this.pilihBatch(0);
+      } else {
+        this.showSettings = true;
       }
-      const found = opts.find(o => String(o.key) === String(key));
-      return found ? (found.text ?? '') : '';
-    },
+    } else {
+      this.showSettings = false;
+    }
+  },
 
-    _sleep(ms = 500) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    },
+  // -------------------------
+  // Apply jumlah soal & pilih batch berikutnya
+  applyAndSelectNextBatch() {
+    if (!this.canApplyJumlahSoal()) {
+      alert('Masukkan jumlah soal valid (>=1).');
+      return;
+    }
+    this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
+    this.rebuildBatches();
+    if (this.currentBatchIndex == null) {
+      if (this.batches && this.batches.length) this.pilihBatch(0);
+    } else if (this.currentBatchIndex < (this.batches.length - 1)) {
+      this.pilihBatch(this.currentBatchIndex + 1);
+    } else {
+      alert('Tidak ada batch berikutnya.');
+      this.showSettings = true;
+    }
+  },
 
-    _now() {
-      const d = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const ts = Date.now();
-      const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-      return { ts, date, time };
-    },
+  // -------------------------
+  // Pilih batch aktif (reset index soal, countdown, jawaban)
+  pilihBatch(index) {
+    if (!this.batches || !this.batches[index]) return;
+    this.currentBatchIndex = index;    // ini yang penting
+    this.currentQuestions = this.batches[index].slice();
+    this.tampilIndex = 0;
+    this.currentIndex = 0;
+    this.jawabanTerpilih = null;
+    this.jawabanSudahDikirim = false;
+    this.submittedSoal = null;
+    this.stopCountdown();
+    this.showSettings = false;
+  },
+  // -------------------------
+  // Tutup modal settings
+  closeSettings() {
+    this.showSettings = false;
+  },
 
-    // Metode insert yang membentuk URL seperti:
-    // .../exec?action=insert&table=request&data={"dataset":"PMK 62",...}
-    async _doInsert(payload = {}) {
-      if (!this.insertUrlBase) throw new Error('insertUrlBase belum diset.');
-      // build URL: add table=request and encoded JSON data
-      const url = this.insertUrlBase + '&table=request&data=' + encodeURIComponent(JSON.stringify(payload));
-      console.log('Insert URL:', url);
-      const res = await fetch(url, { method: 'GET' });
-      const text = await res.text();
-      try { this.raw = JSON.parse(text); } catch(e) { this.raw = text; }
-      if (!res.ok) throw new Error('Insert gagal HTTP ' + res.status);
-    },
+  /* -----------------------
+    Util & small helpers
+    ----------------------- */
+  _sleep(ms = 500) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
 
-    // insert lalu fetch (menggunakan selectedDataset)
-    async insertThenFetch() {
-      if (!this.selectedDataset) {
-        alert('Pilih dataset terlebih dahulu.');
-        return;
-      }
-      this.loading = true;
+  _now() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const ts = Date.now();
+    const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return { ts, date, time };
+  },
 
-      // save selectedDataset to localStorage
-      localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
+  // Ambil soal yang sedang tampil: prioritas submittedSoal > currentQuestions[tampilIndex] > dataAwal[tampilIndex]
+  _getCurrentSoal() {
+    if (this.submittedSoal) return this.submittedSoal;
+    // Gunakan tampilIndex untuk display (sesuai permintaan)
+    if (Array.isArray(this.currentQuestions) && this.currentQuestions.length) {
+      return this.currentQuestions[this.tampilIndex] || {};
+    }
+    return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
+  },
 
-      // prepare payload for insert (include dataset; include noHalaman if you want)
-      const now = this._now();
-      const payload = {
-        no: now.ts,
-        tanggal: now.date,
-        waktu: now.time,
-        noHalaman: this.selectedDataset
-        // jika butuh: noHalaman: Number(this.noHalaman)
-      };
+  // Ambil teks jawaban berdasar key (a/b/c/d) — kompatibel dengan banyak format
+  getAnswerTextByKey(soal, key) {
+    if (!soal || !soal.shuffledOptions) return '';
+    const s = soal.shuffledOptions;
+    let opts = [];
+    if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object') {
+      opts = s;
+    } else if (s && typeof s === 'object' && !Array.isArray(s)) {
+      opts = Object.keys(s).map(k => ({ key: k, text: s[k] }));
+    } else if (Array.isArray(s) && typeof s[0] === 'string') {
+      opts = s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
+    }
+    const found = opts.find(o => String((o.key ?? '')).toLowerCase() === String(key ?? '').toLowerCase());
+    return found ? (found.text ?? '') : '';
+  },
 
+  /* -----------------------
+    Server insert & fetch
+    ----------------------- */
+  // _doInsert: panggil endpoint insert (GET dengan data JSON ter-encode)
+  async _doInsert(payload = {}) {
+    if (!this.insertUrlBase) throw new Error('insertUrlBase belum diset.');
+    const url = this.insertUrlBase + '&table=request&data=' + encodeURIComponent(JSON.stringify(payload));
+    console.log('Insert URL:', url);
+    const res = await fetch(url, { method: 'GET' });
+    const text = await res.text();
+    try { this.raw = JSON.parse(text); } catch(e) { this.raw = text; }
+    if (!res.ok) throw new Error('Insert gagal HTTP ' + res.status);
+  },
+
+  // insertThenFetch: dipanggil dari template — pastikan ada
+  async insertThenFetch() {
+    if (!this.selectedDataset) {
+      alert('Pilih dataset terlebih dahulu.');
+      return;
+    }
+    this.loading = true;
+
+    // save selectedDataset to localStorage
+    localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
+
+    // prepare payload for insert (include dataset; include noHalaman if you want)
+    const now = this._now();
+    const payload = {
+      no: now.ts,
+      tanggal: now.date,
+      waktu: now.time,
+      noHalaman: this.selectedDataset
+    };
+
+    try {
       try {
-        try {
-          await this._doInsert(payload);
-        } catch (e) {
-          console.warn('Insert gagal, lanjut ke loadPage:', e);
-          // teruskan ke loadPage walaupun insert gagal
-        }
-
-        // wait a bit for backend to settle if needed
-        await this._sleep(900);
-        // then load data (loadPage uses selectedDataset)
-        await this.loadPage();
-      } finally {
-        this.loading = false;
+        await this._doInsert(payload);
+      } catch (e) {
+        console.warn('Insert gagal, lanjut ke loadPage:', e);
+        // lanjutkan ke loadPage walau insert gagal
       }
-    },
 
-    // loadPage: fetch dari API, fallback demo — uses selectedDataset as `table` param
-      // loadPage: fetch dari API, fallback demo
-      async loadPage() {
-        this.loading = true;
-        this.dataAwal = [];
-        this.submittedSoal = null;
-        try {
-          const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
-          const res = await fetch(url);
-          const txt = await res.text();
-          let parsed = null;
-          try { parsed = JSON.parse(txt); } catch(e){ parsed = null; }
-          let rows = [];
-          if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
-          else if (Array.isArray(parsed)) rows = parsed;
-          if (!rows || rows.length === 0) {
-            rows = [
-              { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-              { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-              { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-            ];
-          }
+      // wait a bit for backend to settle if needed
+      await this._sleep(900);
+      // then load data (loadPage uses selectedDataset)
+      await this.loadPage();
+    } finally {
+      this.loading = false;
+    }
+  },
 
-          const normalized = rows.map(r => {
-            const allOptions = [
-              { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-              { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-              { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-              { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-            ].filter(o => o.text !== '');
-            const shuffled = shuffleArray(allOptions);
-            const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-            const k = allOptions.find(o=>o.isCorrect);
-            return {
-              id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
-              no: r.no ?? null,
-              soal: r.soal ?? r.question ?? '',
-              kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-              shuffledOptions,
-              sumber: r.sumber ?? '',
-              hal: Number(r.hal ?? r.page ?? 0) || 0,
-              row: Number(r.row ?? 0) || 0
-            };
-          }).filter(r => r.soal);
+  /* -----------------------
+    Load / Normalisasi data
+    ----------------------- */
+  async loadPage() {
+    this.loading = true;
+    this.dataAwal = [];
+    this.submittedSoal = null;
+    try {
+      const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
+      const res = await fetch(url);
+      const txt = await res.text();
+      let parsed = null;
+      try { parsed = JSON.parse(txt); } catch(e){ parsed = null; }
+      let rows = [];
+      if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
+      else if (Array.isArray(parsed)) rows = parsed;
 
-          normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
-          const pageNum = Number(this.noHalaman || 1);
-          const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
-          this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
-          this.currentIndex = 0;
-          this.tampilIndex = 0;
-          this.jawabanTerpilih = null;
-          this.jawabanSudahDikirim = false;
-          this.stopCountdown();
+      if (!rows || rows.length === 0) {
+        rows = [
+          { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
+          { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
+          { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
+        ];
+      }
 
-        } catch (err) {
-          console.error('loadPage error:', err);
-          this.resetToDemo();
-        } finally {
-          this.loading = false;
-        }
-      },
-      
-    resetToDemo() {
-      this.wrongQuestions = [];
-      this.riwayatJawaban = [];
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
-      this.submittedSoal = null;
-      const rows = [
-        { id: 1, no:1, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Ibu kota Indonesia?`, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-        { id: 2, no:2, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — 2 + 2 = ?`, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-        { id: 3, no:3, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Pulau terbesar di Indonesia?`, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-      ];
       const normalized = rows.map(r => {
         const allOptions = [
           { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
@@ -442,186 +657,267 @@ new Vue({
         const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
         const k = allOptions.find(o=>o.isCorrect);
         return {
-          id: r.id,
-          no: r.no,
-          soal: r.soal,
+          id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
+          no: r.no ?? null,
+          soal: r.soal ?? r.question ?? '',
           kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
           shuffledOptions,
           sumber: r.sumber ?? '',
-          hal: r.hal ?? 0,
-          row: r.row ?? 0
+          hal: Number(r.hal ?? r.page ?? 0) || 0,
+          row: Number(r.row ?? 0) || 0
         };
-      });
-      this.dataAwal = shuffleArray(normalized.slice());
+      }).filter(r => r.soal);
+
+      normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
+      const pageNum = Number(this.noHalaman || 1);
+      const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
+      this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
+
+      // sync indices & reset transient state
       this.currentIndex = 0;
       this.tampilIndex = 0;
-      this.stopCountdown();
-    },
-
-    selectAnswer(key, shouldSubmit = false) {
-      if (this.jawabanSudahDikirim) return;
-      this.jawabanTerpilih = key;
-      if (shouldSubmit) {
-        this.$nextTick(() => this.submitAnswer());
-      }
-    },
-
-    submitAnswer() {
-      if (this.jawabanSudahDikirim) return;
-      if (this.jawabanTerpilih === null || this.jawabanTerpilih === undefined) return;
-
-      // keep a copy of the displayed soal so it doesn't change until Next
-      const soal = JSON.parse(JSON.stringify(this.dataAwal[this.currentIndex] || {}));
-      if (!soal || !soal.soal) return;
-
-      const isCorrect = this.jawabanTerpilih === soal.kunciKey;
-      const entry = {
-        id: soal.id ?? soal.no ?? (Math.random().toString(36).slice(2)),
-        no: soal.no ?? null,
-        soal: soal.soal,
-        pilihan: this.jawabanTerpilih,
-        kunciKey: soal.kunciKey,
-        benar: isCorrect,
-        waktu: Date.now()
-      };
-      this.riwayatJawaban.push(entry);
-
-      // simpan displayed copy for review period
-      this.submittedSoal = soal;
-
-      if (isCorrect) {
-        // remove all occurrences from pool (by id or soal text)
-        const matchId = entry.id;
-        const matchText = soal.soal;
-        this.dataAwal = this.dataAwal.filter(s => {
-          const sid = s.id ?? s.no ?? '';
-          return (sid !== matchId) && (s.soal !== matchText);
-        });
-        // adjust currentIndex to a valid index (if pool not empty)
-        if (this.dataAwal.length > 0) {
-          this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.dataAwal.length - 1));
-        } else {
-          this.currentIndex = 0;
-        }
-      } else {
-        // single declaration: simpan soal salah dengan teks kunci
-        const ktext = this.getAnswerTextByKey(soal, soal.kunciKey);
-        this.wrongQuestions.push({
-          id: entry.id,
-          soal: entry.soal,
-          kunciText: ktext || (soal.kunciKey || '').toString().toUpperCase()
-        });
-
-        // reinject the question into pool (clone) at random position
-        const clone = JSON.parse(JSON.stringify(soal));
-        clone.id = clone.id ?? (Math.random().toString(36).slice(2));
-        const insertAt = Math.floor(Math.random() * (this.dataAwal.length + 1));
-        this.dataAwal.splice(insertAt, 0, clone);
-        // no removal from pool in wrong case
-      }
-
-      // lock answer so UI shows review period
-      this.jawabanSudahDikirim = true;
-
-      // start 10s countdown — user can read correct answer; auto next when habis
-      this.startCountdown(10);
-    },
-
-    manualNext() {
-      if (!this.jawabanSudahDikirim) return;
-      this.stopCountdown();
-      this.goNext();
-    },
-
-    goNext() {
-      // clear displayed submitted soal then pick next from pool
+      this.jawabanTerpilih = null;
+      this.jawabanSudahDikirim = false;
       this.submittedSoal = null;
+      this.stopCountdown();
 
-      // if pool empty -> done
-      if (this.dataAwal.length === 0) {
-        this.jawabanTerpilih = null;
-        this.jawabanSudahDikirim = false;
-        return;
+      // rebuild batches otomatis
+      this.rebuildBatches();
+
+    } catch (err) {
+      console.error('loadPage error:', err);
+      this.resetToDemo();
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  resetToDemo() {
+    this.wrongQuestions = [];
+    this.riwayatJawaban = [];
+    this.jawabanTerpilih = null;
+    this.jawabanSudahDikirim = false;
+    this.submittedSoal = null;
+    const rows = [
+      { id: 1, no:1, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Ibu kota Indonesia?`, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
+      { id: 2, no:2, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — 2 + 2 = ?`, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
+      { id: 3, no:3, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Pulau terbesar di Indonesia?`, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
+    ];
+    const normalized = rows.map(r => {
+      const allOptions = [
+        { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
+      ].filter(o => o.text !== '');
+      const shuffled = shuffleArray(allOptions);
+      const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
+      const k = allOptions.find(o=>o.isCorrect);
+      return {
+        id: r.id,
+        no: r.no,
+        soal: r.soal,
+        kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
+        shuffledOptions,
+        sumber: r.sumber ?? '',
+        hal: r.hal ?? 0,
+        row: r.row ?? 0
+      };
+    });
+    this.dataAwal = shuffleArray(normalized.slice());
+    this.currentIndex = 0;
+    this.tampilIndex = 0;
+    this.stopCountdown();
+
+    // rebuild batches
+    this.rebuildBatches();
+  },
+
+  /* -----------------------
+    Answer selection & submit
+    ----------------------- */
+  selectAnswer(key, shouldSubmit = false) {
+    if (this.jawabanSudahDikirim) return;
+    this.jawabanTerpilih = key;
+    if (shouldSubmit) {
+      this.$nextTick(() => this.submitAnswer());
+    }
+  },
+
+  // Perubahan: Hanya catat jawaban, set flag submitted, dan mulai countdown.
+  submitAnswer() {
+    if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
+
+    // Gunakan currentIndex untuk mengambil soal yang sedang dikerjakan
+    const soal = this.currentQuestions[this.currentIndex];
+    if (!soal) return;
+
+    const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
+
+    // 1. Catat jawaban ke riwayat
+    this.riwayatJawaban.push({
+      id: soal.id,
+      no: soal.no,
+      soal: soal.soal,
+      pilihan: this.jawabanTerpilih,
+      kunciKey: soal.kunciKey,
+      benar: isCorrect,
+      waktu: Date.now()
+    });
+
+    // Set soal yang sudah dijawab untuk tampilan koreksi
+    this.submittedSoal = soal;
+    
+    // 2. Set flag
+    this.jawabanSudahDikirim = true;
+
+    // 3. Mulai countdown, yang akan memanggil nextQuestion() saat habis
+    this.startCountdown(10, () => {
+      // Callback: Pindah soal/batch
+      this.nextQuestion();
+    });
+  },
+
+  // Perubahan: Menerima callback untuk pindah soal
+  startCountdown(seconds, callback) {
+    this.stopCountdown(); // Pastikan timer sebelumnya dihentikan
+    this.countdown = seconds;
+    this.countdownActive = true;
+
+    this._countdownTimer = setInterval(() => {
+      this.countdown--;
+      if (this.countdown <= 0) {
+        this.stopCountdown();
+        if (typeof callback === 'function') callback(); // Panggil callback (misalnya: nextQuestion)
       }
+    }, 1000);
+  },
 
-      // shuffle pool and pick random
-      this.dataAwal = shuffleArray(this.dataAwal);
-      this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
+  // Perubahan: Pindah soal, reset state, dan stop countdown
+  nextQuestion() {
+    // 1. Pindah ke soal berikutnya dalam batch
+    if (this.currentIndex < this.currentQuestions.length - 1) {
+      this.currentIndex++;
       this.tampilIndex++;
       this.jawabanTerpilih = null;
       this.jawabanSudahDikirim = false;
-    },
-
-    startCountdown(seconds = 10) {
-      this.stopCountdown();
-      this.countdown = seconds;
-      this.countdownActive = true;
-      this._countdownTimer = setInterval(() => {
-        if (this.countdown > 0) this.countdown--;
-        if (this.countdown <= 0) {
-          this.stopCountdown();
-          this.goNext();
-        }
-      }, 1000);
-    },
-
-    stopCountdown() {
-      this.countdownActive = false;
-      this.countdown = 10;
-      if (this._countdownTimer) {
-        clearInterval(this._countdownTimer);
-        this._countdownTimer = null;
-      }
-    },
-
-    forceShufflePool() {
-      if (this.dataAwal.length === 0) return;
-      this.dataAwal = shuffleArray(this.dataAwal);
-      this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
       this.submittedSoal = null;
-      this.stopCountdown();
-    },
-
-    getOptionClasses(key) {
-      // highlight logic based on displayed soal and submitted state
-      const classes = [];
-      const soal = this.displaySoal;
-      if (!soal) return 'bg-white border-gray-200 text-gray-700';
-      if (this.jawabanSudahDikirim) {
-        const isCorrect = key === soal.kunciKey;
-        const isSelected = key === this.jawabanTerpilih;
-        if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold');
-        else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold');
-        else classes.push('bg-gray-100 border-gray-300 text-gray-500');
-      } else {
-        if (key === this.jawabanTerpilih) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md');
-        else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50');
-      }
-      return classes.join(' ');
-    },
-
-    openWrongModal() { this.showWrongModal = true; },
-    closeWrongModal() { this.showWrongModal = false; },
-
-    exportWrongAsCSV() {
-      if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
-        alert('Belum ada soal salah untuk diekspor.');
-        return;
-      }
-      const rows = [['No','Soal','Kunci']];
-      this.wrongQuestions.forEach((w,i)=> {
-        rows.push([i+1, (w.soal||'').replace(/<[^>]*>?/gm,''), (w.kunciText || '').toString()]);
-      });
-      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'soal_salah.csv'; a.click();
-      URL.revokeObjectURL(url);
+      this.stopCountdown(); // Stop countdown
+      return;
     }
-  }, // end methods
+
+    // 2. Pindah ke batch berikutnya jika ada
+    const nextBatchIndex = (this.currentBatchIndex == null ? -1 : this.currentBatchIndex) + 1;
+    if (this.batches && nextBatchIndex < this.batches.length) {
+      // pilihBatch akan otomatis mereset state dan stopCountdown
+      this.pilihBatch(nextBatchIndex);
+      return;
+    }
+
+    // 3. Batch/sesi selesai
+    alert('Batch terakhir selesai! Silakan mulai sesi/batch baru.');
+    this.stopCountdown();
+    this.showSettings = true;
+  },
+
+  // Method bantuan untuk menghentikan countdown
+  stopCountdown() {
+    this.countdownActive = false;
+    this.countdown = 10;
+    if (this._countdownTimer) {
+      clearInterval(this._countdownTimer);
+      this._countdownTimer = null;
+    }
+  },
+
+  /* -----------------------
+    Navigation & countdown
+    ----------------------- */
+  // Manual next hanya jalan setelah jawaban dikirim
+  manualNext() {
+    if (!this.jawabanSudahDikirim) return;
+    this.stopCountdown();
+    this.nextQuestion(); // Langsung panggil nextQuestion() yang baru
+  },
+
+  // Method goNext() yang lama dihapus/disederhanakan karena logikanya sudah dipindahkan ke nextQuestion()
+  // Karena masih dipanggil di `manualNext` yang lama, kita pertahankan hanya untuk kompatibilitas, tapi kosongkan atau sedernakan
+  goNext() {
+    // Logic lama goNext() sekarang ada di nextQuestion(). 
+    // Jika masih ada panggilan goNext() di luar manualNext(), ganti ke nextQuestion().
+    // Untuk amannya, kita pastikan logic utamanya memanggil nextQuestion.
+    this.nextQuestion();
+  },
+
+  // Menghapus duplikasi startCountdown yang lama (sudah direfactor di atas)
+  // Menghapus duplikasi nextQuestion yang lama (sudah direfactor di atas)
+
+  forceShufflePool() {
+    if (!this.dataAwal || this.dataAwal.length === 0) return;
+    this.dataAwal = shuffleArray(this.dataAwal);
+
+    if (this.currentBatchIndex != null && this.batches && this.batches.length > 0) {
+      this.rebuildBatches();
+      if (this.batches[this.currentBatchIndex]) {
+        this.currentQuestions = this.batches[this.currentBatchIndex].slice();
+        this.tampilIndex = 0;
+      } else {
+        this.currentQuestions = [];
+        this.currentBatchIndex = null;
+        this.tampilIndex = 0;
+      }
+    } else {
+      this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
+      this.tampilIndex = this.currentIndex;
+    }
+
+    this.jawabanTerpilih = null;
+    this.jawabanSudahDikirim = false;
+    this.submittedSoal = null;
+    this.stopCountdown();
+  },
+
+  /* -----------------------
+    UI helpers & export
+    ----------------------- */
+  getOptionClasses(key) {
+    const classes = [];
+    const soal = this._getCurrentSoal(); // Pastikan menggunakan _getCurrentSoal() yang memprioritaskan submittedSoal
+    if (!soal) return 'bg-white border-gray-200 text-gray-700';
+    if (this.jawabanSudahDikirim) {
+      const isCorrect = String(key).toLowerCase() === String(soal.kunciKey).toLowerCase();
+      const isSelected = String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase();
+      if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold');
+      else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold');
+      else classes.push('bg-gray-100 border-gray-300 text-gray-500');
+    } else {
+      if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md');
+      else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50');
+    }
+    return classes.join(' ');
+  },
+
+  openWrongModal() { this.showWrongModal = true; },
+  closeWrongModal() { this.showWrongModal = false; },
+
+  exportWrongAsCSV() {
+    if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
+      alert('Belum ada soal salah untuk diekspor.');
+      return;
+    }
+    const rows = [['No','Soal','Kunci']];
+    this.wrongQuestions.forEach((w,i)=> {
+      rows.push([i+1, (w.soal||'').replace(/<[^>]*>?/gm,''), (w.kunciText || '').toString()]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'soal_salah.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+} // end methods
+,
   mounted() {
     // restore selectedDataset if previously set
     const saved = localStorage.getItem('kitab_selectedDataset');
@@ -640,4 +936,3 @@ new Vue({
 
 </body>
 </html>
-
