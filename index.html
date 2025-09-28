@@ -50,7 +50,7 @@
 
 
     <!-- MAIN CARD -->
-    <div class="bg-white p-6 md:p-8 rounded-xl shadow-xl">
+    <div class="bg-white p-6 md:p-8 rounded-xl shadow-xl" ref="soalContainer">
       <div v-if="loading" class="text-center py-16 text-indigo-600">
         <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -67,7 +67,7 @@
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
         <section class="md:col-span-2">
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-4" >
             <div>
               <div class="text-sm text-gray-500">Soal ke</div>
               <div class="text-2xl font-bold text-indigo-700">{{ tampilIndex + 1 }} <span class="text-base font-medium text-gray-500">/ {{ totalPool }}</span></div>
@@ -117,7 +117,7 @@
         </section>
 
         <!-- RIGHT: Info, Kontrol, Statistik -->
-        <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6">
+        <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6" ref="controlsAside" >
           <div class="sticky top-6">
             <div class="mb-4">
               <div class="text-sm text-gray-500">Status</div>
@@ -130,16 +130,37 @@
               </div>
             </div>
 
-            <div class="mb-4">
-              <button
-                @click="manualNext"
-                :disabled="!jawabanSudahDikirim || poolEmpty"
-                class="w-full px-3 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base"
-              >
-                <span v-if="countdownActive">Next (otomatis dalam {{ countdown }}s)</span>
-                <span v-else>{{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}</span>
-              </button>
-            </div>
+<div class="mb-4 flex items-stretch gap-2">
+  <!-- Tombol utama Next -->
+  <button
+    @click="manualNext"
+    :disabled="!jawabanSudahDikirim || poolEmpty"
+    class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base"
+    style="height: 48px;"
+  >
+    <span v-if="countdownActive">
+      Next (otomatis dalam {{ countdown }}s)
+    </span>
+    <span v-else>
+      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
+    </span>
+  </button>
+
+  <!-- Tombol pause / resume terpisah -->
+  <button
+    v-if="countdownActive"
+    @click.stop="toggleCountdown"
+    :disabled="countdown <= 0"
+    class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm"
+    style="height: 48px;"
+    title="Jeda / Lanjutkan countdown"
+  >
+    <span v-if="isPaused">▶️ Lanjutkan</span>
+    <span v-else>⏸️ Jeda</span>
+  </button>
+</div>
+
+
 
             <div class="mb-4 grid grid-cols-2 gap-2">
               <!-- <button @click="forceShufflePool" class="px-3 py-2 bg-gray-100 text-gray-800 rounded-md shadow hover:bg-gray-200 text-sm">Acak Pool</button> -->
@@ -177,7 +198,7 @@
         <div class="p-4 border-b flex items-center justify-between">
           <h3 class="font-bold text-lg">Daftar Soal Salah ({{ wrongQuestions.length }})</h3>
           <div class="flex items-center gap-2">
-            <button @click="exportWrongAsCSV" class="px-3 py-1 bg-green-500 text-white rounded-md">Export CSV</button>
+            <!-- <button @click="exportWrongAsCSV" class="px-3 py-1 bg-green-500 text-white rounded-md">Export CSV</button> -->
             <button @click="closeWrongModal" class="px-3 py-1 bg-gray-200 rounded-md">Tutup</button>
           </div>
         </div>
@@ -310,7 +331,8 @@ new Vue({
       optionLabels: ['A','B','C','D'],
 
       // --- dataset select & insert config ---
-      datasets: ['Pejabat Perbendaharaan', 
+      datasets: ['PMK 62', 
+'Pejabat Perbendaharaan', 
 'Mekanisme Pembayaran APBN', 
 'MP PNPB', 
 'PENGELOLAAN HIBAH', 
@@ -354,6 +376,7 @@ new Vue({
 
     // helper/ui
     optionLabels: ['A','B','C','D','E'],
+      isPaused: false, // Digunakan untuk melacak status Jeda/Lanjutkan
 
     };
   },
@@ -417,6 +440,45 @@ new Vue({
   }
 },
 methods: {
+    // Di dalam methods:
+scrollToTop() {
+    // Sesuaikan kondisi lebar layar jika diperlukan
+    if (window.innerWidth < 768) { 
+        // 🚨 Pastikan ref ini menunjuk ke kontainer teks soal!
+        const targetElement = this.$refs.soalContainer; // Ganti 'controlSoal' menjadi ref ke Soal
+        
+        if (targetElement) {
+            targetElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start'      // 'start' adalah untuk scroll ke atas
+            });
+        }
+    }
+},  
+    // 🌟 FUNGSI BARU UNTUK SCROLLING 🌟
+  scrollToBottom() {
+    // Pastikan kita ada di mode HP/layar kecil (opsional, tapi disarankan)
+    // Asumsi: Jika lebar layar kurang dari md (768px), kita scroll.
+    if (window.innerWidth < 768) { 
+      
+      // Target elemen yang berisi tombol kontrol
+      const targetElement = this.$refs.controlsAside;
+      
+      if (targetElement) {
+        // Metode scrollIntoView lebih modern dan memberikan transisi halus
+        targetElement.scrollIntoView({ 
+          behavior: 'smooth', // Animasi halus
+          block: 'end'        // Scroll hingga bagian akhir elemen terlihat
+        });
+        
+        // Alternatif: Scroll ke dasar halaman (lebih universal)
+        // window.scrollTo({
+        //   top: document.body.scrollHeight, 
+        //   behavior: 'smooth'
+        // });
+      }
+    }
+  },
   // Bagi dataAwal menjadi batch resmi berdasarkan jumlahSoal
   rebuildBatches() {
     if (!this.dataAwal || this.dataAwal.length === 0) {
@@ -751,89 +813,154 @@ methods: {
 
   // Perubahan: Hanya catat jawaban, set flag submitted, dan mulai countdown.
   submitAnswer() {
-    if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
+  if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
 
-    // Gunakan currentIndex untuk mengambil soal yang sedang dikerjakan
-    const soal = this.currentQuestions[this.currentIndex];
-    if (!soal) return;
+  // 1. Ambil soal yang sedang dikerjakan
+  const soal = this.currentQuestions[this.currentIndex];
+  if (!soal) return;
 
-    const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
+  // Cek kebenaran jawaban
+  const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
 
-    // 1. Catat jawaban ke riwayat
-    this.riwayatJawaban.push({
-      id: soal.id,
-      no: soal.no,
-      soal: soal.soal,
-      pilihan: this.jawabanTerpilih,
-      kunciKey: soal.kunciKey,
-      benar: isCorrect,
-      waktu: Date.now()
-    });
+  // 2. Catat jawaban ke riwayat
+  this.riwayatJawaban.push({
+    id: soal.id,
+    no: soal.no,
+    soal: soal.soal,
+    pilihan: this.jawabanTerpilih,
+    kunciKey: soal.kunciKey,
+    benar: isCorrect,
+    waktu: Date.now()
+  });
 
-    // Set soal yang sudah dijawab untuk tampilan koreksi
-    this.submittedSoal = soal;
+  // 🌟 LOGIKA PENGULANGAN DAN ACAK ULANG 🌟
+  if (isCorrect) {
+    // JIKA BENAR: Hapus soal dari array currentQuestions (selesai diuji).
+    // Soal berikutnya otomatis bergeser ke currentIndex.
+    this.currentQuestions.splice(this.currentIndex, 1);
     
-    // 2. Set flag
-    this.jawabanSudahDikirim = true;
+  } else {
+    // JIKA SALAH: 
+    
+    // A. Tambahkan soal ke daftar soal salah (untuk modal)
+    const kunciText = this.getAnswerTextByKey(soal, soal.kunciKey); 
+    const isDuplicate = this.wrongQuestions.some(q => q.id === soal.id);
+    if (!isDuplicate) {
+        this.wrongQuestions.push({ id: soal.id, no: soal.no, soal: soal.soal, kunciKey: soal.kunciKey, kunciText: kunciText });
+    }
+    
+    // B. Acak ulang SELURUH array currentQuestions
+    // Fungsi shuffleArray(array) harus tersedia di luar methods
+    this.currentQuestions = shuffleArray(this.currentQuestions);
+    
+    // C. Atur ulang currentIndex menjadi 0
+    // Karena array sudah diacak, kita mulai lagi dari index 0.
+    this.currentIndex = 0;
+    this.tampilIndex = 0; 
+  }
+  // -----------------------------------------------------------
 
-    // 3. Mulai countdown, yang akan memanggil nextQuestion() saat habis
-    this.startCountdown(10, () => {
-      // Callback: Pindah soal/batch
-      this.nextQuestion();
+  // Set soal yang sudah dijawab untuk tampilan koreksi
+  this.submittedSoal = soal;
+  
+  // 3. Set flag
+  this.jawabanSudahDikirim = true;
+
+  // 4. Mulai countdown, yang akan memanggil nextQuestion() saat habis
+  this.startCountdown(10, () => {
+    // Callback: Pindah soal/batch setelah countdown selesai
+    this.nextQuestion();
+  });
+
+      // 🌟 PANGGIL FUNGSI SCROLL SETELAH SEMUA STATE UPDATE 🌟
+    // Gunakan nextTick untuk memastikan DOM sudah selesai diperbarui (feedback/tombol muncul)
+    this.$nextTick(() => {
+        this.scrollToBottom();
     });
-  },
 
+},
   // Perubahan: Menerima callback untuk pindah soal
-  startCountdown(seconds, callback) {
-    this.stopCountdown(); // Pastikan timer sebelumnya dihentikan
-    this.countdown = seconds;
-    this.countdownActive = true;
+  // --- BAGIAN 'methods: {' DALAM KOMPONEN ANDA ---
 
-    this._countdownTimer = setInterval(() => {
-      this.countdown--;
-      if (this.countdown <= 0) {
-        this.stopCountdown();
-        if (typeof callback === 'function') callback(); // Panggil callback (misalnya: nextQuestion)
-      }
-    }, 1000);
-  },
+// 🌟 GANTI/TIMPA FUNGSI INI 🌟
+startCountdown(seconds, callback) {
+  this.stopCountdown(); // Pastikan timer sebelumnya dihentikan
+  this.isPaused = false; // Reset status jeda saat countdown baru dimulai
+  this.countdown = seconds;
+  this.countdownActive = true;
 
+  this._countdownTimer = setInterval(() => {
+    this.countdown--;
+    if (this.countdown <= 0) {
+      this.stopCountdown();
+      if (typeof callback === 'function') callback(); // Panggil callback (misalnya: nextQuestion)
+    }
+  }, 1000);
+},
+
+// 🌟 GANTI/TIMPA FUNGSI INI 🌟
+// Method bantuan untuk menghentikan countdown
+stopCountdown() {
+  this.countdownActive = false;
+  // JANGAN reset this.countdown = 10; di sini, agar sisa waktu tetap tersimpan saat di-pause
+  if (this._countdownTimer) {
+    clearInterval(this._countdownTimer);
+    this._countdownTimer = null;
+  }
+},
+
+// 🌟 TAMBAHKAN FUNGSI INI 🌟
+// Mengalihkan status jeda/lanjutkan pada countdown
+toggleCountdown() {
+  if (this.isPaused) {
+    // Jika di-pause, lanjutkan (resume)
+    this.isPaused = false;
+    // Panggil startCountdown dengan sisa waktu yang tersisa dan callback yang sama
+    this.startCountdown(this.countdown, () => this.nextQuestion()); 
+  } else {
+    // Jika tidak di-pause, jeda (pause)
+    this.isPaused = true;
+    this.stopCountdown(); // Hentikan timer
+  }
+},
+// --- LANJUTKAN DENGAN methods LAINNYA ---
   // Perubahan: Pindah soal, reset state, dan stop countdown
-  nextQuestion() {
-    // 1. Pindah ke soal berikutnya dalam batch
-    if (this.currentIndex < this.currentQuestions.length - 1) {
-      this.currentIndex++;
-      this.tampilIndex++;
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
-      this.submittedSoal = null;
-      this.stopCountdown(); // Stop countdown
-      return;
+  // Perubahan: Pindah soal, reset state, dan stop countdown
+nextQuestion() {
+    // Cek apakah masih ada soal dalam pool batch ini
+    if (this.currentQuestions.length > 0) {
+        // Soal yang akan muncul berikutnya sudah ditentukan oleh submitAnswer():
+        // 1. Jika BENAR: Soal berikutnya adalah index yang sama (karena soal sebelumnya dihapus).
+        // 2. Jika SALAH: Soal berikutnya adalah index 0 (karena array diacak ulang dan currentIndex direset ke 0).
+        
+        // HANYA LAKUKAN RESET STATE
+        this.jawabanTerpilih = null;
+        this.jawabanSudahDikirim = false;
+        this.submittedSoal = null;
+        this.stopCountdown(); 
+
+              this.$nextTick(() => {
+        this.scrollToTop();
+    });
+        
+        // Catatan: this.currentIndex dan this.tampilIndex TIDAK perlu di-increment di sini.
+        return;
     }
 
-    // 2. Pindah ke batch berikutnya jika ada
+    // Jika array sudah kosong, berarti semua soal sudah dijawab benar.
     const nextBatchIndex = (this.currentBatchIndex == null ? -1 : this.currentBatchIndex) + 1;
     if (this.batches && nextBatchIndex < this.batches.length) {
-      // pilihBatch akan otomatis mereset state dan stopCountdown
-      this.pilihBatch(nextBatchIndex);
-      return;
+        this.pilihBatch(nextBatchIndex);
+        return;
     }
 
-    // 3. Batch/sesi selesai
-    alert('Batch terakhir selesai! Silakan mulai sesi/batch baru.');
+    // Batch/sesi selesai
+    alert('Batch terakhir selesai! Semua soal yang tersisa sudah dijawab benar. Silakan mulai sesi/batch baru.');
     this.stopCountdown();
     this.showSettings = true;
-  },
 
-  // Method bantuan untuk menghentikan countdown
-  stopCountdown() {
-    this.countdownActive = false;
-    this.countdown = 10;
-    if (this._countdownTimer) {
-      clearInterval(this._countdownTimer);
-      this._countdownTimer = null;
-    }
-  },
+  
+},
 
   /* -----------------------
     Navigation & countdown
