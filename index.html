@@ -6,48 +6,219 @@
   <title>Kuis PMK — Review Jawaban 10s + Soal Salah</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <style>
+@keyframes achievement-popup {
+  0% { transform: translateX(100%) scale(0.5); opacity: 0; }
+  70% { transform: translateX(-10px) scale(1.05); }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes level-up {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  50% { transform: scale(1.1) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+@keyframes streak-fire {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.animate-achievement-popup {
+  animation: achievement-popup 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-level-up {
+  animation: level-up 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-streak-fire {
+  animation: streak-fire 1.5s ease-out;
+}
+
+/* Hover effects */
+.hover-lift:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+/* Progress bar glow */
+.progress-glow {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+</style>
 </head>
 <body class="bg-gray-50 antialiased min-h-screen">
   <div id="app" class="mx-auto w-full max-w-5xl p-4 sm:p-8">
     <!-- HEADER -->
- <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-  <div class="flex-1 min-w-0">
-    <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 leading-tight">✅ Belajar Soal</h1>
-    <p class="text-gray-600 mt-1 text-sm md:text-base">tampil jawaban benar selama 10 detik.</p>
+    <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 leading-tight">✅ Belajar Soal</h1>
+        <p class="text-gray-600 mt-1 text-sm md:text-base">tampil jawaban benar selama 10 detik.</p>
+      </div>
+
+      <!-- Badge & Progress Display -->
+      <div class="flex items-center gap-3">
+        <!-- Streak Display -->
+        <div v-if="userStats.streak > 0" class="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-full">
+          <span class="text-orange-600 font-bold">🔥 {{ userStats.streak }}</span>
+          <span class="text-orange-800 text-sm">Hari</span>
+        </div>
+        
+        <!-- Points Display -->
+        <div class="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+          <span class="text-green-600 font-bold">⭐ {{ userStats.points }}</span>
+          <span class="text-green-800 text-sm">Poin</span>
+        </div>
+
+        <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300">
+          <option value="" disabled>-- pilih dataset --</option>
+          <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
+        </select>
+
+        <button
+          @click="insertThenFetch"
+          :disabled="loading || !selectedDataset"
+          class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          type="button"
+        >
+          Tampil
+        </button>
+
+        <button
+          @click="openSettings"
+          type="button"
+          class="ml-1 p-2 rounded-md border hover:bg-gray-100 transition"
+          title="Pengaturan Soal"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M11.3 1.046a1 1 0 00-2.6 0l-.2.657a7.002 7.002 0 00-1.78.846l-.6-.35a1 1 0 00-1.22.18L2.84 5.34a1 1 0 00.18 1.41l.613.49a7.017 7.017 0 000 2.78l-.613.49a1 1 0 00-.18 1.41l1.17 1.37a1 1 0 001.22.18l.6-.35a7.002 7.002 0 001.78.846l.2.657a1 1 0 002.6 0l.2-.657a7.002 7.002 0 001.78-.846l.6.35a1 1 0 001.22-.18l1.17-1.37a1 1 0 00-.18-1.41l-.613-.49a7.017 7.017 0 000-2.78l.613-.49a1 1 0 00.18-1.41L15.7 2.73a1 1 0 00-1.22-.18l-.6.35a7.002 7.002 0 00-1.78-.846L11.3 1.046zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ACHIEVEMENT NOTIFICATION - Enhanced -->
+<div v-if="showAchievementNotification" class="fixed top-4 right-4 z-50 animate-achievement-popup">
+  <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-2xl shadow-2xl max-w-sm border-2 border-yellow-300 transform rotate-[-2deg]">
+    <div class="flex items-center gap-4">
+      <div class="text-4xl animate-bounce">{{ achievementNotification.emoji }}</div>
+      <div class="flex-1">
+        <div class="font-bold text-lg mb-1">{{ achievementNotification.title }}</div>
+        <div class="text-sm opacity-90 mb-2">{{ achievementNotification.message }}</div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs bg-yellow-600 px-2 py-1 rounded-full">+{{ achievementNotification.points }} ⭐</span>
+          <span class="text-xs opacity-75">{{ achievementNotification.type }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-pulse">
+      !
+    </div>
   </div>
+</div>
 
-  <div class="flex-shrink-0 w-full md:w-auto flex items-center gap-2">
-    <!-- dataset select -->
-    <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300">
-      <option value="" disabled>-- pilih dataset --</option>
-      <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
-    </select>
-
-    <button
-      @click="insertThenFetch"
-      :disabled="loading || !selectedDataset"
-      class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
-      type="button"
-    >
-      Tampil
-    </button>
-
-    <!-- Settings button (ikon) -->
-    <button
-      @click="openSettings"
-      type="button"
-      class="ml-1 p-2 rounded-md border hover:bg-gray-100 transition"
-      title="Pengaturan Soal"
-    >
-      <!-- gear icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M11.3 1.046a1 1 0 00-2.6 0l-.2.657a7.002 7.002 0 00-1.78.846l-.6-.35a1 1 0 00-1.22.18L2.84 5.34a1 1 0 00.18 1.41l.613.49a7.017 7.017 0 000 2.78l-.613.49a1 1 0 00-.18 1.41l1.17 1.37a1 1 0 001.22.18l.6-.35a7.002 7.002 0 001.78.846l.2.657a1 1 0 002.6 0l.2-.657a7.002 7.002 0 001.78-.846l.6.35a1 1 0 001.22-.18l1.17-1.37a1 1 0 00-.18-1.41l-.613-.49a7.017 7.017 0 000-2.78l.613-.49a1 1 0 00.18-1.41L15.7 2.73a1 1 0 00-1.22-.18l-.6.35a7.002 7.002 0 00-1.78-.846L11.3 1.046zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"/>
-      </svg>
+<!-- LEVEL UP NOTIFICATION -->
+<div v-if="showLevelUpNotification" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+  <div class="bg-gradient-to-br from-purple-600 to-blue-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-level-up">
+    <div class="text-6xl mb-4">🎉</div>
+    <div class="text-2xl font-bold mb-2">LEVEL UP!</div>
+    <div class="text-4xl font-extrabold mb-4">Level {{ userStats.level }}</div>
+    <div class="text-lg opacity-90 mb-6">Selamat! Kamu semakin hebat!</div>
+    <button @click="showLevelUpNotification = false" class="px-6 py-2 bg-white text-purple-600 rounded-full font-bold hover:scale-105 transition-transform">
+      Lanjutkan
     </button>
   </div>
-</header>
+</div>
 
+<!-- STREAK FIRE ANIMATION -->
+<div v-if="showStreakFire" class="fixed top-20 right-20 z-40 animate-pulse">
+  <div class="text-6xl">🔥</div>
+  <div class="text-center text-white font-bold text-sm bg-orange-500 rounded-full px-2 -mt-2">+3</div>
+</div>
 
+<!-- PROGRESS BAR - Enhanced -->
+<div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 shadow-sm">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-3">
+      <div class="text-sm font-medium text-gray-700">Level {{ userStats.level }}</div>
+      <div class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+        {{ userStats.points }}/{{ userStats.level * 100 }} XP
+      </div>
+    </div>
+    <div class="text-lg font-bold text-indigo-600" v-if="userStats.rank">{{ userStats.rank }}</div>
+  </div>
+  
+  <!-- Animated Progress Bar -->
+  <div class="w-full bg-gray-200 rounded-full h-3 mb-3 overflow-hidden">
+    <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out" 
+         :style="{ width: userStats.progress + '%' }"></div>
+  </div>
+  
+  <!-- Mini Stats -->
+  <div class="flex justify-between text-xs text-gray-600">
+    <div class="flex items-center gap-1">
+      <span>🔥 {{ userStats.streak }} hari</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <span>⭐ {{ userStats.totalPoints }} XP</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <span>✅ {{ userStats.totalCorrect }}/{{ userStats.totalAnswered }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- BADGES DISPLAY - Enhanced -->
+<div class="mb-4 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
+  <div class="flex items-center justify-between mb-3">
+    <div class="font-medium text-gray-800">Pencapaian Aktif</div>
+    <div class="text-xs text-gray-500">{{ unlockedAchievements.length }}/{{ Object.keys(ACHIEVEMENTS).length }}</div>
+  </div>
+  <div class="flex gap-3 overflow-x-auto pb-2">
+    <div v-for="badge in activeBadges" :key="badge.id" 
+         class="flex-shrink-0 text-center group relative">
+      <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200">
+        {{ badge.emoji }}
+      </div>
+      <div class="text-xs font-medium mt-1 text-gray-700">{{ badge.name }}</div>
+      <div class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+        ⭐
+      </div>
+    </div>
+    
+    <!-- Badge placeholder untuk yang belum unlocked -->
+    <div v-for="n in (3 - activeBadges.length)" :key="'placeholder-' + n"
+         class="flex-shrink-0 text-center opacity-40">
+      <div class="text-4xl">🔒</div>
+      <div class="text-xs font-medium mt-1 text-gray-500">Terkunci</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY CHALLENGE -->
+<div v-if="dailyChallenge" class="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-100 rounded-2xl border border-green-200">
+  <div class="flex items-center gap-3 mb-2">
+    <div class="text-2xl">🎯</div>
+    <div>
+      <div class="font-bold text-green-800">Tantangan Harian</div>
+      <div class="text-sm text-green-700">{{ dailyChallenge.description }}</div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between">
+    <div class="text-xs text-green-600">
+      Progress: {{ dailyChallenge.progress }}/{{ dailyChallenge.requirement }}
+    </div>
+    <div class="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+      +{{ dailyChallenge.reward }} ⭐
+    </div>
+  </div>
+  <div class="w-full bg-green-200 rounded-full h-2 mt-2">
+    <div class="bg-green-500 h-2 rounded-full transition-all duration-500" 
+         :style="{ width: (dailyChallenge.progress / dailyChallenge.requirement * 100) + '%' }"></div>
+  </div>
+</div>
 
     <!-- MAIN CARD -->
     <div class="bg-white p-6 md:p-8 rounded-xl shadow-xl" ref="soalContainer">
@@ -62,12 +233,27 @@
       <div v-else-if="poolEmpty" class="text-center py-16 text-gray-500">
         <h3 class="text-lg md:text-xl font-medium text-gray-900">Selesai — tidak ada soal tersisa</h3>
         <p class="mt-2 text-sm md:text-base text-gray-600">Semua soal yang benar telah dikeluarkan dari pool.</p>
+        
+        <!-- Achievement Summary -->
+        <div v-if="sessionStats.questionsAnswered > 0" class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg max-w-md mx-auto">
+          <h4 class="font-bold text-lg text-gray-800 mb-3">🎉 Sesi Selesai!</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-600">{{ sessionStats.correctAnswers }}</div>
+              <div class="text-gray-600">Jawaban Benar</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-blue-600">+{{ sessionStats.pointsEarned }}</div>
+              <div class="text-gray-600">Poin Diperoleh</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
         <section class="md:col-span-2">
-          <div class="flex items-center justify-between mb-4" >
+          <div class="flex items-center justify-between mb-4">
             <div>
               <div class="text-sm text-gray-500">Soal ke</div>
               <div class="text-2xl font-bold text-indigo-700">{{ tampilIndex + 1 }} <span class="text-base font-medium text-gray-500">/ {{ totalPool }}</span></div>
@@ -117,8 +303,28 @@
         </section>
 
         <!-- RIGHT: Info, Kontrol, Statistik -->
-        <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6" ref="controlsAside" >
+        <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6" ref="controlsAside">
           <div class="sticky top-6">
+            <!-- User Stats & Badges -->
+            <div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-medium text-gray-700">Level</div>
+                <div class="text-lg font-bold text-indigo-600">{{ userStats.level }}</div>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+                <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full" 
+                     :style="{ width: userStats.progress + '%' }"></div>
+              </div>
+              
+              <!-- Active Badges -->
+              <div class="flex gap-2 mt-3">
+                <div v-for="badge in activeBadges" :key="badge.id" 
+                     class="text-2xl" :title="badge.name">
+                  {{ badge.emoji }}
+                </div>
+              </div>
+            </div>
+
             <div class="mb-4">
               <div class="text-sm text-gray-500">Status</div>
               <div class="mt-2 text-base font-medium" :class="{'text-green-600': isLastAnswerCorrect, 'text-red-600': !isLastAnswerCorrect}">
@@ -130,53 +336,47 @@
               </div>
             </div>
 
-<div class="mb-4 flex items-stretch gap-2">
-  <!-- Tombol utama Next -->
-  <button
-    @click="manualNext"
-    :disabled="!jawabanSudahDikirim || poolEmpty"
-    class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base"
-    style="height: 48px;"
-  >
-    <span v-if="countdownActive">
-      Next (otomatis dalam {{ countdown }}s)
-    </span>
-    <span v-else>
-      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
-    </span>
-  </button>
+            <div class="mb-4 flex items-stretch gap-2">
+              <button
+                @click="manualNext"
+                :disabled="!jawabanSudahDikirim || poolEmpty"
+                class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base"
+                style="height: 48px;"
+              >
+                <span v-if="countdownActive">
+                  Next (otomatis dalam {{ countdown }}s)
+                </span>
+                <span v-else>
+                  {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
+                </span>
+              </button>
 
-  <!-- Tombol pause / resume terpisah -->
-  <button
-    v-if="countdownActive"
-    @click.stop="toggleCountdown"
-    :disabled="countdown <= 0"
-    class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm"
-    style="height: 48px;"
-    title="Jeda / Lanjutkan countdown"
-  >
-    <span v-if="isPaused">▶️ Lanjutkan</span>
-    <span v-else>⏸️ Jeda</span>
-  </button>
-</div>
-
-
+              <button
+                v-if="countdownActive"
+                @click.stop="toggleCountdown"
+                :disabled="countdown <= 0"
+                class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm"
+                style="height: 48px;"
+                title="Jeda / Lanjutkan countdown"
+              >
+                <span v-if="isPaused">▶️ Lanjutkan</span>
+                <span v-else>⏸️ Jeda</span>
+              </button>
+            </div>
 
             <div class="mb-4 grid grid-cols-2 gap-2">
-              <!-- <button @click="forceShufflePool" class="px-3 py-2 bg-gray-100 text-gray-800 rounded-md shadow hover:bg-gray-200 text-sm">Acak Pool</button> -->
-              <button @click="openWrongModal" class="w-full px-3 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 text-sm">Lihat Soal Salah ({{ wrongQuestions.length }})</button>
+              <button @click="openAchievementsModal" class="w-full px-3 py-2 bg-yellow-500 text-white rounded-md shadow hover:bg-yellow-600 text-sm">
+                Pencapaian ({{ unlockedAchievements.length }})
+              </button>
+              <button @click="openWrongModal" class="w-full px-3 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 text-sm">
+                Soal Salah ({{ wrongQuestions.length }})
+              </button>
             </div>
 
             <div class="mt-4 text-xs text-gray-500">
               <div>Dataset: <span class="font-medium text-gray-700">{{ selectedDataset || '-' }}</span></div>
               <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700">{{ dataAwal.length }}</span></div>
             </div>
-
-            <!-- optional: show last raw response (for debug) -->
-            <!-- <div v-if="raw" class="mt-4 p-3 bg-gray-50 border rounded text-xs text-gray-700 max-h-40 overflow-auto">
-              <div class="text-xs text-gray-500 mb-1">Raw response (debug):</div>
-              <pre class="whitespace-pre-wrap">{{ raw }}</pre>
-            </div> -->
           </div>
         </aside>
       </div>
@@ -184,11 +384,9 @@
 
     <!-- footer controls (mobile-friendly) -->
     <div class="mt-6 flex items-center justify-between gap-3">
-      <!-- <div class="flex items-center gap-2">
-        <button @click="resetToDemo" class="px-3 py-2 bg-gray-200 text-gray-800 rounded-md shadow hover:bg-gray-300">Reset to Demo</button>
-        <button @click="forceShufflePool" class="px-3 py-2 bg-gray-100 text-gray-800 rounded-md shadow hover:bg-gray-200">Acak Pool</button>
-      </div> -->
-
+      <div class="text-sm text-gray-500">
+        Progress tersimpan: <span class="font-medium text-green-600">{{ lastSavedTime }}</span>
+      </div>
       <div class="text-sm text-gray-500">Total soal salah: <span class="font-medium text-red-600">{{ wrongQuestions.length }}</span></div>
     </div>
 
@@ -198,7 +396,6 @@
         <div class="p-4 border-b flex items-center justify-between">
           <h3 class="font-bold text-lg">Daftar Soal Salah ({{ wrongQuestions.length }})</h3>
           <div class="flex items-center gap-2">
-            <!-- <button @click="exportWrongAsCSV" class="px-3 py-1 bg-green-500 text-white rounded-md">Export CSV</button> -->
             <button @click="closeWrongModal" class="px-3 py-1 bg-gray-200 rounded-md">Tutup</button>
           </div>
         </div>
@@ -226,8 +423,42 @@
       </div>
     </div>
 
-    
-<!-- Modal: Pengaturan Soal -->
+    <!-- Modal: Achievements -->
+    <div v-if="showAchievementsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b flex items-center justify-between">
+          <h3 class="font-bold text-lg">🏆 Pencapaian</h3>
+          <div class="flex items-center gap-2">
+            <button @click="closeAchievementsModal" class="px-3 py-1 bg-gray-200 rounded-md">Tutup</button>
+          </div>
+        </div>
+        <div class="p-4 max-h-[60vh] overflow-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="achievement in allAchievements" :key="achievement.id"
+                 class="p-4 border rounded-lg"
+                 :class="achievement.unlocked ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200' : 'bg-gray-50 border-gray-200'">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl">{{ achievement.emoji }}</div>
+                <div class="flex-1">
+                  <div class="font-bold text-gray-800">{{ achievement.name }}</div>
+                  <div class="text-sm text-gray-600 mt-1">{{ achievement.description }}</div>
+                  <div class="text-xs text-gray-500 mt-2">
+                    <span v-if="achievement.unlocked" class="text-green-600">✅ Terbuka</span>
+                    <span v-else>{{ achievement.progress }}/{{ achievement.requirement }}</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-yellow-600">+{{ achievement.points }}</div>
+                  <div class="text-xs text-gray-500">poin</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Modal: Settings (existing) -->
 <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
   <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
     <div class="p-4 border-b flex items-center justify-between">
@@ -236,8 +467,6 @@
         <button @click="closeSettings" class="px-3 py-1 bg-gray-200 rounded-md">Batal</button>
       </div>
     </div>
-
-    <!-- Isi modal -->
     <div class="p-4 space-y-6">
       <!-- Input jumlah soal -->
       <div class="flex items-center gap-4">
@@ -274,21 +503,20 @@
 
       <!-- Tombol batch soal (preview) -->
       <div>
-        <label class="block font-medium mb-2">Preview Batch:</label>
-<div class="flex flex-wrap gap-2">
-<button
-  v-for="(batch, idx) in batches"
-  :key="idx"
-  @click="pilihBatch(idx)"
-  :class="[
-    'px-3 py-1 rounded-md text-sm',
-    idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100'
-  ]"
->
-  Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
-</button>
-
-</div>
+        <label class="block font-medium mb-2">Pilih Batch:</label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="(batch, idx) in batches"
+            :key="idx"
+            @click="pilihBatch(idx)"
+            :class="[
+              'px-3 py-1 rounded-md text-sm',
+              idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100'
+            ]"
+          >
+            Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
+          </button>
+        </div>
       </div>
 
       <!-- Optional: tombol pilih batch berikutnya (jika ada batch aktif) -->
@@ -306,11 +534,6 @@
     </div>
   </div>
 </div>
-
-
-
-
-
   </div>
 
 <script>
@@ -323,6 +546,135 @@ function shuffleArray(array) {
   return a;
 }
 
+// Enhanced ACHIEVEMENTS dengan lebih banyak variasi
+const ACHIEVEMENTS = {
+  FIRST_QUESTION: {
+    id: 'first_question',
+    name: 'Pemula',
+    description: 'Jawab soal pertama',
+    emoji: '🎯',
+    points: 20,
+    requirement: 1,
+    type: 'Milenium',
+    check: (stats) => stats.totalAnswered >= 1
+  },
+  STREAK_3: {
+    id: 'streak_3',
+    name: 'Hot Streak',
+    description: '3 jawaban benar berturut-turut',
+    emoji: '🔥',
+    points: 30,
+    requirement: 3,
+    type: 'Kombo',
+    check: (stats) => stats.currentStreak >= 3
+  },
+  STREAK_10: {
+    id: 'streak_10',
+    name: 'Master Combo',
+    description: '10 jawaban benar berturut-turut',
+    emoji: '⚡',
+    points: 100,
+    requirement: 10,
+    type: 'Kombo',
+    check: (stats) => stats.currentStreak >= 10
+  },
+  PERFECT_SESSION: {
+    id: 'perfect_session',
+    name: 'Sempurna',
+    description: 'Selesaikan sesi tanpa salah',
+    emoji: '⭐',
+    points: 80,
+    requirement: 1,
+    type: 'Presisi',
+    check: (stats) => stats.perfectSessions >= 1
+  },
+  NIGHT_OWL: {
+    id: 'night_owl',
+    name: 'Burung Hantu',
+    description: 'Belajar setelah jam 10 malam',
+    emoji: '🦉',
+    points: 25,
+    requirement: 1,
+    type: 'Waktu',
+    check: (stats) => stats.nightSessions >= 1
+  },
+  EARLY_BIRD: {
+    id: 'early_bird',
+    name: 'Early Bird',
+    description: 'Belajar sebelum jam 6 pagi',
+    emoji: '🌅',
+    points: 25,
+    requirement: 1,
+    type: 'Waktu',
+    check: (stats) => stats.earlySessions >= 1
+  },
+  MARATHON: {
+    id: 'marathon',
+    name: 'Maraton',
+    description: '50 soal dalam satu sesi',
+    emoji: '🏃',
+    points: 150,
+    requirement: 50,
+    type: 'Ketahanan',
+    check: (stats) => stats.sessionQuestions >= 50
+  },
+  MASTER: {
+    id: 'master',
+    name: 'Master',
+    description: 'Kumpulkan 1000 poin',
+    emoji: '👑',
+    points: 200,
+    requirement: 1000,
+    type: 'Prestasi',
+    check: (stats) => stats.totalPoints >= 1000
+  },
+  SPEED_DEMON: {
+    id: 'speed_demon',
+    name: 'Speed Demon',
+    description: 'Jawab 10 soal dalam 2 menit',
+    emoji: '💨',
+    points: 60,
+    requirement: 1,
+    type: 'Kecepatan',
+    check: (stats) => stats.fastAnswers >= 1
+  },
+  CONSISTENT: {
+    id: 'consistent',
+    name: 'Konsisten',
+    description: 'Aktif 7 hari berturut-turut',
+    emoji: '📅',
+    points: 120,
+    requirement: 7,
+    type: 'Dedikasi',
+    check: (stats) => stats.streak >= 7
+  }
+};
+
+// DAILY CHALLENGES
+const DAILY_CHALLENGES = {
+  ANSWER_10: {
+    id: 'answer_10',
+    description: 'Jawab 10 soal hari ini',
+    requirement: 10,
+    reward: 50,
+    type: 'Soal'
+  },
+  PERFECT_5: {
+    id: 'perfect_5',
+    description: '5 jawaban benar berturut-turut',
+    requirement: 5,
+    reward: 75,
+    type: 'Akurasi'
+  },
+  STREAK_3_DAYS: {
+    id: 'streak_3_days',
+    description: 'Aktif 3 hari berturut-turut',
+    requirement: 3,
+    reward: 100,
+    type: 'Konsistensi'
+  }
+};
+
 new Vue({
   el: '#app',
   data() {
@@ -331,197 +683,409 @@ new Vue({
       optionLabels: ['A','B','C','D'],
 
       // --- dataset select & insert config ---
-      datasets: ['PMK 62', 
-'Pejabat Perbendaharaan', 
-'Mekanisme Pembayaran APBN', 
-'MP PNPB', 
-'PENGELOLAAN HIBAH', 
-'TRANSFER KE DAERAH', 
-'MONEV PA', ],
+      datasets: ['PMK 62', 'Pejabat Perbendaharaan', 'Mekanisme Pembayaran APBN', 'MP PNPB', 'PENGELOLAAN HIBAH', 'TRANSFER KE DAERAH', 'MONEV PA'],
       selectedDataset: '',
 
-      // insert URL base: beri base (action=insert). _doInsert akan menambahkan &table=request&data=...
+      // insert URL base
       insertUrlBase: 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec?action=insert',
 
-        // umum / UI
-    loading: false,
-    raw: null,
-    showWrongModal: false,
-    showSettings: false,
+      // umum / UI
+      loading: false,
+      raw: null,
+      showWrongModal: false,
+      showSettings: false,
+      showAchievementsModal: false,
+      showAchievementNotification: false,
+      achievementNotification: {},
 
-    // pool & indices
-    dataAwal: [],           // seluruh soal (source) — pastikan hanya 1 definisi
-    originalQuestions: [],  // copy fallback dari dataAwal jika diperlukan
-    currentIndex: 0,        // kompatibilitas kode lama (optional)
-    tampilIndex: 0,         // indeks saat ini di currentQuestions
+      // Auto-save
+      lastSavedTime: 'Belum tersimpan',
+      autoSaveInterval: null,
 
-    // batch
-    jumlahSoal: 15,
-    jumlahSoalDraft: 15,
-    batches: [],            // hasil pembagian dataAwal menjadi group
-    currentBatchIndex: null,// null = belum pilih batch
-    currentQuestions: [],   // slice dari batches[currentBatchIndex]
+      // Gamification
+      userStats: {
+        points: 0,
+        level: 1,
+        progress: 0,
+        streak: 0,
+        lastActiveDate: null,
+        totalAnswered: 0,
+        totalCorrect: 0,
+        currentStreak: 0,
+        perfectSessions: 0,
+        nightSessions: 0,
+        sessionQuestions: 0,
+        totalPoints: 0
+      },
+      sessionStats: {
+        questionsAnswered: 0,
+        correctAnswers: 0,
+        pointsEarned: 0
+      },
+      unlockedAchievements: [],
+      activeBadges: [],
 
-    // jawaban & riwayat
-    jawabanTerpilih: null,
-    jawabanSudahDikirim: false,
-    submittedSoal: null,    // salinan soal yang sedang direview
-    riwayatJawaban: [],
-    wrongQuestions: [],
+      // pool & indices
+      dataAwal: [],
+      originalQuestions: [],
+      currentIndex: 0,
+      tampilIndex: 0,
 
-    // countdown
-    countdown: 10,
-    countdownActive: false,
-    _countdownTimer: null,
+      // batch
+      jumlahSoal: 15,
+      jumlahSoalDraft: 15,
+      batches: [],
+      currentBatchIndex: null,
+      currentQuestions: [],
 
-    // helper/ui
-    optionLabels: ['A','B','C','D','E'],
-      isPaused: false, // Digunakan untuk melacak status Jeda/Lanjutkan
+      // jawaban & riwayat
+      jawabanTerpilih: null,
+      jawabanSudahDikirim: false,
+      submittedSoal: null,
+      riwayatJawaban: [],
+      wrongQuestions: [],
 
+      // countdown
+      countdown: 10,
+      countdownActive: false,
+      _countdownTimer: null,
+      isPaused: false,
+
+        // Enhanced gamification
+    showLevelUpNotification: false,
+    showStreakFire: false,
+    dailyChallenge: null,
+    userStats: {
+      points: 0,
+      level: 1,
+      progress: 0,
+      streak: 0,
+      lastActiveDate: null,
+      totalAnswered: 0,
+      totalCorrect: 0,
+      currentStreak: 0,
+      perfectSessions: 0,
+      nightSessions: 0,
+      earlySessions: 0,
+      sessionQuestions: 0,
+      totalPoints: 0,
+      fastAnswers: 0,
+      rank: 'Pemula',
+      dailyProgress: 0
+    },
+    
+    // Session tracking untuk challenge
+    sessionStartTime: null,
+    answersThisSession: 0,
+    correctStreakThisSession: 0,
+ // Pindahkan ACHIEVEMENTS ke dalam data
+      ACHIEVEMENTS: {
+        FIRST_QUESTION: {
+          id: 'first_question',
+          name: 'Pemula',
+          description: 'Jawab soal pertama',
+          emoji: '🎯',
+          points: 20,
+          requirement: 1,
+          type: 'Milenium',
+          check: (stats) => stats.totalAnswered >= 1
+        },
+        STREAK_3: {
+          id: 'streak_3',
+          name: 'Hot Streak',
+          description: '3 jawaban benar berturut-turut',
+          emoji: '🔥',
+          points: 30,
+          requirement: 3,
+          type: 'Kombo',
+          check: (stats) => stats.currentStreak >= 3
+        },
+        STREAK_10: {
+          id: 'streak_10',
+          name: 'Master Combo',
+          description: '10 jawaban benar berturut-turut',
+          emoji: '⚡',
+          points: 100,
+          requirement: 10,
+          type: 'Kombo',
+          check: (stats) => stats.currentStreak >= 10
+        },
+        PERFECT_SESSION: {
+          id: 'perfect_session',
+          name: 'Sempurna',
+          description: 'Selesaikan sesi tanpa salah',
+          emoji: '⭐',
+          points: 80,
+          requirement: 1,
+          type: 'Presisi',
+          check: (stats) => stats.perfectSessions >= 1
+        },
+        NIGHT_OWL: {
+          id: 'night_owl',
+          name: 'Burung Hantu',
+          description: 'Belajar setelah jam 10 malam',
+          emoji: '🦉',
+          points: 25,
+          requirement: 1,
+          type: 'Waktu',
+          check: (stats) => stats.nightSessions >= 1
+        },
+        EARLY_BIRD: {
+          id: 'early_bird',
+          name: 'Early Bird',
+          description: 'Belajar sebelum jam 6 pagi',
+          emoji: '🌅',
+          points: 25,
+          requirement: 1,
+          type: 'Waktu',
+          check: (stats) => stats.earlySessions >= 1
+        },
+        MARATHON: {
+          id: 'marathon',
+          name: 'Maraton',
+          description: '50 soal dalam satu sesi',
+          emoji: '🏃',
+          points: 150,
+          requirement: 50,
+          type: 'Ketahanan',
+          check: (stats) => stats.sessionQuestions >= 50
+        },
+        MASTER: {
+          id: 'master',
+          name: 'Master',
+          description: 'Kumpulkan 1000 poin',
+          emoji: '👑',
+          points: 200,
+          requirement: 1000,
+          type: 'Prestasi',
+          check: (stats) => stats.totalPoints >= 1000
+        },
+        SPEED_DEMON: {
+          id: 'speed_demon',
+          name: 'Speed Demon',
+          description: 'Jawab 10 soal dalam 2 menit',
+          emoji: '💨',
+          points: 60,
+          requirement: 1,
+          type: 'Kecepatan',
+          check: (stats) => stats.fastAnswers >= 1
+        },
+        CONSISTENT: {
+          id: 'consistent',
+          name: 'Konsisten',
+          description: 'Aktif 7 hari berturut-turut',
+          emoji: '📅',
+          points: 120,
+          requirement: 7,
+          type: 'Dedikasi',
+          check: (stats) => stats.streak >= 7
+        }
+      }
+    
     };
   },
   computed: {
-  // apakah pool soal kosong (memperhitungkan batch jika ada)
-  poolEmpty() {
-    const poolSize = (this.currentQuestions && this.currentQuestions.length)
-      ? this.currentQuestions.length
-      : (this.dataAwal ? this.dataAwal.length : 0);
-    return poolSize === 0 && !this.submittedSoal;
-  },
+    poolEmpty() {
+      const poolSize = (this.currentQuestions && this.currentQuestions.length)
+        ? this.currentQuestions.length
+        : (this.dataAwal ? this.dataAwal.length : 0);
+      return poolSize === 0 && !this.submittedSoal;
+    },
 
-  // total soal yang bisa dinavigasi (pakai batch bila ada, fallback ke dataAwal)
-  totalPool() {
-    const poolSize = (this.currentQuestions && this.currentQuestions.length)
-      ? this.currentQuestions.length
-      : (this.dataAwal ? this.dataAwal.length : 0);
-    return poolSize + (this.submittedSoal ? 1 : 0);
-  },
+    totalPool() {
+      const poolSize = (this.currentQuestions && this.currentQuestions.length)
+        ? this.currentQuestions.length
+        : (this.dataAwal ? this.dataAwal.length : 0);
+      return poolSize + (this.submittedSoal ? 1 : 0);
+    },
 
-  // soal yang sedang ditampilkan: prioritas ke submittedSoal,
-  // lalu ke currentQuestions[tampilIndex], lalu fallback ke dataAwal[tampilIndex]
-  displaySoal() {
-    if (this.submittedSoal) return this.submittedSoal;
+    displaySoal() {
+      if (this.submittedSoal) return this.submittedSoal;
+      if (this.currentQuestions && this.currentQuestions.length) {
+        return this.currentQuestions[this.tampilIndex] || {};
+      }
+      return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
+    },
 
-    // prefer batch (currentQuestions) jika ada
-    if (this.currentQuestions && this.currentQuestions.length) {
-      return this.currentQuestions[this.tampilIndex] || {};
+    displayOptions() {
+      const s = this.displaySoal && this.displaySoal.shuffledOptions;
+      if (!s) return [];
+
+      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object' && ('text' in s[0] || 'key' in s[0])) {
+        return s.map((o, i) => ({ key: o.key ?? String.fromCharCode(97 + i), text: o.text ?? '' }));
+      }
+      if (s && typeof s === 'object' && !Array.isArray(s)) {
+        return Object.keys(s).map(k => ({ key: k, text: s[k] }));
+      }
+      if (Array.isArray(s) && typeof s[0] === 'string') {
+        return s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
+      }
+      return [];
+    },
+
+    isLastAnswerCorrect() {
+      const last = this.riwayatJawaban && this.riwayatJawaban[this.riwayatJawaban.length - 1];
+      return !!last && last.benar === true;
+    },
+
+    correctAnswerText() {
+      const soal = this.displaySoal;
+      if (!soal) return '';
+      return this.getAnswerTextByKey(soal, soal.kunciKey);
+    },
+
+    allAchievements() {
+      return Object.values(ACHIEVEMENTS).map(achievement => ({
+        ...achievement,
+        unlocked: this.unlockedAchievements.includes(achievement.id),
+        progress: this.getAchievementProgress(achievement)
+      }));
     }
-
-    // fallback ke dataAwal (mis. saat belum memilih batch)
-    return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
   },
-
-  // bangun opsi jawaban dari struktur soal yang berbeda-beda
-  displayOptions() {
-    const s = this.displaySoal && this.displaySoal.shuffledOptions;
-    if (!s) return [];
-
-    if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object' && ('text' in s[0] || 'key' in s[0])) {
-      return s.map((o, i) => ({ key: o.key ?? String.fromCharCode(97 + i), text: o.text ?? '' }));
-    }
-    if (s && typeof s === 'object' && !Array.isArray(s)) {
-      return Object.keys(s).map(k => ({ key: k, text: s[k] }));
-    }
-    if (Array.isArray(s) && typeof s[0] === 'string') {
-      return s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
-    }
-    return [];
-  },
-
-  isLastAnswerCorrect() {
-    const last = this.riwayatJawaban && this.riwayatJawaban[this.riwayatJawaban.length - 1];
-    return !!last && last.benar === true;
-  },
-
-  correctAnswerText() {
-    const soal = this.displaySoal;
-    if (!soal) return '';
-    return this.getAnswerTextByKey(soal, soal.kunciKey);
-  }
-},
-methods: {
-    // Di dalam methods:
-scrollToTop() {
-    // Sesuaikan kondisi lebar layar jika diperlukan
-    if (window.innerWidth < 768) { 
-        // 🚨 Pastikan ref ini menunjuk ke kontainer teks soal!
-        const targetElement = this.$refs.soalContainer; // Ganti 'controlSoal' menjadi ref ke Soal
-        
-        if (targetElement) {
-            targetElement.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start'      // 'start' adalah untuk scroll ke atas
-            });
-        }
-    }
-},  
-    // 🌟 FUNGSI BARU UNTUK SCROLLING 🌟
-  scrollToBottom() {
-    // Pastikan kita ada di mode HP/layar kecil (opsional, tapi disarankan)
-    // Asumsi: Jika lebar layar kurang dari md (768px), kita scroll.
-    if (window.innerWidth < 768) { 
+  methods: {
+      updateStatsAfterAnswer(isCorrect, answerTime) {
+    this.sessionStats.questionsAnswered++;
+    this.answersThisSession++;
+    
+    if (isCorrect) {
+      this.sessionStats.correctAnswers++;
+      this.userStats.currentStreak++;
+      this.correctStreakThisSession++;
       
-      // Target elemen yang berisi tombol kontrol
-      const targetElement = this.$refs.controlsAside;
-      
-      if (targetElement) {
-        // Metode scrollIntoView lebih modern dan memberikan transisi halus
-        targetElement.scrollIntoView({ 
-          behavior: 'smooth', // Animasi halus
-          block: 'end'        // Scroll hingga bagian akhir elemen terlihat
-        });
-        
-        // Alternatif: Scroll ke dasar halaman (lebih universal)
-        // window.scrollTo({
-        //   top: document.body.scrollHeight, 
-        //   behavior: 'smooth'
-        // });
+      // Show streak fire animation for every 3 correct answers
+      if (this.userStats.currentStreak % 3 === 0) {
+        this.showStreakAnimation();
+      }
+    } else {
+      this.userStats.currentStreak = 0;
+      this.correctStreakThisSession = 0;
+    }
+
+    // Calculate points with bonuses
+    const basePoints = isCorrect ? 10 : 2;
+    const streakBonus = Math.floor(this.userStats.currentStreak / 3) * 5;
+    const speedBonus = answerTime < 10 ? 5 : 0; // Bonus untuk jawaban cepat
+    const pointsEarned = basePoints + streakBonus + speedBonus;
+    
+    this.userStats.points += pointsEarned;
+    this.userStats.totalPoints += pointsEarned;
+    this.sessionStats.pointsEarned += pointsEarned;
+
+    // Track fast answers for achievement
+    if (answerTime < 5) {
+      this.userStats.fastAnswers++;
+    }
+
+    this.updateLevelAndProgress();
+    this.checkAchievements();
+    this.updateDailyChallenge();
+    this.updateActiveBadges();
+    this.updateRank();
+    this.saveUserData();
+  },
+
+  showStreakAnimation() {
+    this.showStreakFire = true;
+    setTimeout(() => {
+      this.showStreakFire = false;
+    }, 1500);
+  },
+
+  updateLevelAndProgress() {
+    const pointsForNextLevel = this.userStats.level * 100;
+    if (this.userStats.points >= pointsForNextLevel) {
+      this.userStats.level++;
+      this.showLevelUpNotification = true;
+      setTimeout(() => {
+        this.showLevelUpNotification = false;
+      }, 3000);
+    }
+    this.userStats.progress = (this.userStats.points % 100) / 100 * 100;
+  },
+
+  updateRank() {
+    const ranks = {
+      0: 'Pemula',
+      500: 'Pelajar',
+      1000: 'Ahli',
+      2000: 'Master',
+      5000: 'Legenda'
+    };
+    
+    const points = this.userStats.totalPoints;
+    let userRank = 'Pemula';
+    
+    for (const [threshold, rank] of Object.entries(ranks)) {
+      if (points >= parseInt(threshold)) {
+        userRank = rank;
       }
     }
+    
+    this.userStats.rank = userRank;
   },
-  // Bagi dataAwal menjadi batch resmi berdasarkan jumlahSoal
-  rebuildBatches() {
-    if (!this.dataAwal || this.dataAwal.length === 0) {
-      this.batches = [];
-      this.currentBatchIndex = null;
-      this.currentQuestions = [];
+
+  updateDailyChallenge() {
+    if (!this.dailyChallenge) {
+      this.initializeDailyChallenge();
       return;
     }
-    const chunkSize = this.jumlahSoal || 15;
-    this.batches = [];
-    for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
-      this.batches.push(this.dataAwal.slice(i, i + chunkSize));
+    
+    // Update progress based on challenge type
+    switch(this.dailyChallenge.id) {
+      case 'answer_10':
+        this.dailyChallenge.progress = this.answersThisSession;
+        break;
+      case 'perfect_5':
+        this.dailyChallenge.progress = Math.max(this.dailyChallenge.progress, this.correctStreakThisSession);
+        break;
+      case 'streak_3_days':
+        this.dailyChallenge.progress = this.userStats.streak;
+        break;
     }
-    this.currentBatchIndex = 0;
-    this.currentQuestions = this.batches[0] || [];
+    
+    // Check if challenge completed
+    if (this.dailyChallenge.progress >= this.dailyChallenge.requirement) {
+      this.completeDailyChallenge();
+    }
   },
 
-  // -------------------------
-  // Buka modal settings, inisialisasi draft dan rebuild batches
-  openSettings() {
-    // simpan salinan dataAwal jika belum ada
-    if (!this.originalQuestions || this.originalQuestions.length === 0) {
-      this.originalQuestions = (this.dataAwal || []).slice();
-    }
-
-    // rebuild batches untuk preview saja, berdasarkan jumlah soal draft
-    if (typeof this.rebuildBatchesFromDraft === 'function') {
-      this.rebuildBatchesFromDraft();
-    } else {
-      const chunk = this.jumlahSoalDraft && this.jumlahSoalDraft > 0 ? Math.floor(this.jumlahSoalDraft) : 15;
-      this.batches = [];
-      for (let i = 0; i < (this.dataAwal || []).length; i += chunk) {
-        this.batches.push((this.dataAwal || []).slice(i, i + chunk));
-      }
-    }
-
-    // buka modal settings
-    this.showSettings = true;
+  initializeDailyChallenge() {
+    const challenges = Object.values(DAILY_CHALLENGES);
+    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    this.dailyChallenge = {
+      ...randomChallenge,
+      progress: 0
+    };
   },
 
-  // -------------------------
-  // Rebuild batch sementara menggunakan jumlah soal draft untuk preview
-  rebuildBatchesFromDraft() {
+  completeDailyChallenge() {
+    this.userStats.points += this.dailyChallenge.reward;
+    this.userStats.totalPoints += this.dailyChallenge.reward;
+    
+    this.showAchievement({
+      title: 'Tantangan Selesai!',
+      message: this.dailyChallenge.description,
+      points: this.dailyChallenge.reward,
+      emoji: '🏆',
+      type: 'Tantangan Harian'
+    });
+    
+    this.dailyChallenge = null;
+    setTimeout(() => {
+      this.initializeDailyChallenge();
+    }, 5000);
+  },
+
+  // Enhanced achievement notification
+  showAchievement(notification) {
+    this.achievementNotification = notification;
+    this.showAchievementNotification = true;
+    
+    setTimeout(() => {
+      this.showAchievementNotification = false;
+    }, 4000);
+  },
+    rebuildBatchesFromDraft() {
     this.batches = [];
     const chunkSize = (this.jumlahSoalDraft && this.jumlahSoalDraft > 0) ? Math.floor(this.jumlahSoalDraft) : 15;
     if (!Array.isArray(this.dataAwal) || this.dataAwal.length === 0) return;
@@ -530,14 +1094,6 @@ scrollToTop() {
     }
   },
 
-  // -------------------------
-  // Guard sederhana untuk validasi jumlah soal draft
-  canApplyJumlahSoal() {
-    return Number.isInteger(this.jumlahSoalDraft) && this.jumlahSoalDraft > 0;
-  },
-
-  // -------------------------
-  // Apply settings: simpan jumlah soal, rebuild batches, opsional auto-select batch pertama
   applySettings(autoSelectFirst = false) {
     if (!this.canApplyJumlahSoal()) {
       alert('Masukkan jumlah soal valid (>=1).');
@@ -556,8 +1112,6 @@ scrollToTop() {
     }
   },
 
-  // -------------------------
-  // Apply jumlah soal & pilih batch berikutnya
   applyAndSelectNextBatch() {
     if (!this.canApplyJumlahSoal()) {
       alert('Masukkan jumlah soal valid (>=1).');
@@ -575,11 +1129,9 @@ scrollToTop() {
     }
   },
 
-  // -------------------------
-  // Pilih batch aktif (reset index soal, countdown, jawaban)
   pilihBatch(index) {
     if (!this.batches || !this.batches[index]) return;
-    this.currentBatchIndex = index;    // ini yang penting
+    this.currentBatchIndex = index;
     this.currentQuestions = this.batches[index].slice();
     this.tampilIndex = 0;
     this.currentIndex = 0;
@@ -589,130 +1141,462 @@ scrollToTop() {
     this.stopCountdown();
     this.showSettings = false;
   },
-  // -------------------------
-  // Tutup modal settings
-  closeSettings() {
-    this.showSettings = false;
-  },
 
-  /* -----------------------
-    Util & small helpers
-    ----------------------- */
-  _sleep(ms = 500) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  },
+    // ==================== AUTO-SAVE SYSTEM ====================
+    initializeAutoSave() {
+      // Load saved data
+      this.loadUserData();
+      
+      // Setup auto-save every 30 seconds
+      this.autoSaveInterval = setInterval(() => {
+        this.saveUserData();
+      }, 30000);
 
-  _now() {
-    const d = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const ts = Date.now();
-    const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    return { ts, date, time };
-  },
+      // Also save when user leaves the page
+      window.addEventListener('beforeunload', this.saveUserData);
+    },
 
-  // Ambil soal yang sedang tampil: prioritas submittedSoal > currentQuestions[tampilIndex] > dataAwal[tampilIndex]
-  _getCurrentSoal() {
-    if (this.submittedSoal) return this.submittedSoal;
-    // Gunakan tampilIndex untuk display (sesuai permintaan)
-    if (Array.isArray(this.currentQuestions) && this.currentQuestions.length) {
-      return this.currentQuestions[this.tampilIndex] || {};
-    }
-    return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
-  },
+    saveUserData() {
+      const saveData = {
+        userStats: this.userStats,
+        unlockedAchievements: this.unlockedAchievements,
+        sessionStats: this.sessionStats,
+        wrongQuestions: this.wrongQuestions,
+        lastSaved: Date.now()
+      };
 
-  // Ambil teks jawaban berdasar key (a/b/c/d) — kompatibel dengan banyak format
-  getAnswerTextByKey(soal, key) {
-    if (!soal || !soal.shuffledOptions) return '';
-    const s = soal.shuffledOptions;
-    let opts = [];
-    if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object') {
-      opts = s;
-    } else if (s && typeof s === 'object' && !Array.isArray(s)) {
-      opts = Object.keys(s).map(k => ({ key: k, text: s[k] }));
-    } else if (Array.isArray(s) && typeof s[0] === 'string') {
-      opts = s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
-    }
-    const found = opts.find(o => String((o.key ?? '')).toLowerCase() === String(key ?? '').toLowerCase());
-    return found ? (found.text ?? '') : '';
-  },
-
-  /* -----------------------
-    Server insert & fetch
-    ----------------------- */
-  // _doInsert: panggil endpoint insert (GET dengan data JSON ter-encode)
-  async _doInsert(payload = {}) {
-    if (!this.insertUrlBase) throw new Error('insertUrlBase belum diset.');
-    const url = this.insertUrlBase + '&table=request&data=' + encodeURIComponent(JSON.stringify(payload));
-    console.log('Insert URL:', url);
-    const res = await fetch(url, { method: 'GET' });
-    const text = await res.text();
-    try { this.raw = JSON.parse(text); } catch(e) { this.raw = text; }
-    if (!res.ok) throw new Error('Insert gagal HTTP ' + res.status);
-  },
-
-  // insertThenFetch: dipanggil dari template — pastikan ada
-  async insertThenFetch() {
-    if (!this.selectedDataset) {
-      alert('Pilih dataset terlebih dahulu.');
-      return;
-    }
-    this.loading = true;
-
-    // save selectedDataset to localStorage
-    localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
-
-    // prepare payload for insert (include dataset; include noHalaman if you want)
-    const now = this._now();
-    const payload = {
-      no: now.ts,
-      tanggal: now.date,
-      waktu: now.time,
-      noHalaman: this.selectedDataset
-    };
-
-    try {
       try {
-        await this._doInsert(payload);
-      } catch (e) {
-        console.warn('Insert gagal, lanjut ke loadPage:', e);
-        // lanjutkan ke loadPage walau insert gagal
+        localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
+        this.lastSavedTime = new Date().toLocaleTimeString();
+        console.log('Progress tersimpan:', this.lastSavedTime);
+      } catch (error) {
+        console.error('Gagal menyimpan data:', error);
+      }
+    },
+
+    loadUserData() {
+      try {
+        const saved = localStorage.getItem('pmk_quiz_user_data');
+        if (saved) {
+          const data = JSON.parse(saved);
+          
+          // Check if data is from today for streak calculation
+          const today = new Date().toDateString();
+          const lastActive = data.userStats.lastActiveDate;
+          
+          if (lastActive === today) {
+            this.userStats = { ...this.userStats, ...data.userStats };
+          } else if (lastActive && this.isYesterday(lastActive)) {
+            // Continue streak if last active was yesterday
+            this.userStats.streak = data.userStats.streak + 1;
+          } else {
+            // Reset streak if broken
+            this.userStats.streak = 1;
+          }
+          
+          this.unlockedAchievements = data.unlockedAchievements || [];
+          this.wrongQuestions = data.wrongQuestions || [];
+          this.updateActiveBadges();
+          
+          this.userStats.lastActiveDate = today;
+          console.log('Data pengguna dimuat');
+        }
+      } catch (error) {
+        console.error('Gagal memuat data:', error);
+      }
+    },
+
+    isYesterday(dateString) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return dateString === yesterday.toDateString();
+    },
+
+    // ==================== GAMIFICATION SYSTEM ====================
+    updateStatsAfterAnswer(isCorrect) {
+      // Update session stats
+      this.sessionStats.questionsAnswered++;
+      if (isCorrect) {
+        this.sessionStats.correctAnswers++;
+        this.userStats.currentStreak++;
+      } else {
+        this.userStats.currentStreak = 0;
       }
 
-      // wait a bit for backend to settle if needed
-      await this._sleep(900);
-      // then load data (loadPage uses selectedDataset)
-      await this.loadPage();
-    } finally {
-      this.loading = false;
-    }
-  },
+      // Update lifetime stats
+      this.userStats.totalAnswered++;
+      if (isCorrect) this.userStats.totalCorrect++;
 
-  /* -----------------------
-    Load / Normalisasi data
-    ----------------------- */
-  async loadPage() {
-    this.loading = true;
-    this.dataAwal = [];
-    this.submittedSoal = null;
-    try {
-      const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
-      const res = await fetch(url);
-      const txt = await res.text();
-      let parsed = null;
-      try { parsed = JSON.parse(txt); } catch(e){ parsed = null; }
-      let rows = [];
-      if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
-      else if (Array.isArray(parsed)) rows = parsed;
+      // Calculate points
+      const basePoints = isCorrect ? 10 : 2;
+      const streakBonus = Math.floor(this.userStats.currentStreak / 3) * 5;
+      const pointsEarned = basePoints + streakBonus;
+      
+      this.userStats.points += pointsEarned;
+      this.userStats.totalPoints += pointsEarned;
+      this.sessionStats.pointsEarned += pointsEarned;
 
-      if (!rows || rows.length === 0) {
-        rows = [
-          { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-          { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-          { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-        ];
+      // Update level and progress
+      this.updateLevelAndProgress();
+
+      // Check for achievements
+      this.checkAchievements();
+
+      // Update active badges
+      this.updateActiveBadges();
+
+      // Save progress
+      this.saveUserData();
+    },
+
+    updateLevelAndProgress() {
+      const pointsForNextLevel = this.userStats.level * 100;
+      if (this.userStats.points >= pointsForNextLevel) {
+        this.userStats.level++;
+        this.showAchievement({
+          message: `Level Up! Sekarang Level ${this.userStats.level}`,
+          points: 0
+        });
       }
+      this.userStats.progress = (this.userStats.points % 100) / 100 * 100;
+    },
 
+    checkAchievements() {
+      const stats = {
+        totalAnswered: this.userStats.totalAnswered,
+        currentStreak: this.userStats.currentStreak,
+        perfectSessions: this.userStats.perfectSessions,
+        nightSessions: this.userStats.nightSessions,
+        sessionQuestions: this.sessionStats.questionsAnswered,
+        totalPoints: this.userStats.totalPoints
+      };
+
+      Object.values(ACHIEVEMENTS).forEach(achievement => {
+        if (!this.unlockedAchievements.includes(achievement.id) && achievement.check(stats)) {
+          this.unlockAchievement(achievement);
+        }
+      });
+    },
+
+    unlockAchievement(achievement) {
+      this.unlockedAchievements.push(achievement.id);
+      this.userStats.points += achievement.points;
+      this.userStats.totalPoints += achievement.points;
+      
+      this.showAchievement({
+        message: achievement.name,
+        points: achievement.points
+      });
+
+      this.updateActiveBadges();
+      this.saveUserData();
+    },
+
+    showAchievement(notification) {
+      this.achievementNotification = notification;
+      this.showAchievementNotification = true;
+      
+      setTimeout(() => {
+        this.showAchievementNotification = false;
+      }, 5000);
+    },
+
+    updateActiveBadges() {
+      this.activeBadges = this.unlockedAchievements
+        .map(id => Object.values(ACHIEVEMENTS).find(a => a.id === id))
+        .filter(Boolean)
+        .slice(0, 3); // Show only 3 most recent badges
+    },
+
+    getAchievementProgress(achievement) {
+      const stats = {
+        totalAnswered: this.userStats.totalAnswered,
+        currentStreak: this.userStats.currentStreak,
+        perfectSessions: this.userStats.perfectSessions,
+        nightSessions: this.userStats.nightSessions,
+        sessionQuestions: this.sessionStats.questionsAnswered,
+        totalPoints: this.userStats.totalPoints
+      };
+
+      switch(achievement.id) {
+        case 'first_question': return Math.min(stats.totalAnswered, 1);
+        case 'streak_3': return Math.min(stats.currentStreak, 3);
+        case 'marathon': return Math.min(stats.sessionQuestions, 50);
+        case 'master': return Math.min(stats.totalPoints, 1000);
+        default: return achievement.requirement;
+      }
+    },
+
+    openAchievementsModal() {
+      this.showAchievementsModal = true;
+    },
+
+    closeAchievementsModal() {
+      this.showAchievementsModal = false;
+    },
+
+    // ==================== EXISTING METHODS (with gamification integration) ====================
+    scrollToTop() {
+      if (window.innerWidth < 768) {
+        const targetElement = this.$refs.soalContainer;
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    },
+
+    scrollToBottom() {
+      if (window.innerWidth < 768) {
+        const targetElement = this.$refs.controlsAside;
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      }
+    },
+
+    rebuildBatches() {
+      if (!this.dataAwal || this.dataAwal.length === 0) {
+        this.batches = [];
+        this.currentBatchIndex = null;
+        this.currentQuestions = [];
+        return;
+      }
+      const chunkSize = this.jumlahSoal || 15;
+      this.batches = [];
+      for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
+        this.batches.push(this.dataAwal.slice(i, i + chunkSize));
+      }
+      this.currentBatchIndex = 0;
+      this.currentQuestions = this.batches[0] || [];
+    },
+
+    openSettings() {
+      if (!this.originalQuestions || this.originalQuestions.length === 0) {
+        this.originalQuestions = (this.dataAwal || []).slice();
+      }
+      this.rebuildBatchesFromDraft();
+      this.showSettings = true;
+    },
+
+    rebuildBatchesFromDraft() {
+      this.batches = [];
+      const chunkSize = (this.jumlahSoalDraft && this.jumlahSoalDraft > 0) ? Math.floor(this.jumlahSoalDraft) : 15;
+      if (!Array.isArray(this.dataAwal) || this.dataAwal.length === 0) return;
+      for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
+        this.batches.push(this.dataAwal.slice(i, i + chunkSize));
+      }
+    },
+
+    canApplyJumlahSoal() {
+      return Number.isInteger(this.jumlahSoalDraft) && this.jumlahSoalDraft > 0;
+    },
+
+    applySettings(autoSelectFirst = false) {
+      if (!this.canApplyJumlahSoal()) {
+        alert('Masukkan jumlah soal valid (>=1).');
+        return;
+      }
+      this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
+      this.rebuildBatches();
+      if (autoSelectFirst) {
+        if (this.batches && this.batches.length) {
+          this.pilihBatch(0);
+        } else {
+          this.showSettings = true;
+        }
+      } else {
+        this.showSettings = false;
+      }
+    },
+
+    applyAndSelectNextBatch() {
+      if (!this.canApplyJumlahSoal()) {
+        alert('Masukkan jumlah soal valid (>=1).');
+        return;
+      }
+      this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
+      this.rebuildBatches();
+      if (this.currentBatchIndex == null) {
+        if (this.batches && this.batches.length) this.pilihBatch(0);
+      } else if (this.currentBatchIndex < (this.batches.length - 1)) {
+        this.pilihBatch(this.currentBatchIndex + 1);
+      } else {
+        alert('Tidak ada batch berikutnya.');
+        this.showSettings = true;
+      }
+    },
+
+    pilihBatch(index) {
+      if (!this.batches || !this.batches[index]) return;
+      this.currentBatchIndex = index;
+      this.currentQuestions = this.batches[index].slice();
+      this.tampilIndex = 0;
+      this.currentIndex = 0;
+      this.jawabanTerpilih = null;
+      this.jawabanSudahDikirim = false;
+      this.submittedSoal = null;
+      this.stopCountdown();
+      this.showSettings = false;
+    },
+
+    closeSettings() {
+      this.showSettings = false;
+    },
+
+    _sleep(ms = 500) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
+    _now() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const ts = Date.now();
+      const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      return { ts, date, time };
+    },
+
+    _getCurrentSoal() {
+      if (this.submittedSoal) return this.submittedSoal;
+      if (Array.isArray(this.currentQuestions) && this.currentQuestions.length) {
+        return this.currentQuestions[this.tampilIndex] || {};
+      }
+      return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
+    },
+
+    getAnswerTextByKey(soal, key) {
+      if (!soal || !soal.shuffledOptions) return '';
+      const s = soal.shuffledOptions;
+      let opts = [];
+      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object') {
+        opts = s;
+      } else if (s && typeof s === 'object' && !Array.isArray(s)) {
+        opts = Object.keys(s).map(k => ({ key: k, text: s[k] }));
+      } else if (Array.isArray(s) && typeof s[0] === 'string') {
+        opts = s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
+      }
+      const found = opts.find(o => String((o.key ?? '')).toLowerCase() === String(key ?? '').toLowerCase());
+      return found ? (found.text ?? '') : '';
+    },
+
+    async _doInsert(payload = {}) {
+      if (!this.insertUrlBase) throw new Error('insertUrlBase belum diset.');
+      const url = this.insertUrlBase + '&table=request&data=' + encodeURIComponent(JSON.stringify(payload));
+      console.log('Insert URL:', url);
+      const res = await fetch(url, { method: 'GET' });
+      const text = await res.text();
+      try { this.raw = JSON.parse(text); } catch(e) { this.raw = text; }
+      if (!res.ok) throw new Error('Insert gagal HTTP ' + res.status);
+    },
+
+    async insertThenFetch() {
+      if (!this.selectedDataset) {
+        alert('Pilih dataset terlebih dahulu.');
+        return;
+      }
+      this.loading = true;
+
+      localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
+
+      const now = this._now();
+      const payload = {
+        no: now.ts,
+        tanggal: now.date,
+        waktu: now.time,
+        noHalaman: this.selectedDataset
+      };
+
+      try {
+        try {
+          await this._doInsert(payload);
+        } catch (e) {
+          console.warn('Insert gagal, lanjut ke loadPage:', e);
+        }
+
+        await this._sleep(900);
+        await this.loadPage();
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadPage() {
+      this.loading = true;
+      this.dataAwal = [];
+      this.submittedSoal = null;
+      try {
+        const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
+        const res = await fetch(url);
+        const txt = await res.text();
+        let parsed = null;
+        try { parsed = JSON.parse(txt); } catch(e){ parsed = null; }
+        let rows = [];
+        if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
+        else if (Array.isArray(parsed)) rows = parsed;
+
+        if (!rows || rows.length === 0) {
+          rows = [
+            { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
+            { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
+            { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
+          ];
+        }
+
+        const normalized = rows.map(r => {
+          const allOptions = [
+            { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
+            { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
+            { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
+            { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
+          ].filter(o => o.text !== '');
+          const shuffled = shuffleArray(allOptions);
+          const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
+          const k = allOptions.find(o=>o.isCorrect);
+          return {
+            id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
+            no: r.no ?? null,
+            soal: r.soal ?? r.question ?? '',
+            kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
+            shuffledOptions,
+            sumber: r.sumber ?? '',
+            hal: Number(r.hal ?? r.page ?? 0) || 0,
+            row: Number(r.row ?? 0) || 0
+          };
+        }).filter(r => r.soal);
+
+        normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
+        const pageNum = Number(this.noHalaman || 1);
+        const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
+        this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
+
+        this.currentIndex = 0;
+        this.tampilIndex = 0;
+        this.jawabanTerpilih = null;
+        this.jawabanSudahDikirim = false;
+        this.submittedSoal = null;
+        this.stopCountdown();
+
+        this.rebuildBatches();
+
+      } catch (err) {
+        console.error('loadPage error:', err);
+        this.resetToDemo();
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    resetToDemo() {
+      this.wrongQuestions = [];
+      this.riwayatJawaban = [];
+      this.jawabanTerpilih = null;
+      this.jawabanSudahDikirim = false;
+      this.submittedSoal = null;
+      const rows = [
+        { id: 1, no:1, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Ibu kota Indonesia?`, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
+        { id: 2, no:2, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — 2 + 2 = ?`, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
+        { id: 3, no:3, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Pulau terbesar di Indonesia?`, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
+      ];
       const normalized = rows.map(r => {
         const allOptions = [
           { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
@@ -724,344 +1608,234 @@ scrollToTop() {
         const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
         const k = allOptions.find(o=>o.isCorrect);
         return {
-          id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
-          no: r.no ?? null,
-          soal: r.soal ?? r.question ?? '',
+          id: r.id,
+          no: r.no,
+          soal: r.soal,
           kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
           shuffledOptions,
           sumber: r.sumber ?? '',
-          hal: Number(r.hal ?? r.page ?? 0) || 0,
-          row: Number(r.row ?? 0) || 0
+          hal: r.hal ?? 0,
+          row: r.row ?? 0
         };
-      }).filter(r => r.soal);
-
-      normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
-      const pageNum = Number(this.noHalaman || 1);
-      const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
-      this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
-
-      // sync indices & reset transient state
+      });
+      this.dataAwal = shuffleArray(normalized.slice());
       this.currentIndex = 0;
       this.tampilIndex = 0;
+      this.stopCountdown();
+      this.rebuildBatches();
+    },
+
+    selectAnswer(key, shouldSubmit = false) {
+      if (this.jawabanSudahDikirim) return;
+      this.jawabanTerpilih = key;
+      if (shouldSubmit) {
+        this.$nextTick(() => this.submitAnswer());
+      }
+    },
+
+    submitAnswer() {
+      if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
+
+      const soal = this.currentQuestions[this.currentIndex];
+      if (!soal) return;
+
+      const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
+
+      // Update gamification stats
+      this.updateStatsAfterAnswer(isCorrect);
+
+      this.riwayatJawaban.push({
+        id: soal.id,
+        no: soal.no,
+        soal: soal.soal,
+        pilihan: this.jawabanTerpilih,
+        kunciKey: soal.kunciKey,
+        benar: isCorrect,
+        waktu: Date.now()
+      });
+
+      if (isCorrect) {
+        this.currentQuestions.splice(this.currentIndex, 1);
+      } else {
+        const kunciText = this.getAnswerTextByKey(soal, soal.kunciKey); 
+        const isDuplicate = this.wrongQuestions.some(q => q.id === soal.id);
+        if (!isDuplicate) {
+            this.wrongQuestions.push({ id: soal.id, no: soal.no, soal: soal.soal, kunciKey: soal.kunciKey, kunciText: kunciText });
+        }
+        this.currentQuestions = shuffleArray(this.currentQuestions);
+        this.currentIndex = 0;
+        this.tampilIndex = 0; 
+      }
+
+      this.submittedSoal = soal;
+      this.jawabanSudahDikirim = true;
+
+      this.startCountdown(10, () => {
+        this.nextQuestion();
+      });
+
+      this.$nextTick(() => {
+          this.scrollToBottom();
+      });
+    },
+
+    startCountdown(seconds, callback) {
+      this.stopCountdown();
+      this.isPaused = false;
+      this.countdown = seconds;
+      this.countdownActive = true;
+
+      this._countdownTimer = setInterval(() => {
+        this.countdown--;
+        if (this.countdown <= 0) {
+          this.stopCountdown();
+          if (typeof callback === 'function') callback();
+        }
+      }, 1000);
+    },
+
+    stopCountdown() {
+      this.countdownActive = false;
+      if (this._countdownTimer) {
+        clearInterval(this._countdownTimer);
+        this._countdownTimer = null;
+      }
+    },
+
+    toggleCountdown() {
+      if (this.isPaused) {
+        this.isPaused = false;
+        this.startCountdown(this.countdown, () => this.nextQuestion());
+      } else {
+        this.isPaused = true;
+        this.stopCountdown();
+      }
+    },
+
+    nextQuestion() {
+      if (this.currentQuestions.length > 0) {
+        this.jawabanTerpilih = null;
+        this.jawabanSudahDikirim = false;
+        this.submittedSoal = null;
+        this.stopCountdown();
+
+        this.$nextTick(() => {
+          this.scrollToTop();
+        });
+        return;
+      }
+
+      const nextBatchIndex = (this.currentBatchIndex == null ? -1 : this.currentBatchIndex) + 1;
+      if (this.batches && nextBatchIndex < this.batches.length) {
+        this.pilihBatch(nextBatchIndex);
+        return;
+      }
+
+      // Check for perfect session achievement
+      if (this.sessionStats.correctAnswers === this.sessionStats.questionsAnswered && this.sessionStats.questionsAnswered > 0) {
+        this.userStats.perfectSessions++;
+      }
+
+      alert('Batch terakhir selesai! Semua soal yang tersisa sudah dijawab benar. Silakan mulai sesi/batch baru.');
+      this.stopCountdown();
+      this.showSettings = true;
+    },
+
+    manualNext() {
+      if (!this.jawabanSudahDikirim) return;
+      this.stopCountdown();
+      this.nextQuestion();
+    },
+
+    goNext() {
+      this.nextQuestion();
+    },
+
+    forceShufflePool() {
+      if (!this.dataAwal || this.dataAwal.length === 0) return;
+      this.dataAwal = shuffleArray(this.dataAwal);
+
+      if (this.currentBatchIndex != null && this.batches && this.batches.length > 0) {
+        this.rebuildBatches();
+        if (this.batches[this.currentBatchIndex]) {
+          this.currentQuestions = this.batches[this.currentBatchIndex].slice();
+          this.tampilIndex = 0;
+        } else {
+          this.currentQuestions = [];
+          this.currentBatchIndex = null;
+          this.tampilIndex = 0;
+        }
+      } else {
+        this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
+        this.tampilIndex = this.currentIndex;
+      }
+
       this.jawabanTerpilih = null;
       this.jawabanSudahDikirim = false;
       this.submittedSoal = null;
       this.stopCountdown();
+    },
 
-      // rebuild batches otomatis
-      this.rebuildBatches();
-
-    } catch (err) {
-      console.error('loadPage error:', err);
-      this.resetToDemo();
-    } finally {
-      this.loading = false;
-    }
-  },
-
-  resetToDemo() {
-    this.wrongQuestions = [];
-    this.riwayatJawaban = [];
-    this.jawabanTerpilih = null;
-    this.jawabanSudahDikirim = false;
-    this.submittedSoal = null;
-    const rows = [
-      { id: 1, no:1, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Ibu kota Indonesia?`, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-      { id: 2, no:2, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — 2 + 2 = ?`, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-      { id: 3, no:3, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Pulau terbesar di Indonesia?`, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-    ];
-    const normalized = rows.map(r => {
-      const allOptions = [
-        { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-      ].filter(o => o.text !== '');
-      const shuffled = shuffleArray(allOptions);
-      const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-      const k = allOptions.find(o=>o.isCorrect);
-      return {
-        id: r.id,
-        no: r.no,
-        soal: r.soal,
-        kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-        shuffledOptions,
-        sumber: r.sumber ?? '',
-        hal: r.hal ?? 0,
-        row: r.row ?? 0
-      };
-    });
-    this.dataAwal = shuffleArray(normalized.slice());
-    this.currentIndex = 0;
-    this.tampilIndex = 0;
-    this.stopCountdown();
-
-    // rebuild batches
-    this.rebuildBatches();
-  },
-
-  /* -----------------------
-    Answer selection & submit
-    ----------------------- */
-  selectAnswer(key, shouldSubmit = false) {
-    if (this.jawabanSudahDikirim) return;
-    this.jawabanTerpilih = key;
-    if (shouldSubmit) {
-      this.$nextTick(() => this.submitAnswer());
-    }
-  },
-
-  // Perubahan: Hanya catat jawaban, set flag submitted, dan mulai countdown.
-  submitAnswer() {
-  if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
-
-  // 1. Ambil soal yang sedang dikerjakan
-  const soal = this.currentQuestions[this.currentIndex];
-  if (!soal) return;
-
-  // Cek kebenaran jawaban
-  const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
-
-  // 2. Catat jawaban ke riwayat
-  this.riwayatJawaban.push({
-    id: soal.id,
-    no: soal.no,
-    soal: soal.soal,
-    pilihan: this.jawabanTerpilih,
-    kunciKey: soal.kunciKey,
-    benar: isCorrect,
-    waktu: Date.now()
-  });
-
-  // 🌟 LOGIKA PENGULANGAN DAN ACAK ULANG 🌟
-  if (isCorrect) {
-    // JIKA BENAR: Hapus soal dari array currentQuestions (selesai diuji).
-    // Soal berikutnya otomatis bergeser ke currentIndex.
-    this.currentQuestions.splice(this.currentIndex, 1);
-    
-  } else {
-    // JIKA SALAH: 
-    
-    // A. Tambahkan soal ke daftar soal salah (untuk modal)
-    const kunciText = this.getAnswerTextByKey(soal, soal.kunciKey); 
-    const isDuplicate = this.wrongQuestions.some(q => q.id === soal.id);
-    if (!isDuplicate) {
-        this.wrongQuestions.push({ id: soal.id, no: soal.no, soal: soal.soal, kunciKey: soal.kunciKey, kunciText: kunciText });
-    }
-    
-    // B. Acak ulang SELURUH array currentQuestions
-    // Fungsi shuffleArray(array) harus tersedia di luar methods
-    this.currentQuestions = shuffleArray(this.currentQuestions);
-    
-    // C. Atur ulang currentIndex menjadi 0
-    // Karena array sudah diacak, kita mulai lagi dari index 0.
-    this.currentIndex = 0;
-    this.tampilIndex = 0; 
-  }
-  // -----------------------------------------------------------
-
-  // Set soal yang sudah dijawab untuk tampilan koreksi
-  this.submittedSoal = soal;
-  
-  // 3. Set flag
-  this.jawabanSudahDikirim = true;
-
-  // 4. Mulai countdown, yang akan memanggil nextQuestion() saat habis
-  this.startCountdown(10, () => {
-    // Callback: Pindah soal/batch setelah countdown selesai
-    this.nextQuestion();
-  });
-
-      // 🌟 PANGGIL FUNGSI SCROLL SETELAH SEMUA STATE UPDATE 🌟
-    // Gunakan nextTick untuk memastikan DOM sudah selesai diperbarui (feedback/tombol muncul)
-    this.$nextTick(() => {
-        this.scrollToBottom();
-    });
-
-},
-  // Perubahan: Menerima callback untuk pindah soal
-  // --- BAGIAN 'methods: {' DALAM KOMPONEN ANDA ---
-
-// 🌟 GANTI/TIMPA FUNGSI INI 🌟
-startCountdown(seconds, callback) {
-  this.stopCountdown(); // Pastikan timer sebelumnya dihentikan
-  this.isPaused = false; // Reset status jeda saat countdown baru dimulai
-  this.countdown = seconds;
-  this.countdownActive = true;
-
-  this._countdownTimer = setInterval(() => {
-    this.countdown--;
-    if (this.countdown <= 0) {
-      this.stopCountdown();
-      if (typeof callback === 'function') callback(); // Panggil callback (misalnya: nextQuestion)
-    }
-  }, 1000);
-},
-
-// 🌟 GANTI/TIMPA FUNGSI INI 🌟
-// Method bantuan untuk menghentikan countdown
-stopCountdown() {
-  this.countdownActive = false;
-  // JANGAN reset this.countdown = 10; di sini, agar sisa waktu tetap tersimpan saat di-pause
-  if (this._countdownTimer) {
-    clearInterval(this._countdownTimer);
-    this._countdownTimer = null;
-  }
-},
-
-// 🌟 TAMBAHKAN FUNGSI INI 🌟
-// Mengalihkan status jeda/lanjutkan pada countdown
-toggleCountdown() {
-  if (this.isPaused) {
-    // Jika di-pause, lanjutkan (resume)
-    this.isPaused = false;
-    // Panggil startCountdown dengan sisa waktu yang tersisa dan callback yang sama
-    this.startCountdown(this.countdown, () => this.nextQuestion()); 
-  } else {
-    // Jika tidak di-pause, jeda (pause)
-    this.isPaused = true;
-    this.stopCountdown(); // Hentikan timer
-  }
-},
-// --- LANJUTKAN DENGAN methods LAINNYA ---
-  // Perubahan: Pindah soal, reset state, dan stop countdown
-  // Perubahan: Pindah soal, reset state, dan stop countdown
-nextQuestion() {
-    // Cek apakah masih ada soal dalam pool batch ini
-    if (this.currentQuestions.length > 0) {
-        // Soal yang akan muncul berikutnya sudah ditentukan oleh submitAnswer():
-        // 1. Jika BENAR: Soal berikutnya adalah index yang sama (karena soal sebelumnya dihapus).
-        // 2. Jika SALAH: Soal berikutnya adalah index 0 (karena array diacak ulang dan currentIndex direset ke 0).
-        
-        // HANYA LAKUKAN RESET STATE
-        this.jawabanTerpilih = null;
-        this.jawabanSudahDikirim = false;
-        this.submittedSoal = null;
-        this.stopCountdown(); 
-
-              this.$nextTick(() => {
-        this.scrollToTop();
-    });
-        
-        // Catatan: this.currentIndex dan this.tampilIndex TIDAK perlu di-increment di sini.
-        return;
-    }
-
-    // Jika array sudah kosong, berarti semua soal sudah dijawab benar.
-    const nextBatchIndex = (this.currentBatchIndex == null ? -1 : this.currentBatchIndex) + 1;
-    if (this.batches && nextBatchIndex < this.batches.length) {
-        this.pilihBatch(nextBatchIndex);
-        return;
-    }
-
-    // Batch/sesi selesai
-    alert('Batch terakhir selesai! Semua soal yang tersisa sudah dijawab benar. Silakan mulai sesi/batch baru.');
-    this.stopCountdown();
-    this.showSettings = true;
-
-  
-},
-
-  /* -----------------------
-    Navigation & countdown
-    ----------------------- */
-  // Manual next hanya jalan setelah jawaban dikirim
-  manualNext() {
-    if (!this.jawabanSudahDikirim) return;
-    this.stopCountdown();
-    this.nextQuestion(); // Langsung panggil nextQuestion() yang baru
-  },
-
-  // Method goNext() yang lama dihapus/disederhanakan karena logikanya sudah dipindahkan ke nextQuestion()
-  // Karena masih dipanggil di `manualNext` yang lama, kita pertahankan hanya untuk kompatibilitas, tapi kosongkan atau sedernakan
-  goNext() {
-    // Logic lama goNext() sekarang ada di nextQuestion(). 
-    // Jika masih ada panggilan goNext() di luar manualNext(), ganti ke nextQuestion().
-    // Untuk amannya, kita pastikan logic utamanya memanggil nextQuestion.
-    this.nextQuestion();
-  },
-
-  // Menghapus duplikasi startCountdown yang lama (sudah direfactor di atas)
-  // Menghapus duplikasi nextQuestion yang lama (sudah direfactor di atas)
-
-  forceShufflePool() {
-    if (!this.dataAwal || this.dataAwal.length === 0) return;
-    this.dataAwal = shuffleArray(this.dataAwal);
-
-    if (this.currentBatchIndex != null && this.batches && this.batches.length > 0) {
-      this.rebuildBatches();
-      if (this.batches[this.currentBatchIndex]) {
-        this.currentQuestions = this.batches[this.currentBatchIndex].slice();
-        this.tampilIndex = 0;
+    getOptionClasses(key) {
+      const classes = [];
+      const soal = this._getCurrentSoal();
+      if (!soal) return 'bg-white border-gray-200 text-gray-700';
+      if (this.jawabanSudahDikirim) {
+        const isCorrect = String(key).toLowerCase() === String(soal.kunciKey).toLowerCase();
+        const isSelected = String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase();
+        if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold');
+        else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold');
+        else classes.push('bg-gray-100 border-gray-300 text-gray-500');
       } else {
-        this.currentQuestions = [];
-        this.currentBatchIndex = null;
-        this.tampilIndex = 0;
+        if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md');
+        else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50');
       }
-    } else {
-      this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
-      this.tampilIndex = this.currentIndex;
-    }
+      return classes.join(' ');
+    },
 
-    this.jawabanTerpilih = null;
-    this.jawabanSudahDikirim = false;
-    this.submittedSoal = null;
-    this.stopCountdown();
+    openWrongModal() { this.showWrongModal = true; },
+    closeWrongModal() { this.showWrongModal = false; },
+
+    exportWrongAsCSV() {
+      if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
+        alert('Belum ada soal salah untuk diekspor.');
+        return;
+      }
+      const rows = [['No','Soal','Kunci']];
+      this.wrongQuestions.forEach((w,i)=> {
+        rows.push([i+1, (w.soal||'').replace(/<[^>]*>?/gm,''), (w.kunciText || '').toString()]);
+      });
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'soal_salah.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
   },
-
-  /* -----------------------
-    UI helpers & export
-    ----------------------- */
-  getOptionClasses(key) {
-    const classes = [];
-    const soal = this._getCurrentSoal(); // Pastikan menggunakan _getCurrentSoal() yang memprioritaskan submittedSoal
-    if (!soal) return 'bg-white border-gray-200 text-gray-700';
-    if (this.jawabanSudahDikirim) {
-      const isCorrect = String(key).toLowerCase() === String(soal.kunciKey).toLowerCase();
-      const isSelected = String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase();
-      if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold');
-      else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold');
-      else classes.push('bg-gray-100 border-gray-300 text-gray-500');
-    } else {
-      if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md');
-      else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50');
-    }
-    return classes.join(' ');
-  },
-
-  openWrongModal() { this.showWrongModal = true; },
-  closeWrongModal() { this.showWrongModal = false; },
-
-  exportWrongAsCSV() {
-    if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
-      alert('Belum ada soal salah untuk diekspor.');
-      return;
-    }
-    const rows = [['No','Soal','Kunci']];
-    this.wrongQuestions.forEach((w,i)=> {
-      rows.push([i+1, (w.soal||'').replace(/<[^>]*>?/gm,''), (w.kunciText || '').toString()]);
-    });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'soal_salah.csv'; a.click();
-    URL.revokeObjectURL(url);
-  }
-} // end methods
-,
   mounted() {
-    // restore selectedDataset if previously set
+    // Initialize auto-save and gamification
+    this.initializeAutoSave();
+
+    // Restore selected dataset
     const saved = localStorage.getItem('kitab_selectedDataset');
     if (saved) {
       this.selectedDataset = saved;
-      // don't auto-load immediately; let user press Load / Tampil
     }
-    // If you want to auto-load when dataset exists, uncomment:
-    // if (this.selectedDataset) this.loadPage();
+
+    // Check for night owl achievement
+    const currentHour = new Date().getHours();
+    if (currentHour >= 22 || currentHour <= 4) {
+      this.userStats.nightSessions++;
+    }
   },
   beforeDestroy() {
     this.stopCountdown();
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+    }
+    window.removeEventListener('beforeunload', this.saveUserData);
+    this.saveUserData(); // Final save
   }
 });
 </script>
