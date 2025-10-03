@@ -7,72 +7,256 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
   <style>
-@keyframes achievement-popup {
-  0% { transform: translateX(100%) scale(0.5); opacity: 0; }
-  70% { transform: translateX(-10px) scale(1.05); }
-  100% { transform: translateX(0) scale(1); opacity: 1; }
-}
+    /* Animations */
+    @keyframes achievement-popup {
+      0% { transform: translateX(100%) scale(0.5); opacity: 0; }
+      70% { transform: translateX(-10px) scale(1.05); }
+      100% { transform: translateX(0) scale(1); opacity: 1; }
+    }
 
-@keyframes level-up {
-  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-  50% { transform: scale(1.1) rotate(5deg); }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
+    @keyframes level-up {
+      0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+      50% { transform: scale(1.1) rotate(5deg); }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
 
-@keyframes streak-fire {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(1); opacity: 0; }
-}
+    @keyframes streak-fire {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 0; }
+    }
 
-.animate-achievement-popup {
-  animation: achievement-popup 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
+    @keyframes flip {
+      0% { transform: rotateY(0); }
+      50% { transform: rotateY(90deg); }
+      100% { transform: rotateY(0); }
+    }
 
-.animate-level-up {
-  animation: level-up 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
+    @keyframes bounce-gentle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
 
-.animate-streak-fire {
-  animation: streak-fire 1.5s ease-out;
-}
+    @keyframes pulse-soft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
 
-/* Hover effects */
-.hover-lift:hover {
-  transform: translateY(-2px);
-  transition: transform 0.2s ease;
-}
+    @keyframes slide-in {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
 
-/* Progress bar glow */
-.progress-glow {
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-}
-</style>
+    /* Animation Classes */
+    .animate-achievement-popup {
+      animation: achievement-popup 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .animate-level-up {
+      animation: level-up 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .animate-streak-fire {
+      animation: streak-fire 1.5s ease-out;
+    }
+
+    .animate-flip {
+      animation: flip 0.6s ease-in-out;
+    }
+
+    .animate-bounce-gentle {
+      animation: bounce-gentle 0.5s ease-in-out;
+    }
+
+    .animate-pulse-soft {
+      animation: pulse-soft 0.3s ease-in-out;
+    }
+
+    .animate-slide-in {
+      animation: slide-in 0.3s ease-out;
+    }
+
+    /* Custom Styles */
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      transition: transform 0.2s ease;
+    }
+
+    .progress-glow {
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    .dark-mode {
+      background-color: #1a202c;
+      color: #e2e8f0;
+    }
+
+    .dark-mode .card {
+      background-color: #2d3748;
+      border-color: #4a5568;
+    }
+
+    .dark-mode .text-gray-800 {
+      color: #e2e8f0;
+    }
+
+    .dark-mode .text-gray-600 {
+      color: #a0aec0;
+    }
+
+    .dark-mode .bg-white {
+      background-color: #2d3748;
+    }
+
+    .dark-mode .border-gray-200 {
+      border-color: #4a5568;
+    }
+
+    /* Loading Animation */
+    .flip-card {
+      perspective: 1000px;
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 1rem;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      animation: flip 2s infinite;
+    }
+
+    .flip-card-front, .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border-radius: 12px;
+    }
+
+    .flip-card-front {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .flip-card-back {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      transform: rotateY(180deg);
+    }
+
+    /* Stat Cards */
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    /* Theme Colors */
+    .theme-ocean {
+      --primary-color: #06B6D4;
+      --secondary-color: #0EA5E9;
+    }
+
+    .theme-forest {
+      --primary-color: #16A34A;
+      --secondary-color: #22C55E;
+    }
+
+    .theme-sunset {
+      --primary-color: #EA580C;
+      --secondary-color: #DC2626;
+    }
+
+    /* Power-up Styles */
+    .power-up-card {
+      background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+      border-radius: 10px;
+      padding: 0.75rem;
+      text-align: center;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .power-up-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Season Pass */
+    .season-tier {
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .season-tier.unlocked {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #10b98120 0%, #05966920 100%);
+    }
+
+    .season-tier.current {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, #3b82f620 0%, #1d4ed820 100%);
+    }
+  </style>
 </head>
-<body class="bg-gray-50 antialiased min-h-screen">
+<body class="bg-gray-50 antialiased min-h-screen transition-colors duration-300" :class="{ 'dark-mode': darkMode }">
   <div id="app" class="mx-auto w-full max-w-5xl p-4 sm:p-8">
     <!-- HEADER -->
-    <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <header class="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div class="flex-1 min-w-0">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 leading-tight">✅ Belajar Soal</h1>
-        <p class="text-gray-600 mt-1 text-sm md:text-base">tampil jawaban benar selama 10 detik.</p>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 leading-tight">✅ Belajar Soal</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">Tampil jawaban benar selama 10 detik + Fitur Gamifikasi</p>
       </div>
 
-      <!-- Badge & Progress Display -->
-      <div class="flex items-center gap-3">
-        <!-- Streak Display -->
-        <div v-if="userStats.streak > 0" class="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-full">
-          <span class="text-orange-600 font-bold">🔥 {{ userStats.streak }}</span>
-          <span class="text-orange-800 text-sm">Hari</span>
-        </div>
-        
-        <!-- Points Display -->
-        <div class="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-          <span class="text-green-600 font-bold">⭐ {{ userStats.points }}</span>
-          <span class="text-green-800 text-sm">Poin</span>
-        </div>
+      <!-- Theme & Settings Controls -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Theme Selector -->
+        <select v-model="selectedTheme" @change="changeTheme" class="p-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          <option value="default">Default</option>
+          <option value="ocean">Ocean</option>
+          <option value="forest">Forest</option>
+          <option value="sunset">Sunset</option>
+        </select>
 
-        <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300">
+        <!-- Dark Mode Toggle -->
+        <button @click="toggleDarkMode" class="p-2 rounded-md border hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Dark Mode">
+          <span v-if="darkMode">🌙</span>
+          <span v-else>☀️</span>
+        </button>
+
+        <!-- Dataset Selector -->
+        <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           <option value="" disabled>-- pilih dataset --</option>
           <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
         </select>
@@ -80,342 +264,423 @@
         <button
           @click="insertThenFetch"
           :disabled="loading || !selectedDataset"
-          class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition animate-pulse-soft"
           type="button"
         >
-          Tampil
+          Tampil Soal
         </button>
 
         <button
           @click="openSettings"
           type="button"
-          class="ml-1 p-2 rounded-md border hover:bg-gray-100 transition"
+          class="ml-1 p-2 rounded-md border hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           title="Pengaturan Soal"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 dark:text-gray-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M11.3 1.046a1 1 0 00-2.6 0l-.2.657a7.002 7.002 0 00-1.78.846l-.6-.35a1 1 0 00-1.22.18L2.84 5.34a1 1 0 00.18 1.41l.613.49a7.017 7.017 0 000 2.78l-.613.49a1 1 0 00-.18 1.41l1.17 1.37a1 1 0 001.22.18l.6-.35a7.002 7.002 0 001.78.846l.2.657a1 1 0 002.6 0l.2-.657a7.002 7.002 0 001.78-.846l.6.35a1 1 0 001.22-.18l1.17-1.37a1 1 0 00-.18-1.41l-.613-.49a7.017 7.017 0 000-2.78l.613-.49a1 1 0 00.18-1.41L15.7 2.73a1 1 0 00-1.22-.18l-.6.35a7.002 7.002 0 00-1.78-.846L11.3 1.046zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"/>
           </svg>
         </button>
       </div>
     </header>
 
-    <!-- ACHIEVEMENT NOTIFICATION - Enhanced -->
-<div v-if="showAchievementNotification" class="fixed top-4 right-4 z-50 animate-achievement-popup">
-  <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-2xl shadow-2xl max-w-sm border-2 border-yellow-300 transform rotate-[-2deg]">
-    <div class="flex items-center gap-4">
-      <div class="text-4xl animate-bounce">{{ achievementNotification.emoji }}</div>
-      <div class="flex-1">
-        <div class="font-bold text-lg mb-1">{{ achievementNotification.title }}</div>
-        <div class="text-sm opacity-90 mb-2">{{ achievementNotification.message }}</div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs bg-yellow-600 px-2 py-1 rounded-full">+{{ achievementNotification.points }} ⭐</span>
-          <span class="text-xs opacity-75">{{ achievementNotification.type }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-pulse">
-      !
-    </div>
-  </div>
-</div>
-
-<!-- LEVEL UP NOTIFICATION -->
-<div v-if="showLevelUpNotification" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-  <div class="bg-gradient-to-br from-purple-600 to-blue-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-level-up">
-    <div class="text-6xl mb-4">🎉</div>
-    <div class="text-2xl font-bold mb-2">LEVEL UP!</div>
-    <div class="text-4xl font-extrabold mb-4">Level {{ userStats.level }}</div>
-    <div class="text-lg opacity-90 mb-6">Selamat! Kamu semakin hebat!</div>
-    <button @click="showLevelUpNotification = false" class="px-6 py-2 bg-white text-purple-600 rounded-full font-bold hover:scale-105 transition-transform">
-      Lanjutkan
-    </button>
-  </div>
-</div>
-
-<!-- STREAK FIRE ANIMATION -->
-<div v-if="showStreakFire" class="fixed top-20 right-20 z-40 animate-pulse">
-  <div class="text-6xl">🔥</div>
-  <div class="text-center text-white font-bold text-sm bg-orange-500 rounded-full px-2 -mt-2">+3</div>
-</div>
-
-<!-- PROGRESS BAR - Enhanced -->
-<div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 shadow-sm">
-  <div class="flex items-center justify-between mb-3">
-    <div class="flex items-center gap-3">
-      <div class="text-sm font-medium text-gray-700">Level {{ userStats.level }}</div>
-      <div class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
-        {{ userStats.points }}/{{ userStats.level * 100 }} XP
-      </div>
-    </div>
-    <div class="text-lg font-bold text-indigo-600" v-if="userStats.rank">{{ userStats.rank }}</div>
-  </div>
-  
-  <!-- Animated Progress Bar -->
-  <div class="w-full bg-gray-200 rounded-full h-3 mb-3 overflow-hidden">
-    <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out" 
-         :style="{ width: userStats.progress + '%' }"></div>
-  </div>
-  
-  <!-- Mini Stats -->
-  <div class="flex justify-between text-xs text-gray-600">
-    <div class="flex items-center gap-1">
-      <span>🔥 {{ userStats.streak }} hari</span>
-    </div>
-    <div class="flex items-center gap-1">
-      <span>⭐ {{ userStats.totalPoints }} XP</span>
-    </div>
-    <div class="flex items-center gap-1">
-      <span>✅ {{ userStats.totalCorrect }}/{{ userStats.totalAnswered }}</span>
-    </div>
-  </div>
-</div>
-
-<!-- BADGES DISPLAY - Enhanced -->
-<div class="mb-4 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
-  <div class="flex items-center justify-between mb-3">
-    <div class="font-medium text-gray-800">Pencapaian Aktif</div>
-    <div class="text-xs text-gray-500">{{ unlockedAchievements.length }}/{{ Object.keys(ACHIEVEMENTS).length }}</div>
-  </div>
-  <div class="flex gap-3 overflow-x-auto pb-2">
-    <div v-for="badge in activeBadges" :key="badge.id" 
-         class="flex-shrink-0 text-center group relative">
-      <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200">
-        {{ badge.emoji }}
-      </div>
-      <div class="text-xs font-medium mt-1 text-gray-700">{{ badge.name }}</div>
-      <div class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
-        ⭐
-      </div>
-    </div>
-    
-    <!-- Badge placeholder untuk yang belum unlocked -->
-    <div v-for="n in (3 - activeBadges.length)" :key="'placeholder-' + n"
-         class="flex-shrink-0 text-center opacity-40">
-      <div class="text-4xl">🔒</div>
-      <div class="text-xs font-medium mt-1 text-gray-500">Terkunci</div>
-    </div>
-  </div>
-</div>
-
-<!-- DAILY CHALLENGE -->
-<div v-if="dailyChallenge" class="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-100 rounded-2xl border border-green-200">
-  <div class="flex items-center gap-3 mb-2">
-    <div class="text-2xl">🎯</div>
-    <div>
-      <div class="font-bold text-green-800">Tantangan Harian</div>
-      <div class="text-sm text-green-700">{{ dailyChallenge.description }}</div>
-    </div>
-  </div>
-  <div class="flex items-center justify-between">
-    <div class="text-xs text-green-600">
-      Progress: {{ dailyChallenge.progress }}/{{ dailyChallenge.requirement }}
-    </div>
-    <div class="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
-      +{{ dailyChallenge.reward }} ⭐
-    </div>
-  </div>
-  <div class="w-full bg-green-200 rounded-full h-2 mt-2">
-    <div class="bg-green-500 h-2 rounded-full transition-all duration-500" 
-         :style="{ width: (dailyChallenge.progress / dailyChallenge.requirement * 100) + '%' }"></div>
-  </div>
-</div>
-
-    <!-- MAIN CARD -->
-    <div class="bg-white p-6 md:p-8 rounded-xl shadow-xl" ref="soalContainer">
-      <div v-if="loading" class="text-center py-16 text-indigo-600">
-        <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-        <div class="text-lg font-medium">Mengambil data soal...</div>
-      </div>
-
-      <div v-else-if="poolEmpty" class="text-center py-16 text-gray-500">
-        <h3 class="text-lg md:text-xl font-medium text-gray-900">Selesai — tidak ada soal tersisa</h3>
-        <p class="mt-2 text-sm md:text-base text-gray-600">Semua soal yang benar telah dikeluarkan dari pool.</p>
-        
-        <!-- Achievement Summary -->
-        <div v-if="sessionStats.questionsAnswered > 0" class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg max-w-md mx-auto">
-          <h4 class="font-bold text-lg text-gray-800 mb-3">🎉 Sesi Selesai!</h4>
-          <div class="grid grid-cols-2 gap-4 text-sm">
-            <div class="text-center">
-              <div class="text-2xl font-bold text-green-600">{{ sessionStats.correctAnswers }}</div>
-              <div class="text-gray-600">Jawaban Benar</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-blue-600">+{{ sessionStats.pointsEarned }}</div>
-              <div class="text-gray-600">Poin Diperoleh</div>
+    <!-- ACHIEVEMENT NOTIFICATION -->
+    <div v-if="showAchievementNotification" class="fixed top-4 right-4 z-50 animate-achievement-popup">
+      <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-2xl shadow-2xl max-w-sm border-2 border-yellow-300 transform rotate-[-2deg]">
+        <div class="flex items-center gap-4">
+          <div class="text-4xl animate-bounce">{{ achievementNotification.emoji }}</div>
+          <div class="flex-1">
+            <div class="font-bold text-lg mb-1">{{ achievementNotification.title }}</div>
+            <div class="text-sm opacity-90 mb-2">{{ achievementNotification.message }}</div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs bg-yellow-600 px-2 py-1 rounded-full">+{{ achievementNotification.points }} ⭐</span>
+              <span class="text-xs opacity-75">{{ achievementNotification.type }}</span>
             </div>
           </div>
         </div>
+        <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-pulse">
+          !
+        </div>
       </div>
+    </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
-        <section class="md:col-span-2">
-          <div class="flex items-center justify-between mb-4">
+    <!-- LEVEL UP NOTIFICATION -->
+    <div v-if="showLevelUpNotification" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+      <div class="bg-gradient-to-br from-purple-600 to-blue-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-level-up">
+        <div class="text-6xl mb-4">🎉</div>
+        <div class="text-2xl font-bold mb-2">LEVEL UP!</div>
+        <div class="text-4xl font-extrabold mb-4">Level {{ userStats.level }}</div>
+        <div class="text-lg opacity-90 mb-6">Selamat! Kamu semakin hebat!</div>
+        <button @click="showLevelUpNotification = false" class="px-6 py-2 bg-white text-purple-600 rounded-full font-bold hover:scale-105 transition-transform">
+          Lanjutkan
+        </button>
+      </div>
+    </div>
+
+    <!-- STREAK FIRE ANIMATION -->
+    <div v-if="showStreakFire" class="fixed top-20 right-20 z-40 animate-streak-fire">
+      <div class="text-6xl">🔥</div>
+      <div class="text-center text-white font-bold text-sm bg-orange-500 rounded-full px-2 -mt-2">+3</div>
+    </div>
+
+    <!-- DAILY LOGIN BONUS -->
+    <div v-if="showDailyBonus" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+      <div class="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-slide-in">
+        <div class="text-6xl mb-4">🎁</div>
+        <div class="text-2xl font-bold mb-2">Bonus Harian!</div>
+        <div class="text-4xl font-extrabold mb-4">+{{ dailyBonusAmount }} ⭐</div>
+        <div class="text-lg opacity-90 mb-2">Login hari ke-{{ loginStreak.current }} berturut-turut!</div>
+        <div class="text-sm opacity-75 mb-6">Besok dapat {{ loginStreak.rewards[loginStreak.current] || 0 }} poin</div>
+        <button @click="claimDailyBonus" class="px-6 py-2 bg-white text-green-600 rounded-full font-bold hover:scale-105 transition-transform">
+          Klaim
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+      <!-- LEFT SIDEBAR - Stats & Features -->
+      <div class="lg:col-span-1 space-y-4">
+        <!-- User Profile Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="text-3xl">{{ userAvatar.emoji }}</div>
+            <div class="flex-1">
+              <div class="font-bold text-gray-800 dark:text-white">{{ userStats.rank }}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</div>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+            <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-2 rounded-full transition-all duration-1000 ease-out" 
+                 :style="{ width: userStats.progress + '%' }"></div>
+          </div>
+          
+          <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+            <span>{{ userStats.points }} XP</span>
+            <span>{{ userStats.level * 100 }} XP</span>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ accuracyRate }}%</div>
+            <div class="stat-label">Akurasi</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-value">{{ averageTime }}s</div>
+            <div class="stat-label">Rata-rata</div>
+          </div>
+        </div>
+
+        <!-- Daily Challenge -->
+        <div v-if="dailyChallenge" class="bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900 dark:to-emerald-900 rounded-2xl border border-green-200 dark:border-green-800 p-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="text-2xl">🎯</div>
             <div>
-              <div class="text-sm text-gray-500">Soal ke</div>
-              <div class="text-2xl font-bold text-indigo-700">{{ tampilIndex + 1 }} <span class="text-base font-medium text-gray-500">/ {{ totalPool }}</span></div>
-            </div>
-            <div class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded">{{ displaySoal.sumber || selectedDataset || '-' }}</div>
-          </div>
-
-          <article class="prose prose-sm md:prose lg:prose-lg max-w-none">
-            <p class="text-gray-900 text-lg md:text-xl font-semibold border-b pb-4" v-html="displaySoal.soal"></p>
-          </article>
-
-          <!-- OPSI -->
-          <div class="mt-6 space-y-3">
-            <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
-              <div class="flex items-start gap-3">
-                <button
-                  type="button"
-                  @click="selectAnswer(opt.key)"
-                  @dblclick.prevent="selectAnswer(opt.key, true)"
-                  :disabled="jawabanSudahDikirim"
-                  class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base"
-                  :class="getOptionClasses(opt.key)"
-                >
-                  <div class="flex items-start">
-                    <div class="mr-4 flex-shrink-0">
-                      <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white border text-sm font-bold text-gray-800">{{ optionLabels[index] || opt.key.toUpperCase() }}</div>
-                    </div>
-                    <div class="flex-1 text-left" v-html="opt.text"></div>
-                  </div>
-                </button>
-
-                <button
-                  v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
-                  @click.stop="submitAnswer"
-                  type="button"
-                  class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center"
-                  title="Kirim Jawaban"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                  </svg>
-                </button>
-              </div>
+              <div class="font-bold text-green-800 dark:text-green-200">Tantangan Harian</div>
+              <div class="text-sm text-green-700 dark:text-green-300">{{ dailyChallenge.description }}</div>
             </div>
           </div>
-        </section>
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs text-green-600 dark:text-green-400">
+              {{ dailyChallenge.progress }}/{{ dailyChallenge.requirement }}
+            </div>
+            <div class="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+              +{{ dailyChallenge.reward }} ⭐
+            </div>
+          </div>
+          <div class="w-full bg-green-200 dark:bg-green-700 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                 :style="{ width: (dailyChallenge.progress / dailyChallenge.requirement * 100) + '%' }"></div>
+          </div>
+        </div>
 
-        <!-- RIGHT: Info, Kontrol, Statistik -->
-        <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6" ref="controlsAside">
-          <div class="sticky top-6">
-            <!-- User Stats & Badges -->
-            <div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg">
-              <div class="flex items-center justify-between mb-2">
-                <div class="text-sm font-medium text-gray-700">Level</div>
-                <div class="text-lg font-bold text-indigo-600">{{ userStats.level }}</div>
+        <!-- Power-ups -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+          <div class="font-bold text-gray-800 dark:text-white mb-3">Power-ups</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div v-for="(count, type) in powerUps" :key="type" 
+                 @click="usePowerUp(type)"
+                 class="power-up-card"
+                 :class="{ 'opacity-50 cursor-not-allowed': count === 0 }">
+              <div class="text-2xl mb-1">{{ powerUpIcons[type] }}</div>
+              <div class="text-xs font-bold">{{ count }}</div>
+              <div class="text-xs opacity-90">{{ powerUpNames[type] }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT - Questions -->
+      <div class="lg:col-span-3">
+        <!-- Progress & Controls -->
+        <div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900 dark:to-indigo-900 rounded-2xl border border-purple-200 dark:border-purple-800 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Level {{ userStats.level }}</div>
+              <div class="text-xs bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full">
+                {{ userStats.points }}/{{ userStats.level * 100 }} XP
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
-                <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full" 
-                     :style="{ width: userStats.progress + '%' }"></div>
+            </div>
+            <div class="flex items-center gap-4">
+              <!-- Streak Display -->
+              <div v-if="userStats.streak > 0" class="flex items-center gap-2 bg-orange-100 dark:bg-orange-900 px-3 py-1 rounded-full">
+                <span class="text-orange-600 dark:text-orange-400 font-bold">🔥 {{ userStats.streak }}</span>
+                <span class="text-orange-800 dark:text-orange-200 text-sm">Hari</span>
               </div>
               
-              <!-- Active Badges -->
-              <div class="flex gap-2 mt-3">
-                <div v-for="badge in activeBadges" :key="badge.id" 
-                     class="text-2xl" :title="badge.name">
-                  {{ badge.emoji }}
+              <!-- Points Display -->
+              <div class="flex items-center gap-2 bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full">
+                <span class="text-green-600 dark:text-green-400 font-bold">⭐ {{ userStats.points }}</span>
+                <span class="text-green-800 dark:text-green-200 text-sm">Poin</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Animated Progress Bar -->
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-3 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out progress-glow" 
+                 :style="{ width: userStats.progress + '%' }"></div>
+          </div>
+          
+          <!-- Mini Stats -->
+          <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+            <div class="flex items-center gap-1">
+              <span>🔥 {{ userStats.streak }} hari</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span>⭐ {{ userStats.totalPoints }} XP</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span>✅ {{ userStats.totalCorrect }}/{{ userStats.totalAnswered }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BADGES DISPLAY -->
+        <div class="mb-4 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-medium text-gray-800 dark:text-white">Pencapaian Aktif</div>
+            <div class="text-xs text-gray-500">{{ unlockedAchievements.length }}/{{ Object.keys(ACHIEVEMENTS).length }}</div>
+          </div>
+          <div class="flex gap-3 overflow-x-auto pb-2">
+            <div v-for="badge in activeBadges" :key="badge.id" 
+                 class="flex-shrink-0 text-center group relative">
+              <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200 animate-bounce-gentle">
+                {{ badge.emoji }}
+              </div>
+              <div class="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">{{ badge.name }}</div>
+              <div class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+                ⭐
+              </div>
+            </div>
+            
+            <!-- Badge placeholder untuk yang belum unlocked -->
+            <div v-for="n in (3 - activeBadges.length)" :key="'placeholder-' + n"
+                 class="flex-shrink-0 text-center opacity-40">
+              <div class="text-4xl">🔒</div>
+              <div class="text-xs font-medium mt-1 text-gray-500">Terkunci</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CARD -->
+        <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-xl" ref="soalContainer">
+          <div v-if="loading" class="text-center py-16 text-indigo-600 dark:text-indigo-400">
+            <div class="flip-card">
+              <div class="flip-card-inner">
+                <div class="flip-card-front">📚</div>
+                <div class="flip-card-back">🎯</div>
+              </div>
+            </div>
+            <div class="text-lg font-medium mt-4">Mempersiapkan soal terbaik untukmu...</div>
+          </div>
+
+          <div v-else-if="poolEmpty" class="text-center py-16 text-gray-500 dark:text-gray-400">
+            <h3 class="text-lg md:text-xl font-medium text-gray-900 dark:text-white">Selesai — tidak ada soal tersisa</h3>
+            <p class="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-400">Semua soal yang benar telah dikeluarkan dari pool.</p>
+            
+            <!-- Achievement Summary -->
+            <div v-if="sessionStats.questionsAnswered > 0" class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900 dark:to-blue-900 rounded-lg max-w-md mx-auto">
+              <h4 class="font-bold text-lg text-gray-800 dark:text-white mb-3">🎉 Sesi Selesai!</h4>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ sessionStats.correctAnswers }}</div>
+                  <div class="text-gray-600 dark:text-gray-400">Jawaban Benar</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">+{{ sessionStats.pointsEarned }}</div>
+                  <div class="text-gray-600 dark:text-gray-400">Poin Diperoleh</div>
                 </div>
               </div>
             </div>
-
-            <div class="mb-4">
-              <div class="text-sm text-gray-500">Status</div>
-              <div class="mt-2 text-base font-medium" :class="{'text-green-600': isLastAnswerCorrect, 'text-red-600': !isLastAnswerCorrect}">
-                <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
-                <span v-else class="text-gray-600">Pilih opsi, lalu kirim atau double-click.</span>
-              </div>
-              <div v-if="jawabanSudahDikirim" class="mt-3 text-sm text-gray-700">
-                Kunci jawaban: <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
-              </div>
-            </div>
-
-            <div class="mb-4 flex items-stretch gap-2">
-              <button
-                @click="manualNext"
-                :disabled="!jawabanSudahDikirim || poolEmpty"
-                class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base"
-                style="height: 48px;"
-              >
-                <span v-if="countdownActive">
-                  Next (otomatis dalam {{ countdown }}s)
-                </span>
-                <span v-else>
-                  {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
-                </span>
-              </button>
-
-              <button
-                v-if="countdownActive"
-                @click.stop="toggleCountdown"
-                :disabled="countdown <= 0"
-                class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm"
-                style="height: 48px;"
-                title="Jeda / Lanjutkan countdown"
-              >
-                <span v-if="isPaused">▶️ Lanjutkan</span>
-                <span v-else>⏸️ Jeda</span>
-              </button>
-            </div>
-
-            <div class="mb-4 grid grid-cols-2 gap-2">
-              <button @click="openAchievementsModal" class="w-full px-3 py-2 bg-yellow-500 text-white rounded-md shadow hover:bg-yellow-600 text-sm">
-                Pencapaian ({{ unlockedAchievements.length }})
-              </button>
-              <button @click="openWrongModal" class="w-full px-3 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 text-sm">
-                Soal Salah ({{ wrongQuestions.length }})
-              </button>
-            </div>
-
-            <div class="mt-4 text-xs text-gray-500">
-              <div>Dataset: <span class="font-medium text-gray-700">{{ selectedDataset || '-' }}</span></div>
-              <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700">{{ dataAwal.length }}</span></div>
-            </div>
           </div>
-        </aside>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
+            <section class="md:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">Soal ke</div>
+                  <div class="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{{ tampilIndex + 1 }} <span class="text-base font-medium text-gray-500 dark:text-gray-400">/ {{ totalPool }}</span></div>
+                </div>
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">{{ displaySoal.sumber || selectedDataset || '-' }}</div>
+              </div>
+
+              <article class="prose prose-sm md:prose lg:prose-lg max-w-none dark:prose-invert">
+                <p class="text-gray-900 dark:text-white text-lg md:text-xl font-semibold border-b pb-4 dark:border-gray-600" v-html="displaySoal.soal"></p>
+              </article>
+
+              <!-- OPSI -->
+              <div class="mt-6 space-y-3">
+                <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
+                  <div class="flex items-start gap-3">
+                    <button
+                      type="button"
+                      @click="selectAnswer(opt.key)"
+                      @dblclick.prevent="selectAnswer(opt.key, true)"
+                      :disabled="jawabanSudahDikirim"
+                      class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
+                      :class="getOptionClasses(opt.key)"
+                    >
+                      <div class="flex items-start">
+                        <div class="mr-4 flex-shrink-0">
+                          <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">{{ optionLabels[index] || opt.key.toUpperCase() }}</div>
+                        </div>
+                        <div class="flex-1 text-left" v-html="opt.text"></div>
+                      </div>
+                    </button>
+
+                    <button
+                      v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
+                      @click.stop="submitAnswer"
+                      type="button"
+                      class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
+                      title="Kirim Jawaban"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- RIGHT: Info, Kontrol, Statistik -->
+            <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6 dark:border-gray-600" ref="controlsAside">
+              <div class="sticky top-6">
+                <!-- Weakness Analysis -->
+                <div v-if="weaknessAnalysis.weakTopics.length > 0" class="mb-4 p-4 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900 dark:to-orange-900 rounded-lg border border-red-200 dark:border-red-800">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="text-xl">🎯</div>
+                    <div class="font-medium text-red-800 dark:text-red-200">Area Perbaikan</div>
+                  </div>
+                  <div class="text-sm text-red-700 dark:text-red-300 mb-2">{{ weaknessAnalysis.suggestion }}</div>
+                  <div class="text-xs text-red-600 dark:text-red-400">
+                    Topik: {{ weaknessAnalysis.weakTopics.join(', ') }}
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                  <div class="mt-2 text-base font-medium" :class="{'text-green-600 dark:text-green-400': isLastAnswerCorrect, 'text-red-600 dark:text-red-400': !isLastAnswerCorrect}">
+                    <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
+                    <span v-else class="text-gray-600 dark:text-gray-400">Pilih opsi, lalu kirim atau double-click.</span>
+                  </div>
+                  <div v-if="jawabanSudahDikirim" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
+                    Kunci jawaban: <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
+                  </div>
+                </div>
+
+                <div class="mb-4 flex items-stretch gap-2">
+                  <button
+                    @click="manualNext"
+                    :disabled="!jawabanSudahDikirim || poolEmpty"
+                    class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base transition-transform hover:scale-105"
+                    style="height: 48px;"
+                  >
+                    <span v-if="countdownActive">
+                      Next (otomatis dalam {{ countdown }}s)
+                    </span>
+                    <span v-else>
+                      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
+                    </span>
+                  </button>
+
+                  <button
+                    v-if="countdownActive"
+                    @click.stop="toggleCountdown"
+                    :disabled="countdown <= 0"
+                    class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm transition-transform hover:scale-105"
+                    style="height: 48px;"
+                    title="Jeda / Lanjutkan countdown"
+                  >
+                    <span v-if="isPaused">▶️ Lanjutkan</span>
+                    <span v-else>⏸️ Jeda</span>
+                  </button>
+                </div>
+
+                <div class="mb-4 grid grid-cols-2 gap-2">
+                  <button @click="openAchievementsModal" class="w-full px-3 py-2 bg-yellow-500 text-white rounded-md shadow hover:bg-yellow-600 text-sm transition-transform hover:scale-105">
+                    Pencapaian ({{ unlockedAchievements.length }})
+                  </button>
+                  <button @click="openWrongModal" class="w-full px-3 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 text-sm transition-transform hover:scale-105">
+                    Soal Salah ({{ wrongQuestions.length }})
+                  </button>
+                </div>
+
+                <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div>Dataset: <span class="font-medium text-gray-700 dark:text-gray-300">{{ selectedDataset || '-' }}</span></div>
+                  <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700 dark:text-indigo-400">{{ dataAwal.length }}</span></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- footer controls (mobile-friendly) -->
     <div class="mt-6 flex items-center justify-between gap-3">
-      <div class="text-sm text-gray-500">
-        Progress tersimpan: <span class="font-medium text-green-600">{{ lastSavedTime }}</span>
+      <div class="text-sm text-gray-500 dark:text-gray-400">
+        Progress tersimpan: <span class="font-medium text-green-600 dark:text-green-400">{{ lastSavedTime }}</span>
       </div>
-      <div class="text-sm text-gray-500">Total soal salah: <span class="font-medium text-red-600">{{ wrongQuestions.length }}</span></div>
+      <div class="text-sm text-gray-500 dark:text-gray-400">Total soal salah: <span class="font-medium text-red-600 dark:text-red-400">{{ wrongQuestions.length }}</span></div>
     </div>
 
     <!-- Modal: Soal Salah -->
     <div v-if="showWrongModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-        <div class="p-4 border-b flex items-center justify-between">
-          <h3 class="font-bold text-lg">Daftar Soal Salah ({{ wrongQuestions.length }})</h3>
+      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
+          <h3 class="font-bold text-lg dark:text-white">Daftar Soal Salah ({{ wrongQuestions.length }})</h3>
           <div class="flex items-center gap-2">
-            <button @click="closeWrongModal" class="px-3 py-1 bg-gray-200 rounded-md">Tutup</button>
+            <button @click="exportWrongAsCSV" class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600">Export CSV</button>
+            <button @click="closeWrongModal" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Tutup</button>
           </div>
         </div>
         <div class="p-4 max-h-[60vh] overflow-auto">
           <table class="w-full table-auto text-sm">
             <thead>
-              <tr class="bg-gray-50">
-                <th class="p-3 text-left">#</th>
-                <th class="p-3 text-left">Soal</th>
-                <th class="p-3 text-left">Kunci</th>
+              <tr class="bg-gray-50 dark:bg-gray-700">
+                <th class="p-3 text-left dark:text-white">#</th>
+                <th class="p-3 text-left dark:text-white">Soal</th>
+                <th class="p-3 text-left dark:text-white">Kunci</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(w, i) in wrongQuestions" :key="i" class="border-t">
-                <td class="p-3 align-top w-12">{{ i+1 }}</td>
-                <td class="p-3 align-top" v-html="w.soal"></td>
-                <td class="p-3 align-top">{{ w.kunciText || (w.kunciKey || '').toString().toUpperCase() }}</td>
+              <tr v-for="(w, i) in wrongQuestions" :key="i" class="border-t dark:border-gray-600">
+                <td class="p-3 align-top w-12 dark:text-white">{{ i+1 }}</td>
+                <td class="p-3 align-top dark:text-white" v-html="w.soal"></td>
+                <td class="p-3 align-top dark:text-white">{{ w.kunciText || (w.kunciKey || '').toString().toUpperCase() }}</td>
               </tr>
               <tr v-if="wrongQuestions.length === 0">
-                <td colspan="3" class="p-4 text-center text-gray-500">Belum ada soal salah.</td>
+                <td colspan="3" class="p-4 text-center text-gray-500 dark:text-gray-400">Belum ada soal salah.</td>
               </tr>
             </tbody>
           </table>
@@ -425,31 +690,31 @@
 
     <!-- Modal: Achievements -->
     <div v-if="showAchievementsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-        <div class="p-4 border-b flex items-center justify-between">
-          <h3 class="font-bold text-lg">🏆 Pencapaian</h3>
+      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
+          <h3 class="font-bold text-lg dark:text-white">🏆 Pencapaian</h3>
           <div class="flex items-center gap-2">
-            <button @click="closeAchievementsModal" class="px-3 py-1 bg-gray-200 rounded-md">Tutup</button>
+            <button @click="closeAchievementsModal" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Tutup</button>
           </div>
         </div>
         <div class="p-4 max-h-[60vh] overflow-auto">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div v-for="achievement in allAchievements" :key="achievement.id"
-                 class="p-4 border rounded-lg"
-                 :class="achievement.unlocked ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200' : 'bg-gray-50 border-gray-200'">
+                 class="p-4 border rounded-lg transition-all duration-300 hover:scale-105"
+                 :class="achievement.unlocked ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200 dark:from-green-900 dark:to-blue-900 dark:border-green-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'">
               <div class="flex items-center gap-3">
                 <div class="text-3xl">{{ achievement.emoji }}</div>
                 <div class="flex-1">
-                  <div class="font-bold text-gray-800">{{ achievement.name }}</div>
-                  <div class="text-sm text-gray-600 mt-1">{{ achievement.description }}</div>
-                  <div class="text-xs text-gray-500 mt-2">
-                    <span v-if="achievement.unlocked" class="text-green-600">✅ Terbuka</span>
+                  <div class="font-bold text-gray-800 dark:text-white">{{ achievement.name }}</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ achievement.description }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                    <span v-if="achievement.unlocked" class="text-green-600 dark:text-green-400">✅ Terbuka</span>
                     <span v-else>{{ achievement.progress }}/{{ achievement.requirement }}</span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="text-sm font-bold text-yellow-600">+{{ achievement.points }}</div>
-                  <div class="text-xs text-gray-500">poin</div>
+                  <div class="text-sm font-bold text-yellow-600 dark:text-yellow-400">+{{ achievement.points }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">poin</div>
                 </div>
               </div>
             </div>
@@ -458,82 +723,79 @@
       </div>
     </div>
 
-<!-- Modal: Settings (existing) -->
-<div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-  <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-    <div class="p-4 border-b flex items-center justify-between">
-      <h3 class="font-bold text-lg">Pengaturan Soal</h3>
-      <div class="flex items-center gap-2">
-        <button @click="closeSettings" class="px-3 py-1 bg-gray-200 rounded-md">Batal</button>
+    <!-- Modal: Settings -->
+    <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
+          <h3 class="font-bold text-lg dark:text-white">Pengaturan Soal</h3>
+          <div class="flex items-center gap-2">
+            <button @click="closeSettings" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Batal</button>
+          </div>
+        </div>
+        <div class="p-4 space-y-6">
+          <!-- Input jumlah soal -->
+          <div class="flex items-center gap-4">
+            <div>
+              <label class="block font-medium mb-1 dark:text-white">Jumlah Soal per Batch</label>
+              <input
+                type="number"
+                v-model.number="jumlahSoalDraft"
+                min="1"
+                class="w-32 border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+
+            <div class="flex items-end gap-2">
+              <button
+                :disabled="!canApplyJumlahSoal"
+                @click="applySettings"
+                class="px-3 py-1 rounded-md bg-indigo-600 text-white disabled:opacity-60 hover:bg-indigo-700"
+              >
+                Simpan
+              </button>
+
+              <button
+                @click="applySettings(true)"
+                class="px-3 py-1 rounded-md border bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+                title="Simpan dan pilih batch pertama"
+              >
+                Simpan & Pilih
+              </button>
+            </div>
+          </div>
+
+          <!-- Tombol batch soal -->
+          <div>
+            <label class="block font-medium mb-2 dark:text-white">Pilih Batch:</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="(batch, idx) in batches"
+                :key="idx"
+                @click="pilihBatch(idx)"
+                :class="[
+                  'px-3 py-1 rounded-md text-sm transition-transform hover:scale-105',
+                  idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 dark:text-white'
+                ]"
+              >
+                Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Tombol pilih batch berikutnya -->
+          <div v-if="currentBatchIndex != null" class="pt-2">
+            <button
+              v-if="currentBatchIndex < (batches.length - 1)"
+              @click="applyAndSelectNextBatch"
+              class="px-3 py-1 rounded-md bg-green-500 text-white hover:bg-green-600 transition-transform hover:scale-105"
+            >
+              Pilih Batch Berikutnya
+            </button>
+            <span v-else class="text-sm text-gray-500 dark:text-gray-400">Tidak ada batch berikutnya.</span>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="p-4 space-y-6">
-      <!-- Input jumlah soal -->
-      <div class="flex items-center gap-4">
-        <div>
-          <label class="block font-medium mb-1">Jumlah Soal per Batch</label>
-          <input
-            type="number"
-            v-model.number="jumlahSoalDraft"
-            min="1"
-            class="w-32 border rounded px-2 py-1"
-          />
-        </div>
-
-        <div class="flex items-end gap-2">
-          <!-- Submit / Apply -->
-          <button
-            :disabled="!canApplyJumlahSoal"
-            @click="applySettings"
-            class="px-3 py-1 rounded-md bg-indigo-600 text-white disabled:opacity-60"
-          >
-            Simpan
-          </button>
-
-          <!-- Optional: apply & pilih batch pertama langsung -->
-          <button
-            @click="applySettings(true)"
-            class="px-3 py-1 rounded-md border bg-white"
-            title="Simpan dan pilih batch pertama"
-          >
-            Simpan & Pilih
-          </button>
-        </div>
-      </div>
-
-      <!-- Tombol batch soal (preview) -->
-      <div>
-        <label class="block font-medium mb-2">Pilih Batch:</label>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="(batch, idx) in batches"
-            :key="idx"
-            @click="pilihBatch(idx)"
-            :class="[
-              'px-3 py-1 rounded-md text-sm',
-              idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100'
-            ]"
-          >
-            Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Optional: tombol pilih batch berikutnya (jika ada batch aktif) -->
-      <div v-if="currentBatchIndex != null" class="pt-2">
-        <button
-          v-if="currentBatchIndex < (batches.length - 1)"
-          @click="applyAndSelectNextBatch"
-          class="px-3 py-1 rounded-md bg-green-500 text-white"
-        >
-          Pilih Batch Berikutnya
-        </button>
-        <span v-else class="text-sm text-gray-500">Tidak ada batch berikutnya.</span>
-      </div>
-
-    </div>
-  </div>
-</div>
   </div>
 
 <script>
@@ -702,7 +964,59 @@ new Vue({
       lastSavedTime: 'Belum tersimpan',
       autoSaveInterval: null,
 
-      // Gamification
+      // Enhanced Features
+      darkMode: false,
+      selectedTheme: 'default',
+      
+      // User Avatar & Customization
+      userAvatar: {
+        emoji: '👨‍💼',
+        frame: 'basic',
+        effects: 'none'
+      },
+
+      // Power-ups System
+      powerUps: {
+        doublePoints: 2,
+        timeExtender: 3,
+        skipQuestion: 1,
+        hint: 5
+      },
+
+      powerUpIcons: {
+        doublePoints: '⚡',
+        timeExtender: '⏱️',
+        skipQuestion: '🚀',
+        hint: '💡'
+      },
+
+      powerUpNames: {
+        doublePoints: '2x Poin',
+        timeExtender: '+10s',
+        skipQuestion: 'Skip',
+        hint: 'Petunjuk'
+      },
+
+      // Weakness Analysis
+      weaknessAnalysis: {
+        weakTopics: [],
+        suggestion: "",
+        recommendedQuestions: []
+      },
+
+      // Daily Bonus
+      showDailyBonus: false,
+      dailyBonusAmount: 0,
+      loginStreak: {
+        current: 0,
+        lastLogin: null,
+        rewards: [10, 20, 30, 50, 100, 150, 200]
+      },
+
+      // Enhanced Gamification
+      showLevelUpNotification: false,
+      showStreakFire: false,
+      dailyChallenge: null,
       userStats: {
         points: 0,
         level: 1,
@@ -714,14 +1028,22 @@ new Vue({
         currentStreak: 0,
         perfectSessions: 0,
         nightSessions: 0,
+        earlySessions: 0,
         sessionQuestions: 0,
-        totalPoints: 0
+        totalPoints: 0,
+        fastAnswers: 0,
+        rank: 'Pemula',
+        dailyProgress: 0
       },
-      sessionStats: {
-        questionsAnswered: 0,
-        correctAnswers: 0,
-        pointsEarned: 0
-      },
+      
+      // Session tracking untuk challenge
+      sessionStartTime: null,
+      answersThisSession: 0,
+      correctStreakThisSession: 0,
+      answerTimes: [],
+
+      // Achievement system
+      ACHIEVEMENTS: ACHIEVEMENTS,
       unlockedAchievements: [],
       activeBadges: [],
 
@@ -751,137 +1073,12 @@ new Vue({
       _countdownTimer: null,
       isPaused: false,
 
-        // Enhanced gamification
-    showLevelUpNotification: false,
-    showStreakFire: false,
-    dailyChallenge: null,
-    userStats: {
-      points: 0,
-      level: 1,
-      progress: 0,
-      streak: 0,
-      lastActiveDate: null,
-      totalAnswered: 0,
-      totalCorrect: 0,
-      currentStreak: 0,
-      perfectSessions: 0,
-      nightSessions: 0,
-      earlySessions: 0,
-      sessionQuestions: 0,
-      totalPoints: 0,
-      fastAnswers: 0,
-      rank: 'Pemula',
-      dailyProgress: 0
-    },
-    
-    // Session tracking untuk challenge
-    sessionStartTime: null,
-    answersThisSession: 0,
-    correctStreakThisSession: 0,
- // Pindahkan ACHIEVEMENTS ke dalam data
-      ACHIEVEMENTS: {
-        FIRST_QUESTION: {
-          id: 'first_question',
-          name: 'Pemula',
-          description: 'Jawab soal pertama',
-          emoji: '🎯',
-          points: 20,
-          requirement: 1,
-          type: 'Milenium',
-          check: (stats) => stats.totalAnswered >= 1
-        },
-        STREAK_3: {
-          id: 'streak_3',
-          name: 'Hot Streak',
-          description: '3 jawaban benar berturut-turut',
-          emoji: '🔥',
-          points: 30,
-          requirement: 3,
-          type: 'Kombo',
-          check: (stats) => stats.currentStreak >= 3
-        },
-        STREAK_10: {
-          id: 'streak_10',
-          name: 'Master Combo',
-          description: '10 jawaban benar berturut-turut',
-          emoji: '⚡',
-          points: 100,
-          requirement: 10,
-          type: 'Kombo',
-          check: (stats) => stats.currentStreak >= 10
-        },
-        PERFECT_SESSION: {
-          id: 'perfect_session',
-          name: 'Sempurna',
-          description: 'Selesaikan sesi tanpa salah',
-          emoji: '⭐',
-          points: 80,
-          requirement: 1,
-          type: 'Presisi',
-          check: (stats) => stats.perfectSessions >= 1
-        },
-        NIGHT_OWL: {
-          id: 'night_owl',
-          name: 'Burung Hantu',
-          description: 'Belajar setelah jam 10 malam',
-          emoji: '🦉',
-          points: 25,
-          requirement: 1,
-          type: 'Waktu',
-          check: (stats) => stats.nightSessions >= 1
-        },
-        EARLY_BIRD: {
-          id: 'early_bird',
-          name: 'Early Bird',
-          description: 'Belajar sebelum jam 6 pagi',
-          emoji: '🌅',
-          points: 25,
-          requirement: 1,
-          type: 'Waktu',
-          check: (stats) => stats.earlySessions >= 1
-        },
-        MARATHON: {
-          id: 'marathon',
-          name: 'Maraton',
-          description: '50 soal dalam satu sesi',
-          emoji: '🏃',
-          points: 150,
-          requirement: 50,
-          type: 'Ketahanan',
-          check: (stats) => stats.sessionQuestions >= 50
-        },
-        MASTER: {
-          id: 'master',
-          name: 'Master',
-          description: 'Kumpulkan 1000 poin',
-          emoji: '👑',
-          points: 200,
-          requirement: 1000,
-          type: 'Prestasi',
-          check: (stats) => stats.totalPoints >= 1000
-        },
-        SPEED_DEMON: {
-          id: 'speed_demon',
-          name: 'Speed Demon',
-          description: 'Jawab 10 soal dalam 2 menit',
-          emoji: '💨',
-          points: 60,
-          requirement: 1,
-          type: 'Kecepatan',
-          check: (stats) => stats.fastAnswers >= 1
-        },
-        CONSISTENT: {
-          id: 'consistent',
-          name: 'Konsisten',
-          description: 'Aktif 7 hari berturut-turut',
-          emoji: '📅',
-          points: 120,
-          requirement: 7,
-          type: 'Dedikasi',
-          check: (stats) => stats.streak >= 7
-        }
+      // Session stats
+      sessionStats: {
+        questionsAnswered: 0,
+        correctAnswers: 0,
+        pointsEarned: 0
       }
-    
     };
   },
   computed: {
@@ -940,270 +1137,159 @@ new Vue({
         unlocked: this.unlockedAchievements.includes(achievement.id),
         progress: this.getAchievementProgress(achievement)
       }));
+    },
+
+    accuracyRate() {
+      if (this.userStats.totalAnswered === 0) return 0;
+      return Math.round((this.userStats.totalCorrect / this.userStats.totalAnswered) * 100);
+    },
+
+    averageTime() {
+      if (this.answerTimes.length === 0) return 0;
+      const avg = this.answerTimes.reduce((a, b) => a + b, 0) / this.answerTimes.length;
+      return Math.round(avg * 10) / 10;
     }
   },
   methods: {
-      updateStatsAfterAnswer(isCorrect, answerTime) {
-    this.sessionStats.questionsAnswered++;
-    this.answersThisSession++;
-    
-    if (isCorrect) {
-      this.sessionStats.correctAnswers++;
-      this.userStats.currentStreak++;
-      this.correctStreakThisSession++;
-      
-      // Show streak fire animation for every 3 correct answers
-      if (this.userStats.currentStreak % 3 === 0) {
-        this.showStreakAnimation();
-      }
-    } else {
-      this.userStats.currentStreak = 0;
-      this.correctStreakThisSession = 0;
-    }
-
-    // Calculate points with bonuses
-    const basePoints = isCorrect ? 10 : 2;
-    const streakBonus = Math.floor(this.userStats.currentStreak / 3) * 5;
-    const speedBonus = answerTime < 10 ? 5 : 0; // Bonus untuk jawaban cepat
-    const pointsEarned = basePoints + streakBonus + speedBonus;
-    
-    this.userStats.points += pointsEarned;
-    this.userStats.totalPoints += pointsEarned;
-    this.sessionStats.pointsEarned += pointsEarned;
-
-    // Track fast answers for achievement
-    if (answerTime < 5) {
-      this.userStats.fastAnswers++;
-    }
-
-    this.updateLevelAndProgress();
-    this.checkAchievements();
-    this.updateDailyChallenge();
-    this.updateActiveBadges();
-    this.updateRank();
-    this.saveUserData();
-  },
-
-  showStreakAnimation() {
-    this.showStreakFire = true;
-    setTimeout(() => {
-      this.showStreakFire = false;
-    }, 1500);
-  },
-
-  updateLevelAndProgress() {
-    const pointsForNextLevel = this.userStats.level * 100;
-    if (this.userStats.points >= pointsForNextLevel) {
-      this.userStats.level++;
-      this.showLevelUpNotification = true;
-      setTimeout(() => {
-        this.showLevelUpNotification = false;
-      }, 3000);
-    }
-    this.userStats.progress = (this.userStats.points % 100) / 100 * 100;
-  },
-
-  updateRank() {
-    const ranks = {
-      0: 'Pemula',
-      500: 'Pelajar',
-      1000: 'Ahli',
-      2000: 'Master',
-      5000: 'Legenda'
-    };
-    
-    const points = this.userStats.totalPoints;
-    let userRank = 'Pemula';
-    
-    for (const [threshold, rank] of Object.entries(ranks)) {
-      if (points >= parseInt(threshold)) {
-        userRank = rank;
-      }
-    }
-    
-    this.userStats.rank = userRank;
-  },
-
-  updateDailyChallenge() {
-    if (!this.dailyChallenge) {
-      this.initializeDailyChallenge();
-      return;
-    }
-    
-    // Update progress based on challenge type
-    switch(this.dailyChallenge.id) {
-      case 'answer_10':
-        this.dailyChallenge.progress = this.answersThisSession;
-        break;
-      case 'perfect_5':
-        this.dailyChallenge.progress = Math.max(this.dailyChallenge.progress, this.correctStreakThisSession);
-        break;
-      case 'streak_3_days':
-        this.dailyChallenge.progress = this.userStats.streak;
-        break;
-    }
-    
-    // Check if challenge completed
-    if (this.dailyChallenge.progress >= this.dailyChallenge.requirement) {
-      this.completeDailyChallenge();
-    }
-  },
-
-  initializeDailyChallenge() {
-    const challenges = Object.values(DAILY_CHALLENGES);
-    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
-    this.dailyChallenge = {
-      ...randomChallenge,
-      progress: 0
-    };
-  },
-
-  completeDailyChallenge() {
-    this.userStats.points += this.dailyChallenge.reward;
-    this.userStats.totalPoints += this.dailyChallenge.reward;
-    
-    this.showAchievement({
-      title: 'Tantangan Selesai!',
-      message: this.dailyChallenge.description,
-      points: this.dailyChallenge.reward,
-      emoji: '🏆',
-      type: 'Tantangan Harian'
-    });
-    
-    this.dailyChallenge = null;
-    setTimeout(() => {
-      this.initializeDailyChallenge();
-    }, 5000);
-  },
-
-  // Enhanced achievement notification
-  showAchievement(notification) {
-    this.achievementNotification = notification;
-    this.showAchievementNotification = true;
-    
-    setTimeout(() => {
-      this.showAchievementNotification = false;
-    }, 4000);
-  },
-    rebuildBatchesFromDraft() {
-    this.batches = [];
-    const chunkSize = (this.jumlahSoalDraft && this.jumlahSoalDraft > 0) ? Math.floor(this.jumlahSoalDraft) : 15;
-    if (!Array.isArray(this.dataAwal) || this.dataAwal.length === 0) return;
-    for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
-      this.batches.push(this.dataAwal.slice(i, i + chunkSize));
-    }
-  },
-
-  applySettings(autoSelectFirst = false) {
-    if (!this.canApplyJumlahSoal()) {
-      alert('Masukkan jumlah soal valid (>=1).');
-      return;
-    }
-    this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
-    this.rebuildBatches();
-    if (autoSelectFirst) {
-      if (this.batches && this.batches.length) {
-        this.pilihBatch(0);
-      } else {
-        this.showSettings = true;
-      }
-    } else {
-      this.showSettings = false;
-    }
-  },
-
-  applyAndSelectNextBatch() {
-    if (!this.canApplyJumlahSoal()) {
-      alert('Masukkan jumlah soal valid (>=1).');
-      return;
-    }
-    this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
-    this.rebuildBatches();
-    if (this.currentBatchIndex == null) {
-      if (this.batches && this.batches.length) this.pilihBatch(0);
-    } else if (this.currentBatchIndex < (this.batches.length - 1)) {
-      this.pilihBatch(this.currentBatchIndex + 1);
-    } else {
-      alert('Tidak ada batch berikutnya.');
-      this.showSettings = true;
-    }
-  },
-
-  pilihBatch(index) {
-    if (!this.batches || !this.batches[index]) return;
-    this.currentBatchIndex = index;
-    this.currentQuestions = this.batches[index].slice();
-    this.tampilIndex = 0;
-    this.currentIndex = 0;
-    this.jawabanTerpilih = null;
-    this.jawabanSudahDikirim = false;
-    this.submittedSoal = null;
-    this.stopCountdown();
-    this.showSettings = false;
-  },
-
-    // ==================== AUTO-SAVE SYSTEM ====================
-    initializeAutoSave() {
-      // Load saved data
-      this.loadUserData();
-      
-      // Setup auto-save every 30 seconds
-      this.autoSaveInterval = setInterval(() => {
-        this.saveUserData();
-      }, 30000);
-
-      // Also save when user leaves the page
-      window.addEventListener('beforeunload', this.saveUserData);
+    // ==================== ENHANCED FEATURES ====================
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      localStorage.setItem('pmk_quiz_darkMode', this.darkMode);
     },
 
-    saveUserData() {
-      const saveData = {
-        userStats: this.userStats,
-        unlockedAchievements: this.unlockedAchievements,
-        sessionStats: this.sessionStats,
-        wrongQuestions: this.wrongQuestions,
-        lastSaved: Date.now()
-      };
-
-      try {
-        localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
-        this.lastSavedTime = new Date().toLocaleTimeString();
-        console.log('Progress tersimpan:', this.lastSavedTime);
-      } catch (error) {
-        console.error('Gagal menyimpan data:', error);
+    changeTheme() {
+      document.body.className = document.body.className.replace(/theme-\w+/g, '');
+      if (this.selectedTheme !== 'default') {
+        document.body.classList.add(`theme-${this.selectedTheme}`);
       }
+      localStorage.setItem('pmk_quiz_theme', this.selectedTheme);
     },
 
-    loadUserData() {
-      try {
-        const saved = localStorage.getItem('pmk_quiz_user_data');
-        if (saved) {
-          const data = JSON.parse(saved);
-          
-          // Check if data is from today for streak calculation
-          const today = new Date().toDateString();
-          const lastActive = data.userStats.lastActiveDate;
-          
-          if (lastActive === today) {
-            this.userStats = { ...this.userStats, ...data.userStats };
-          } else if (lastActive && this.isYesterday(lastActive)) {
-            // Continue streak if last active was yesterday
-            this.userStats.streak = data.userStats.streak + 1;
-          } else {
-            // Reset streak if broken
-            this.userStats.streak = 1;
-          }
-          
-          this.unlockedAchievements = data.unlockedAchievements || [];
-          this.wrongQuestions = data.wrongQuestions || [];
-          this.updateActiveBadges();
-          
-          this.userStats.lastActiveDate = today;
-          console.log('Data pengguna dimuat');
+    usePowerUp(powerUpType) {
+      if (this.powerUps[powerUpType] > 0) {
+        this.powerUps[powerUpType]--;
+        
+        switch(powerUpType) {
+          case 'doublePoints':
+            this.activateDoublePoints();
+            break;
+          case 'timeExtender':
+            this.extendTime();
+            break;
+          case 'skipQuestion':
+            this.skipQuestion();
+            break;
+          case 'hint':
+            this.showHint();
+            break;
         }
-      } catch (error) {
-        console.error('Gagal memuat data:', error);
+        
+        this.saveUserData();
       }
+    },
+
+    activateDoublePoints() {
+      this.showAchievement({
+        title: 'Double Points Activated!',
+        message: 'Poin 2x untuk jawaban berikutnya',
+        points: 0,
+        emoji: '⚡',
+        type: 'Power-up'
+      });
+      // Implement double points logic
+    },
+
+    extendTime() {
+      this.countdown += 10;
+      this.showAchievement({
+        title: 'Time Extended!',
+        message: '+10 detik ditambahkan',
+        points: 0,
+        emoji: '⏱️',
+        type: 'Power-up'
+      });
+    },
+
+    skipQuestion() {
+      this.showAchievement({
+        title: 'Question Skipped!',
+        message: 'Soal dilewati',
+        points: 0,
+        emoji: '🚀',
+        type: 'Power-up'
+      });
+      this.nextQuestion();
+    },
+
+    showHint() {
+      // Implement hint system
+      const correctOption = this.displayOptions.find(opt => 
+        opt.key.toLowerCase() === this.displaySoal.kunciKey.toLowerCase()
+      );
+      
+      if (correctOption) {
+        this.showAchievement({
+          title: 'Hint Activated!',
+          message: `Jawaban benar ada di opsi ${correctOption.key.toUpperCase()}`,
+          points: 0,
+          emoji: '💡',
+          type: 'Power-up'
+        });
+      }
+    },
+
+    analyzeWeaknesses() {
+      // Simple weakness analysis based on wrong answers
+      const wrongTopics = this.wrongQuestions.reduce((topics, question) => {
+        const topic = question.sumber || 'Umum';
+        if (!topics[topic]) topics[topic] = 0;
+        topics[topic]++;
+        return topics;
+      }, {});
+
+      const weakTopics = Object.entries(wrongTopics)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([topic]) => topic);
+
+      this.weaknessAnalysis.weakTopics = weakTopics;
+      this.weaknessAnalysis.suggestion = weakTopics.length > 0 
+        ? `Fokus pada: ${weakTopics.join(', ')}`
+        : "Pertahankan performa bagus!";
+    },
+
+    checkDailyBonus() {
+      const today = new Date().toDateString();
+      const lastLogin = this.loginStreak.lastLogin;
+
+      if (lastLogin === today) return; // Already claimed today
+
+      if (!lastLogin || this.isYesterday(lastLogin)) {
+        // Continue streak
+        this.loginStreak.current++;
+      } else if (lastLogin !== today) {
+        // Reset streak
+        this.loginStreak.current = 1;
+      }
+
+      this.loginStreak.lastLogin = today;
+      this.dailyBonusAmount = this.loginStreak.rewards[this.loginStreak.current - 1] || 50;
+      this.showDailyBonus = true;
+    },
+
+    claimDailyBonus() {
+      this.userStats.points += this.dailyBonusAmount;
+      this.userStats.totalPoints += this.dailyBonusAmount;
+      this.showDailyBonus = false;
+      this.saveUserData();
+
+      this.showAchievement({
+        title: 'Bonus Harian Diklaim!',
+        message: `+${this.dailyBonusAmount} poin`,
+        points: this.dailyBonusAmount,
+        emoji: '🎁',
+        type: 'Bonus'
+      });
     },
 
     isYesterday(dateString) {
@@ -1212,130 +1298,193 @@ new Vue({
       return dateString === yesterday.toDateString();
     },
 
-    // ==================== GAMIFICATION SYSTEM ====================
-    updateStatsAfterAnswer(isCorrect) {
-      // Update session stats
+    // ==================== GAMIFICATION ENHANCEMENTS ====================
+    updateStatsAfterAnswer(isCorrect, answerTime = 0) {
+      const now = Date.now();
+      
       this.sessionStats.questionsAnswered++;
+      this.answersThisSession++;
+      this.answerTimes.push(answerTime);
+      
       if (isCorrect) {
         this.sessionStats.correctAnswers++;
         this.userStats.currentStreak++;
+        this.correctStreakThisSession++;
+        
+        // Show streak fire animation for every 3 correct answers
+        if (this.userStats.currentStreak % 3 === 0) {
+          this.showStreakAnimation();
+        }
       } else {
         this.userStats.currentStreak = 0;
+        this.correctStreakThisSession = 0;
       }
 
-      // Update lifetime stats
-      this.userStats.totalAnswered++;
-      if (isCorrect) this.userStats.totalCorrect++;
-
-      // Calculate points
+      // Calculate points with bonuses
       const basePoints = isCorrect ? 10 : 2;
       const streakBonus = Math.floor(this.userStats.currentStreak / 3) * 5;
-      const pointsEarned = basePoints + streakBonus;
+      const speedBonus = answerTime < 10 ? 5 : 0;
+      const pointsEarned = basePoints + streakBonus + speedBonus;
       
       this.userStats.points += pointsEarned;
       this.userStats.totalPoints += pointsEarned;
       this.sessionStats.pointsEarned += pointsEarned;
 
-      // Update level and progress
+      // Track fast answers for achievement
+      if (answerTime < 5) {
+        this.userStats.fastAnswers++;
+      }
+
       this.updateLevelAndProgress();
-
-      // Check for achievements
       this.checkAchievements();
-
-      // Update active badges
+      this.updateDailyChallenge();
       this.updateActiveBadges();
-
-      // Save progress
+      this.updateRank();
+      this.analyzeWeaknesses();
       this.saveUserData();
+    },
+
+    showStreakAnimation() {
+      this.showStreakFire = true;
+      setTimeout(() => {
+        this.showStreakFire = false;
+      }, 1500);
     },
 
     updateLevelAndProgress() {
       const pointsForNextLevel = this.userStats.level * 100;
       if (this.userStats.points >= pointsForNextLevel) {
         this.userStats.level++;
-        this.showAchievement({
-          message: `Level Up! Sekarang Level ${this.userStats.level}`,
-          points: 0
-        });
+        this.userStats.points = this.userStats.points - pointsForNextLevel;
+        this.showLevelUpNotification = true;
+        setTimeout(() => {
+          this.showLevelUpNotification = false;
+        }, 3000);
       }
-      this.userStats.progress = (this.userStats.points % 100) / 100 * 100;
+      this.userStats.progress = (this.userStats.points % 100);
     },
 
-    checkAchievements() {
-      const stats = {
-        totalAnswered: this.userStats.totalAnswered,
-        currentStreak: this.userStats.currentStreak,
-        perfectSessions: this.userStats.perfectSessions,
-        nightSessions: this.userStats.nightSessions,
-        sessionQuestions: this.sessionStats.questionsAnswered,
-        totalPoints: this.userStats.totalPoints
+    updateRank() {
+      const ranks = {
+        0: 'Pemula',
+        500: 'Pelajar',
+        1000: 'Ahli',
+        2000: 'Master',
+        5000: 'Legenda'
       };
-
-      Object.values(ACHIEVEMENTS).forEach(achievement => {
-        if (!this.unlockedAchievements.includes(achievement.id) && achievement.check(stats)) {
-          this.unlockAchievement(achievement);
+      
+      const points = this.userStats.totalPoints;
+      let userRank = 'Pemula';
+      
+      for (const [threshold, rank] of Object.entries(ranks)) {
+        if (points >= parseInt(threshold)) {
+          userRank = rank;
         }
-      });
+      }
+      
+      this.userStats.rank = userRank;
     },
 
-    unlockAchievement(achievement) {
-      this.unlockedAchievements.push(achievement.id);
-      this.userStats.points += achievement.points;
-      this.userStats.totalPoints += achievement.points;
+    updateDailyChallenge() {
+      if (!this.dailyChallenge) {
+        this.initializeDailyChallenge();
+        return;
+      }
+      
+      // Update progress based on challenge type
+      switch(this.dailyChallenge.id) {
+        case 'answer_10':
+          this.dailyChallenge.progress = this.answersThisSession;
+          break;
+        case 'perfect_5':
+          this.dailyChallenge.progress = Math.max(this.dailyChallenge.progress, this.correctStreakThisSession);
+          break;
+        case 'streak_3_days':
+          this.dailyChallenge.progress = this.userStats.streak;
+          break;
+      }
+      
+      // Check if challenge completed
+      if (this.dailyChallenge.progress >= this.dailyChallenge.requirement) {
+        this.completeDailyChallenge();
+      }
+    },
+
+    initializeDailyChallenge() {
+      const challenges = Object.values(DAILY_CHALLENGES);
+      const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+      this.dailyChallenge = {
+        ...randomChallenge,
+        progress: 0
+      };
+    },
+
+    completeDailyChallenge() {
+      this.userStats.points += this.dailyChallenge.reward;
+      this.userStats.totalPoints += this.dailyChallenge.reward;
       
       this.showAchievement({
-        message: achievement.name,
-        points: achievement.points
+        title: 'Tantangan Selesai!',
+        message: this.dailyChallenge.description,
+        points: this.dailyChallenge.reward,
+        emoji: '🏆',
+        type: 'Tantangan Harian'
       });
-
-      this.updateActiveBadges();
-      this.saveUserData();
+      
+      this.dailyChallenge = null;
+      setTimeout(() => {
+        this.initializeDailyChallenge();
+      }, 5000);
     },
 
+    // Enhanced achievement notification
     showAchievement(notification) {
       this.achievementNotification = notification;
       this.showAchievementNotification = true;
       
+      // Play sound if available
+      this.playSound('achievement');
+      
       setTimeout(() => {
         this.showAchievementNotification = false;
-      }, 5000);
+      }, 4000);
     },
 
-    updateActiveBadges() {
-      this.activeBadges = this.unlockedAchievements
-        .map(id => Object.values(ACHIEVEMENTS).find(a => a.id === id))
-        .filter(Boolean)
-        .slice(0, 3); // Show only 3 most recent badges
-    },
-
-    getAchievementProgress(achievement) {
-      const stats = {
-        totalAnswered: this.userStats.totalAnswered,
-        currentStreak: this.userStats.currentStreak,
-        perfectSessions: this.userStats.perfectSessions,
-        nightSessions: this.userStats.nightSessions,
-        sessionQuestions: this.sessionStats.questionsAnswered,
-        totalPoints: this.userStats.totalPoints
-      };
-
-      switch(achievement.id) {
-        case 'first_question': return Math.min(stats.totalAnswered, 1);
-        case 'streak_3': return Math.min(stats.currentStreak, 3);
-        case 'marathon': return Math.min(stats.sessionQuestions, 50);
-        case 'master': return Math.min(stats.totalPoints, 1000);
-        default: return achievement.requirement;
+    playSound(soundType) {
+      // Simple sound implementation using Web Audio API
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        switch(soundType) {
+          case 'achievement':
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+            break;
+          case 'correct':
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            break;
+          case 'wrong':
+            oscillator.frequency.setValueAtTime(349.23, audioContext.currentTime); // F4
+            break;
+        }
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      } catch (e) {
+        console.log('Audio not supported');
       }
     },
 
-    openAchievementsModal() {
-      this.showAchievementsModal = true;
-    },
-
-    closeAchievementsModal() {
-      this.showAchievementsModal = false;
-    },
-
-    // ==================== EXISTING METHODS (with gamification integration) ====================
+    // ==================== EXISTING METHODS ====================
     scrollToTop() {
       if (window.innerWidth < 768) {
         const targetElement = this.$refs.soalContainer;
@@ -1636,13 +1785,14 @@ new Vue({
     submitAnswer() {
       if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
 
+      const startTime = this.sessionStartTime ? Date.now() - this.sessionStartTime : 0;
       const soal = this.currentQuestions[this.currentIndex];
       if (!soal) return;
 
       const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
 
       // Update gamification stats
-      this.updateStatsAfterAnswer(isCorrect);
+      this.updateStatsAfterAnswer(isCorrect, startTime);
 
       this.riwayatJawaban.push({
         id: soal.id,
@@ -1718,6 +1868,7 @@ new Vue({
         this.jawabanSudahDikirim = false;
         this.submittedSoal = null;
         this.stopCountdown();
+        this.sessionStartTime = Date.now();
 
         this.$nextTick(() => {
           this.scrollToTop();
@@ -1779,22 +1930,186 @@ new Vue({
     getOptionClasses(key) {
       const classes = [];
       const soal = this._getCurrentSoal();
-      if (!soal) return 'bg-white border-gray-200 text-gray-700';
+      if (!soal) return 'bg-white border-gray-200 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
       if (this.jawabanSudahDikirim) {
         const isCorrect = String(key).toLowerCase() === String(soal.kunciKey).toLowerCase();
         const isSelected = String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase();
-        if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold');
-        else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold');
-        else classes.push('bg-gray-100 border-gray-300 text-gray-500');
+        if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold dark:bg-green-800 dark:border-green-400 dark:text-green-100');
+        else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold dark:bg-red-800 dark:border-red-400 dark:text-red-100');
+        else classes.push('bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-400');
       } else {
-        if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md');
-        else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50');
+        if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md dark:bg-indigo-800 dark:border-indigo-400 dark:text-indigo-100');
+        else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600');
       }
       return classes.join(' ');
     },
 
     openWrongModal() { this.showWrongModal = true; },
     closeWrongModal() { this.showWrongModal = false; },
+
+    openAchievementsModal() { this.showAchievementsModal = true; },
+    closeAchievementsModal() { this.showAchievementsModal = false; },
+
+    // ==================== ACHIEVEMENT SYSTEM ====================
+    checkAchievements() {
+      const stats = {
+        totalAnswered: this.userStats.totalAnswered,
+        currentStreak: this.userStats.currentStreak,
+        perfectSessions: this.userStats.perfectSessions,
+        nightSessions: this.userStats.nightSessions,
+        earlySessions: this.userStats.earlySessions,
+        sessionQuestions: this.sessionStats.questionsAnswered,
+        totalPoints: this.userStats.totalPoints,
+        streak: this.userStats.streak,
+        fastAnswers: this.userStats.fastAnswers
+      };
+
+      Object.values(ACHIEVEMENTS).forEach(achievement => {
+        if (!this.unlockedAchievements.includes(achievement.id) && achievement.check(stats)) {
+          this.unlockAchievement(achievement);
+        }
+      });
+    },
+
+    unlockAchievement(achievement) {
+      this.unlockedAchievements.push(achievement.id);
+      this.userStats.points += achievement.points;
+      this.userStats.totalPoints += achievement.points;
+      
+      this.showAchievement({
+        title: achievement.name,
+        message: achievement.description,
+        points: achievement.points,
+        emoji: achievement.emoji,
+        type: achievement.type
+      });
+
+      this.updateActiveBadges();
+      this.saveUserData();
+    },
+
+    updateActiveBadges() {
+      this.activeBadges = this.unlockedAchievements
+        .map(id => Object.values(ACHIEVEMENTS).find(a => a.id === id))
+        .filter(Boolean)
+        .slice(0, 3);
+    },
+
+    getAchievementProgress(achievement) {
+      const stats = {
+        totalAnswered: this.userStats.totalAnswered,
+        currentStreak: this.userStats.currentStreak,
+        perfectSessions: this.userStats.perfectSessions,
+        nightSessions: this.userStats.nightSessions,
+        earlySessions: this.userStats.earlySessions,
+        sessionQuestions: this.sessionStats.questionsAnswered,
+        totalPoints: this.userStats.totalPoints,
+        streak: this.userStats.streak,
+        fastAnswers: this.userStats.fastAnswers
+      };
+
+      switch(achievement.id) {
+        case 'first_question': return Math.min(stats.totalAnswered, 1);
+        case 'streak_3': return Math.min(stats.currentStreak, 3);
+        case 'streak_10': return Math.min(stats.currentStreak, 10);
+        case 'marathon': return Math.min(stats.sessionQuestions, 50);
+        case 'master': return Math.min(stats.totalPoints, 1000);
+        case 'consistent': return Math.min(stats.streak, 7);
+        case 'speed_demon': return stats.fastAnswers >= 1 ? 1 : 0;
+        default: return achievement.check(stats) ? achievement.requirement : 0;
+      }
+    },
+
+    // ==================== AUTO-SAVE SYSTEM ====================
+    initializeAutoSave() {
+      // Load saved data
+      this.loadUserData();
+      
+      // Setup auto-save every 30 seconds
+      this.autoSaveInterval = setInterval(() => {
+        this.saveUserData();
+      }, 30000);
+
+      // Also save when user leaves the page
+      window.addEventListener('beforeunload', this.saveUserData);
+
+      // Check for daily bonus
+      this.checkDailyBonus();
+
+      // Check for time-based achievements
+      this.checkTimeBasedAchievements();
+    },
+
+    checkTimeBasedAchievements() {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 22 || currentHour <= 4) {
+        this.userStats.nightSessions++;
+      }
+      if (currentHour >= 5 && currentHour <= 7) {
+        this.userStats.earlySessions++;
+      }
+    },
+
+    saveUserData() {
+      const saveData = {
+        userStats: this.userStats,
+        unlockedAchievements: this.unlockedAchievements,
+        sessionStats: this.sessionStats,
+        wrongQuestions: this.wrongQuestions,
+        powerUps: this.powerUps,
+        loginStreak: this.loginStreak,
+        darkMode: this.darkMode,
+        selectedTheme: this.selectedTheme,
+        lastSaved: Date.now()
+      };
+
+      try {
+        localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
+        this.lastSavedTime = new Date().toLocaleTimeString();
+        console.log('Progress tersimpan:', this.lastSavedTime);
+      } catch (error) {
+        console.error('Gagal menyimpan data:', error);
+      }
+    },
+
+    loadUserData() {
+      try {
+        const saved = localStorage.getItem('pmk_quiz_user_data');
+        if (saved) {
+          const data = JSON.parse(saved);
+          
+          // Check if data is from today for streak calculation
+          const today = new Date().toDateString();
+          const lastActive = data.userStats.lastActiveDate;
+          
+          if (lastActive === today) {
+            this.userStats = { ...this.userStats, ...data.userStats };
+          } else if (lastActive && this.isYesterday(lastActive)) {
+            // Continue streak if last active was yesterday
+            this.userStats.streak = data.userStats.streak + 1;
+          } else {
+            // Reset streak if broken
+            this.userStats.streak = 1;
+          }
+          
+          this.unlockedAchievements = data.unlockedAchievements || [];
+          this.wrongQuestions = data.wrongQuestions || [];
+          this.powerUps = data.powerUps || this.powerUps;
+          this.loginStreak = data.loginStreak || this.loginStreak;
+          this.darkMode = data.darkMode || false;
+          this.selectedTheme = data.selectedTheme || 'default';
+          this.changeTheme();
+          
+          this.updateActiveBadges();
+          this.analyzeWeaknesses();
+          
+          this.userStats.lastActiveDate = today;
+          console.log('Data pengguna dimuat');
+        }
+      } catch (error) {
+        console.error('Gagal memuat data:', error);
+      }
+    },
 
     exportWrongAsCSV() {
       if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
@@ -1814,7 +2129,7 @@ new Vue({
     }
   },
   mounted() {
-    // Initialize auto-save and gamification
+    // Initialize all enhanced features
     this.initializeAutoSave();
 
     // Restore selected dataset
@@ -1823,11 +2138,23 @@ new Vue({
       this.selectedDataset = saved;
     }
 
-    // Check for night owl achievement
-    const currentHour = new Date().getHours();
-    if (currentHour >= 22 || currentHour <= 4) {
-      this.userStats.nightSessions++;
-    }
+    // Initialize session start time
+    this.sessionStartTime = Date.now();
+
+    // Initialize daily challenge
+    this.initializeDailyChallenge();
+
+    // Add micro-interactions to buttons
+    this.$nextTick(() => {
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.target.classList.add('animate-pulse-soft');
+          setTimeout(() => {
+            e.target.classList.remove('animate-pulse-soft');
+          }, 300);
+        });
+      });
+    });
   },
   beforeDestroy() {
     this.stopCountdown();
