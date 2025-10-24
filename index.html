@@ -255,11 +255,15 @@
           <span v-else>☀️</span>
         </button>
 
-        <!-- Dataset Selector -->
-        <select v-model="selectedDataset" class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-          <option value="" disabled>-- pilih dataset --</option>
-          <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
-        </select>
+<input
+  list="datasets"
+  v-model="selectedDataset"
+  placeholder="Ketik atau pilih dataset"
+  class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+/>
+<datalist id="datasets">
+  <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
+</datalist>
 
         <button
           @click="insertThenFetch"
@@ -522,55 +526,74 @@
 
           <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
-            <section class="md:col-span-2">
-              <div class="flex items-center justify-between mb-4">
-                <div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">Soal ke</div>
-                  <div class="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{{ tampilIndex + 1 }} <span class="text-base font-medium text-gray-500 dark:text-gray-400">/ {{ totalPool }}</span></div>
-                </div>
-                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">{{ displaySoal.sumber || selectedDataset || '-' }}</div>
+<section class="md:col-span-2">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <div class="text-sm text-gray-500 dark:text-gray-400">Soal ke</div>
+      <div class="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
+        {{ tampilIndex + 1 }}
+        <span class="text-base font-medium text-gray-500 dark:text-gray-400">/ {{ totalPool }}</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- tombol kontrol ukuran huruf -->
+      <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-2 py-1">
+        <button @click="ubahUkuranHuruf(-1)" class="px-2 text-lg text-gray-700 dark:text-white hover:text-indigo-600">A−</button>
+        <button @click="ubahUkuranHuruf(1)" class="px-2 text-xl font-semibold text-gray-700 dark:text-white hover:text-indigo-600">A+</button>
+      </div>
+      <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
+        {{ displaySoal.sumber || selectedDataset || '-' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- area soal -->
+ <article class="prose prose-sm md:prose lg:prose-lg max-w-none dark:prose-invert">
+  <p class="text-gray-900 dark:text-white font-semibold border-b pb-4 dark:border-gray-600 transition-all duration-200"
+     :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
+     v-html="displaySoal.soal">
+  </p>
+</article>
+
+  <!-- OPSI -->
+  <div class="mt-6 space-y-3">
+    <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
+      <div class="flex items-start gap-3">
+        <button
+          type="button"
+          @click="selectAnswer(opt.key)"
+          @dblclick.prevent="selectAnswer(opt.key, true)"
+          :disabled="jawabanSudahDikirim"
+          class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
+          :class="getOptionClasses(opt.key)"
+        >
+          <div class="flex items-start">
+            <div class="mr-4 flex-shrink-0">
+              <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">
+                {{ optionLabels[index] || opt.key.toUpperCase() }}
               </div>
+            </div>
+            <div class="flex-1 text-left" v-html="opt.text"></div>
+          </div>
+        </button>
 
-              <article class="prose prose-sm md:prose lg:prose-lg max-w-none dark:prose-invert">
-                <p class="text-gray-900 dark:text-white text-lg md:text-xl font-semibold border-b pb-4 dark:border-gray-600" v-html="displaySoal.soal"></p>
-              </article>
+        <button
+          v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
+          @click.stop="submitAnswer"
+          type="button"
+          class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
+          title="Kirim Jawaban"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
 
-              <!-- OPSI -->
-              <div class="mt-6 space-y-3">
-                <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
-                  <div class="flex items-start gap-3">
-                    <button
-                      type="button"
-                      @click="selectAnswer(opt.key)"
-                      @dblclick.prevent="selectAnswer(opt.key, true)"
-                      :disabled="jawabanSudahDikirim"
-                      class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
-                      :class="getOptionClasses(opt.key)"
-                    >
-                      <div class="flex items-start">
-                        <div class="mr-4 flex-shrink-0">
-                          <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">{{ optionLabels[index] || opt.key.toUpperCase() }}</div>
-                        </div>
-                        <div class="flex-1 text-left" v-html="opt.text"></div>
-                      </div>
-                    </button>
-
-                    <button
-                      v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
-                      @click.stop="submitAnswer"
-                      type="button"
-                      class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
-                      title="Kirim Jawaban"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
 
             <!-- RIGHT: Info, Kontrol, Statistik -->
             <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6 dark:border-gray-600" ref="controlsAside">
@@ -937,10 +960,14 @@ const DAILY_CHALLENGES = {
   }
 };
 
+const SOAL_STORAGE_KEY = 'kitab_soal_aktif';
+
 new Vue({
   el: '#app',
   data() {
     return {
+      //  displaySoal: {}, // ✅ penting! harus di sini, bukan di computed
+      
       GAS_BASE: 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec',
       optionLabels: ['A','B','C','D'],
 
@@ -1033,8 +1060,9 @@ new Vue({
         totalPoints: 0,
         fastAnswers: 0,
         rank: 'Pemula',
-        dailyProgress: 0
+        dailyProgress: 0,
       },
+      ukuranHuruf: 20, // default ukuran huruf soal
       
       // Session tracking untuk challenge
       sessionStartTime: null,
@@ -1151,6 +1179,11 @@ new Vue({
     }
   },
   methods: {
+     ubahUkuranHuruf(delta) {
+    const min = 14;
+    const max = 40;
+    this.ukuranHuruf = Math.min(max, Math.max(min, this.ukuranHuruf + delta));
+  },
     // ==================== ENHANCED FEATURES ====================
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
@@ -1639,35 +1672,46 @@ new Vue({
     },
 
     async insertThenFetch() {
-      if (!this.selectedDataset) {
-        alert('Pilih dataset terlebih dahulu.');
-        return;
-      }
-      this.loading = true;
+  if (!this.selectedDataset) {
+    alert('Pilih dataset terlebih dahulu.');
+    return;
+  }
+  this.loading = true;
 
-      localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
+  localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
 
-      const now = this._now();
-      const payload = {
-        no: now.ts,
-        tanggal: now.date,
-        waktu: now.time,
-        noHalaman: this.selectedDataset
-      };
+  const now = this._now();
+  const payload = {
+    no: now.ts,
+    tanggal: now.date,
+    waktu: now.time,
+    noHalaman: this.selectedDataset
+  };
 
-      try {
-        try {
-          await this._doInsert(payload);
-        } catch (e) {
-          console.warn('Insert gagal, lanjut ke loadPage:', e);
-        }
+  try {
+    try {
+      await this._doInsert(payload);
+    } catch (e) {
+      console.warn('Insert gagal, lanjut ke loadPage:', e);
+    }
 
-        await this._sleep(900);
-        await this.loadPage();
-      } finally {
-        this.loading = false;
-      }
-    },
+    await this._sleep(900);
+    await this.loadPage();
+
+    // ✅ Simpan soal yang sudah berhasil dimuat ke Local Storage
+    localStorage.setItem(SOAL_STORAGE_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      dataset: this.selectedDataset,
+      soal: this.displaySoal,
+      pool: this.poolSoal || [], // jika kamu pakai kumpulan soal
+      index: this.tampilIndex || 0
+    }));
+    console.log('✅ Soal berhasil disimpan di localStorage:', SOAL_STORAGE_KEY);
+
+  } finally {
+    this.loading = false;
+  }
+},
 
     async loadPage() {
       this.loading = true;
@@ -2129,33 +2173,50 @@ new Vue({
     }
   },
   mounted() {
-    // Initialize all enhanced features
-    this.initializeAutoSave();
+  // 1️⃣ Inisialisasi fitur auto-save
+  this.initializeAutoSave();
 
-    // Restore selected dataset
-    const saved = localStorage.getItem('kitab_selectedDataset');
-    if (saved) {
-      this.selectedDataset = saved;
-    }
+  // 2️⃣ Pulihkan dataset terakhir yang dipilih
+  const savedDataset = localStorage.getItem('kitab_selectedDataset');
+  if (savedDataset) {
+    this.selectedDataset = savedDataset;
+  }
 
-    // Initialize session start time
-    this.sessionStartTime = Date.now();
+  // 3️⃣ Mulai sesi baru
+  this.sessionStartTime = Date.now();
 
-    // Initialize daily challenge
-    this.initializeDailyChallenge();
+  // 4️⃣ Inisialisasi tantangan harian
+  this.initializeDailyChallenge();
 
-    // Add micro-interactions to buttons
-    this.$nextTick(() => {
-      document.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.target.classList.add('animate-pulse-soft');
-          setTimeout(() => {
-            e.target.classList.remove('animate-pulse-soft');
-          }, 300);
-        });
+  // 5️⃣ Tambahkan efek klik pada tombol (micro interaction)
+  this.$nextTick(() => {
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.target.classList.add('animate-pulse-soft');
+        setTimeout(() => {
+          e.target.classList.remove('animate-pulse-soft');
+        }, 300);
       });
     });
-  },
+  });
+
+  // 6️⃣ Pulihkan soal terakhir dari Local Storage (jika ada)
+  const savedSoal = localStorage.getItem(SOAL_STORAGE_KEY);
+  if (savedSoal) {
+    try {
+      const parsed = JSON.parse(savedSoal);
+      this.selectedDataset = parsed.dataset || this.selectedDataset;
+      this.displaySoal = parsed.soal || {};
+      this.poolSoal = parsed.pool || [];
+      this.tampilIndex = parsed.index || 0;
+      console.log('♻️ Soal terakhir berhasil dipulihkan dari localStorage.');
+    } catch (e) {
+      console.warn('⚠️ Gagal memulihkan soal dari localStorage:', e);
+      localStorage.removeItem(SOAL_STORAGE_KEY);
+    }
+  }
+},
+
   beforeDestroy() {
     this.stopCountdown();
     if (this.autoSaveInterval) {
