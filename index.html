@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kuis PMK — Review Jawaban 10s + Soal Salah</title>
+  <title>Kuis — Review Jawaban 10s + Soal Salah</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
   <style>
@@ -554,8 +554,9 @@
      v-html="displaySoal.soal">
   </p>
 </article>
-
+<!-- {{displaySoal}} <br><br> -->
   <!-- OPSI -->
+   <!-- {{dataAwal}} -->
   <div class="mt-6 space-y-3">
     <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
       <div class="flex items-start gap-3">
@@ -616,9 +617,16 @@
                     <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
                     <span v-else class="text-gray-600 dark:text-gray-400">Pilih opsi, lalu kirim atau double-click.</span>
                   </div>
-                  <div v-if="jawabanSudahDikirim" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
-                    Kunci jawaban: <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
-                  </div>
+       <div v-if="jawabanSudahDikirim" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
+    Kunci jawaban: <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
+
+    <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
+        <strong class="text-indigo-600 dark:text-indigo-400">
+            <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
+        </strong>
+        <p class="mt-1" v-html="displaySoal.penjelasan"></p>
+    </div>
+</div>
                 </div>
 
                 <div class="mb-4 flex items-stretch gap-2">
@@ -1749,6 +1757,7 @@ new Vue({
             id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
             no: r.no ?? null,
             soal: r.soal ?? r.question ?? '',
+            penjelasan: r.penjelasan ?? r.keterangan ?? '', // Asumsi kolom penjelasan bernama 'penjelasan' atau 'keterangan'
             kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
             shuffledOptions,
             sumber: r.sumber ?? '',
