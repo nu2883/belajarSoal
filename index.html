@@ -557,42 +557,46 @@
 <!-- {{displaySoal}} <br><br> -->
   <!-- OPSI -->
    <!-- {{dataAwal}} -->
-  <div class="mt-6 space-y-3">
-    <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
-      <div class="flex items-start gap-3">
-        <button
-          type="button"
-          @click="selectAnswer(opt.key)"
-          @dblclick.prevent="selectAnswer(opt.key, true)"
-          :disabled="jawabanSudahDikirim"
-          class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
-          :class="getOptionClasses(opt.key)"
-        >
-          <div class="flex items-start">
-            <div class="mr-4 flex-shrink-0">
-              <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">
-                {{ optionLabels[index] || opt.key.toUpperCase() }}
-              </div>
-            </div>
-            <div class="flex-1 text-left" v-html="opt.text"></div>
-          </div>
-        </button>
+<div class="mt-6 space-y-3">
+   <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
+     <div class="flex items-start gap-3">
+       <button
+         type="button"
+         @click="selectAnswer(opt.key)"
+         @dblclick.prevent="selectAnswer(opt.key, true)"
+         :disabled="jawabanSudahDikirim"
+         class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
+         :class="getOptionClasses(opt.key)"
+       >
+         <div class="flex items-start">
+           <div class="mr-4 flex-shrink-0">
+             <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">
+               {{ optionLabels[index] || opt.key.toUpperCase() }}
+             </div>
+           </div>
+           <div 
+             class="flex-1 text-left" 
+             v-html="opt.text"
+             :style="{ fontSize: ukuranHuruf + 'px' }" 
+           ></div>
+         </div>
+       </button>
 
-        <button
-          v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
-          @click.stop="submitAnswer"
-          type="button"
-          class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
-          title="Kirim Jawaban"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
+       <button
+         v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
+         @click.stop="submitAnswer"
+         type="button"
+         class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
+         title="Kirim Jawaban"
+       >
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+         </svg>
+       </button>
+     </div>
+   </div>
+ </div>
 </section>
 
 
