@@ -658,7 +658,7 @@
                       Next {{ countdown }} s
                     </span>
                     <span v-else>
-                      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
+                      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (tekan spasi)' }}
                     </span>
                   </button>
 
@@ -671,7 +671,8 @@
                     title="Jeda / Lanjutkan countdown"
                   >
                     <span v-if="isPaused">▶️ Lanjutkan</span>
-                    <span v-else>⏸️ Jeda</span>
+                    <span v-else>⏸️ Jeda (tekan spasi)</span>
+                    
                   </button>
                 </div>
 
@@ -1205,6 +1206,20 @@ new Vue({
     }
   },
   methods: {
+       handleSpaceKey(e) {
+    if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+
+      // ✅ Jika countdown masih aktif, jeda / lanjutkan
+      if (this.countdownActive) {
+        this.toggleCountdown();
+      } 
+      // ✅ Jika countdown sudah habis atau soal sudah dijawab, lanjut soal berikutnya
+      else if (this.jawabanSudahDikirim && !this.poolEmpty) {
+        this.manualNext();
+      }
+    }
+  },
      saveSoalToLocal() {
     localStorage.setItem(SOAL_STORAGE_KEY, JSON.stringify({
       timestamp: Date.now(),
@@ -2237,6 +2252,8 @@ saveUserData() {
     }
   },
 mounted() {
+   // Tangkap spasi untuk jeda/lanjutkan
+  window.addEventListener('keydown', this.handleSpaceKey);
   // 🕒 1️⃣ Inisialisasi auto-save (menyimpan progress setiap beberapa detik)
   this.initializeAutoSave();
 
@@ -2311,6 +2328,7 @@ mounted() {
 }
 ,
 beforeDestroy() {
+   window.removeEventListener('keydown', this.handleSpaceKey);
   // 1️⃣ Hentikan semua interval agar tidak jalan di background
   this.stopCountdown();
   if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
