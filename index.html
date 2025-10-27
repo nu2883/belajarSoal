@@ -473,8 +473,8 @@
           </div>
           <div class="flex gap-3 overflow-x-auto pb-2">
             <div v-for="badge in activeBadges" :key="badge.id" 
-                 class="flex-shrink-0 text-center group relative">
-              <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200 animate-bounce-gentle">
+                 class="flex-shrink-0 text-center group relative mt-1">
+              <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200 animate-bounce-gentle mt-2">
                 {{ badge.emoji }}
               </div>
               <div class="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">{{ badge.name }}</div>
@@ -527,25 +527,30 @@
           <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
 <section class="md:col-span-2">
-  <div class="flex items-center justify-between mb-4">
-    <div>
-      <div class="text-sm text-gray-500 dark:text-gray-400">Soal ke</div>
-      <div class="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
-        {{ tampilIndex + 1 }}
-        <span class="text-base font-medium text-gray-500 dark:text-gray-400">/ {{ totalPool }}</span>
-      </div>
+<div class="flex items-center justify-between mb-4 h-12">
+  <!-- Soal tersisa dengan gaya tombol -->
+  <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-3 py-1 h-full">
+    <span class="text-sm text-gray-500 dark:text-gray-400 mr-2">Soal tersisa:</span>
+    <span class="font-semibold text-indigo-700 dark:text-indigo-400 text-lg">
+      {{ currentQuestions.length }}
+    </span>
+  </div>
+
+  <!-- Kontrol & Sumber -->
+  <div class="flex items-center gap-3 h-full">
+    <!-- tombol kontrol ukuran huruf -->
+    <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-2 py-1 h-full">
+      <button @click="ubahUkuranHuruf(-1)" class="px-2 text-lg text-gray-700 dark:text-white hover:text-indigo-600">A−</button>
+      <button @click="ubahUkuranHuruf(1)" class="px-2 text-xl font-semibold text-gray-700 dark:text-white hover:text-indigo-600">A+</button>
     </div>
-    <div class="flex items-center gap-3">
-      <!-- tombol kontrol ukuran huruf -->
-      <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-2 py-1">
-        <button @click="ubahUkuranHuruf(-1)" class="px-2 text-lg text-gray-700 dark:text-white hover:text-indigo-600">A−</button>
-        <button @click="ubahUkuranHuruf(1)" class="px-2 text-xl font-semibold text-gray-700 dark:text-white hover:text-indigo-600">A+</button>
-      </div>
-      <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
-        {{ displaySoal.sumber || selectedDataset || '-' }}
-      </div>
+    <!-- sumber / dataset -->
+    <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded h-full flex items-center">
+      {{ displaySoal.sumber || selectedDataset || '-' }}
     </div>
   </div>
+</div>
+
+
 
   <!-- area soal -->
  <article class="prose prose-sm md:prose lg:prose-lg max-w-none dark:prose-invert">
@@ -621,25 +626,25 @@
                     <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
                     <span v-else class="text-gray-600 dark:text-gray-400">Pilih opsi, lalu kirim atau double-click.</span>
                   </div>
- <div v-if="jawabanSudahDikirim" 
-     class="mt-3 text-gray-700 dark:text-gray-300 transition-all duration-200"
-     :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }">
+                  <div v-if="jawabanSudahDikirim" 
+                      class="mt-3 text-gray-700 dark:text-gray-300 transition-all duration-200"
+                      :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }">
 
-  <div>
-    Kunci jawaban: 
-    <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
-  </div>
+                    <div>
+                      Kunci jawaban: 
+                      <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
+                    </div>
 
-  <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
-    <strong class="text-indigo-600 dark:text-indigo-400">
-      <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
-    </strong>
-    <p class="mt-1"
-       :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
-       v-html="displaySoal.penjelasan">
-    </p>
-  </div>
-</div>
+                    <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
+                      <strong class="text-indigo-600 dark:text-indigo-400">
+                        <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
+                      </strong>
+                      <p class="mt-1"
+                        :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
+                        v-html="displaySoal.penjelasan">
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mb-4 flex items-stretch gap-2">
@@ -650,7 +655,7 @@
                     style="height: 48px;"
                   >
                     <span v-if="countdownActive">
-                      Next ({{ countdown }}s)
+                      Next {{ countdown }} s
                     </span>
                     <span v-else>
                       {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
@@ -681,7 +686,7 @@
 
                 <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
                   <div>Dataset: <span class="font-medium text-gray-700 dark:text-gray-300">{{ selectedDataset || '-' }}</span></div>
-                  <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700 dark:text-indigo-400">{{ dataAwal.length }}</span></div>
+                  <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700 dark:text-indigo-400">{{ currentQuestions.length }}</span></div>
                 </div>
               </div>
             </aside>
