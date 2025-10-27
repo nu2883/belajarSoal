@@ -621,15 +621,24 @@
                     <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
                     <span v-else class="text-gray-600 dark:text-gray-400">Pilih opsi, lalu kirim atau double-click.</span>
                   </div>
-       <div v-if="jawabanSudahDikirim" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
-    Kunci jawaban: <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
+ <div v-if="jawabanSudahDikirim" 
+     class="mt-3 text-gray-700 dark:text-gray-300 transition-all duration-200"
+     :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }">
 
-    <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
-        <strong class="text-indigo-600 dark:text-indigo-400">
-            <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
-        </strong>
-        <p class="mt-1" v-html="displaySoal.penjelasan"></p>
-    </div>
+  <div>
+    Kunci jawaban: 
+    <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
+  </div>
+
+  <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
+    <strong class="text-indigo-600 dark:text-indigo-400">
+      <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
+    </strong>
+    <p class="mt-1"
+       :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
+       v-html="displaySoal.penjelasan">
+    </p>
+  </div>
 </div>
                 </div>
 
@@ -641,7 +650,7 @@
                     style="height: 48px;"
                   >
                     <span v-if="countdownActive">
-                      Next (otomatis dalam {{ countdown }}s)
+                      Next ({{ countdown }}s)
                     </span>
                     <span v-else>
                       {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (NEXT)' }}
@@ -652,7 +661,7 @@
                     v-if="countdownActive"
                     @click.stop="toggleCountdown"
                     :disabled="countdown <= 0"
-                    class="px-3 bg-indigo-700 hover:bg-indigo-800 rounded-md text-white disabled:opacity-70 text-sm transition-transform hover:scale-105"
+                    class="px-3 bg-green-700 hover:bg-green-800 rounded-md text-white disabled:opacity-70 text-sm transition-transform hover:scale-105"
                     style="height: 48px;"
                     title="Jeda / Lanjutkan countdown"
                   >
@@ -1191,6 +1200,16 @@ new Vue({
     }
   },
   methods: {
+     saveSoalToLocal() {
+    localStorage.setItem(SOAL_STORAGE_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      dataset: this.selectedDataset,
+      soal: this.displaySoal,
+      pool: this.poolSoal || [],
+      index: this.tampilIndex || 0
+    }));
+    console.log('💾 Soal disimpan otomatis ke localStorage.');
+  },
      ubahUkuranHuruf(delta) {
     const min = 14;
     const max = 40;
@@ -1726,71 +1745,88 @@ new Vue({
 },
 
     async loadPage() {
-      this.loading = true;
-      this.dataAwal = [];
-      this.submittedSoal = null;
-      try {
-        const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
-        const res = await fetch(url);
-        const txt = await res.text();
-        let parsed = null;
-        try { parsed = JSON.parse(txt); } catch(e){ parsed = null; }
-        let rows = [];
-        if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
-        else if (Array.isArray(parsed)) rows = parsed;
+  this.loading = true;
+  this.dataAwal = [];
+  this.submittedSoal = null;
 
-        if (!rows || rows.length === 0) {
-          rows = [
-            { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-            { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-            { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-          ];
-        }
+  try {
+    const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
+    const res = await fetch(url);
+    const txt = await res.text();
+    let parsed = null;
 
-        const normalized = rows.map(r => {
-          const allOptions = [
-            { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-            { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-            { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-            { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-          ].filter(o => o.text !== '');
-          const shuffled = shuffleArray(allOptions);
-          const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-          const k = allOptions.find(o=>o.isCorrect);
-          return {
-            id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
-            no: r.no ?? null,
-            soal: r.soal ?? r.question ?? '',
-            penjelasan: r.penjelasan ?? r.keterangan ?? '', // Asumsi kolom penjelasan bernama 'penjelasan' atau 'keterangan'
-            kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-            shuffledOptions,
-            sumber: r.sumber ?? '',
-            hal: Number(r.hal ?? r.page ?? 0) || 0,
-            row: Number(r.row ?? 0) || 0
-          };
-        }).filter(r => r.soal);
+    try { 
+      parsed = JSON.parse(txt); 
+    } catch(e){ 
+      parsed = null; 
+    }
 
-        normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
-        const pageNum = Number(this.noHalaman || 1);
-        const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
-        this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
+    let rows = [];
+    if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
+    else if (Array.isArray(parsed)) rows = parsed;
 
-        this.currentIndex = 0;
-        this.tampilIndex = 0;
-        this.jawabanTerpilih = null;
-        this.jawabanSudahDikirim = false;
-        this.submittedSoal = null;
-        this.stopCountdown();
+    if (!rows || rows.length === 0) {
+      // fallback demo data
+      rows = [
+        { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
+        { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
+        { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
+      ];
+    }
 
-        this.rebuildBatches();
+    // 🔹 Simpan data mentah API ke localStorage
+    localStorage.setItem('pmk_quiz_rawData', JSON.stringify({
+      timestamp: Date.now(),
+      dataset: this.selectedDataset,
+      rawRows: rows
+    }));
+    console.log('💾 Data mentah API disimpan ke localStorage: pmk_quiz_rawData');
 
-      } catch (err) {
-        console.error('loadPage error:', err);
-        this.resetToDemo();
-      } finally {
-        this.loading = false;
-      }
-    },
+    // proses normal seperti sebelumnya
+    const normalized = rows.map(r => {
+      const allOptions = [
+        { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
+        { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
+      ].filter(o => o.text !== '');
+      const shuffled = shuffleArray(allOptions);
+      const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
+      const k = allOptions.find(o=>o.isCorrect);
+      return {
+        id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
+        no: r.no ?? null,
+        soal: r.soal ?? r.question ?? '',
+        penjelasan: r.penjelasan ?? r.keterangan ?? '',
+        kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
+        shuffledOptions,
+        sumber: r.sumber ?? '',
+        hal: Number(r.hal ?? r.page ?? 0) || 0,
+        row: Number(r.row ?? 0) || 0
+      };
+    }).filter(r => r.soal);
+
+    normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
+    const pageNum = Number(this.noHalaman || 1);
+    const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
+    this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
+
+    this.currentIndex = 0;
+    this.tampilIndex = 0;
+    this.jawabanTerpilih = null;
+    this.jawabanSudahDikirim = false;
+    this.submittedSoal = null;
+    this.stopCountdown();
+
+    this.rebuildBatches();
+
+  } catch (err) {
+    console.error('loadPage error:', err);
+    this.resetToDemo();
+  } finally {
+    this.loading = false;
+  }
+},
 
     resetToDemo() {
       this.wrongQuestions = [];
@@ -2107,27 +2143,37 @@ new Vue({
       }
     },
 
-    saveUserData() {
-      const saveData = {
-        userStats: this.userStats,
-        unlockedAchievements: this.unlockedAchievements,
-        sessionStats: this.sessionStats,
-        wrongQuestions: this.wrongQuestions,
-        powerUps: this.powerUps,
-        loginStreak: this.loginStreak,
-        darkMode: this.darkMode,
-        selectedTheme: this.selectedTheme,
-        lastSaved: Date.now()
-      };
+saveUserData() {
+  // 🔹 Gabungkan semua data penting, termasuk soal yang sedang tampil
+  const saveData = {
+    // Data user & progres
+    userStats: this.userStats,
+    unlockedAchievements: this.unlockedAchievements,
+    sessionStats: this.sessionStats,
+    wrongQuestions: this.wrongQuestions,
+    powerUps: this.powerUps,
+    loginStreak: this.loginStreak,
+    darkMode: this.darkMode,
+    selectedTheme: this.selectedTheme,
+    lastSaved: Date.now(),
 
-      try {
-        localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
-        this.lastSavedTime = new Date().toLocaleTimeString();
-        console.log('Progress tersimpan:', this.lastSavedTime);
-      } catch (error) {
-        console.error('Gagal menyimpan data:', error);
-      }
-    },
+    // 🔹 Tambahkan bagian soal yang aktif
+    selectedDataset: this.selectedDataset,
+    displaySoal: this.displaySoal,
+    poolSoal: this.poolSoal,
+    tampilIndex: this.tampilIndex
+  };
+
+  try {
+    // 💾 Simpan semuanya di localStorage
+    localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
+    this.lastSavedTime = new Date().toLocaleTimeString();
+    console.log('✅ Progress & Soal tersimpan:', this.lastSavedTime);
+  } catch (error) {
+    console.error('❌ Gagal menyimpan data:', error);
+  }
+},
+
 
     loadUserData() {
       try {
@@ -2185,59 +2231,97 @@ new Vue({
       URL.revokeObjectURL(url);
     }
   },
-  mounted() {
-  // 1️⃣ Inisialisasi fitur auto-save
+mounted() {
+  // 🕒 1️⃣ Inisialisasi auto-save (menyimpan progress setiap beberapa detik)
   this.initializeAutoSave();
 
-  // 2️⃣ Pulihkan dataset terakhir yang dipilih
+  // 📦 2️⃣ Pulihkan dataset terakhir yang dipilih
   const savedDataset = localStorage.getItem('kitab_selectedDataset');
   if (savedDataset) {
     this.selectedDataset = savedDataset;
   }
 
-  // 3️⃣ Mulai sesi baru
+  // 🧭 3️⃣ Catat waktu mulai sesi
   this.sessionStartTime = Date.now();
 
-  // 4️⃣ Inisialisasi tantangan harian
+  // 🎯 4️⃣ Inisialisasi tantangan harian
   this.initializeDailyChallenge();
 
-  // 5️⃣ Tambahkan efek klik pada tombol (micro interaction)
-  this.$nextTick(() => {
-    document.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.target.classList.add('animate-pulse-soft');
-        setTimeout(() => {
-          e.target.classList.remove('animate-pulse-soft');
-        }, 300);
-      });
-    });
-  });
-
-  // 6️⃣ Pulihkan soal terakhir dari Local Storage (jika ada)
-  const savedSoal = localStorage.getItem(SOAL_STORAGE_KEY);
-  if (savedSoal) {
+  // 💾 5️⃣ Coba pulihkan data mentah dari localStorage
+  const savedRaw = localStorage.getItem('pmk_quiz_rawData');
+  if (savedRaw) {
     try {
-      const parsed = JSON.parse(savedSoal);
+      const parsed = JSON.parse(savedRaw);
       this.selectedDataset = parsed.dataset || this.selectedDataset;
-      this.displaySoal = parsed.soal || {};
-      this.poolSoal = parsed.pool || [];
-      this.tampilIndex = parsed.index || 0;
-      console.log('♻️ Soal terakhir berhasil dipulihkan dari localStorage.');
-    } catch (e) {
-      console.warn('⚠️ Gagal memulihkan soal dari localStorage:', e);
-      localStorage.removeItem(SOAL_STORAGE_KEY);
-    }
-  }
-},
+      const rows = parsed.rawRows || [];
 
-  beforeDestroy() {
-    this.stopCountdown();
-    if (this.autoSaveInterval) {
-      clearInterval(this.autoSaveInterval);
+      // 🔹 Gunakan data mentah untuk membentuk dataAwal
+      this.dataAwal = rows.map(r => {
+        const allOptions = [
+          { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
+          { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
+          { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
+          { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
+        ].filter(o => o.text !== '');
+        const shuffled = shuffleArray(allOptions);
+        const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
+        const k = allOptions.find(o=>o.isCorrect);
+        return {
+          id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
+          no: r.no ?? null,
+          soal: r.soal ?? r.question ?? '',
+          penjelasan: r.penjelasan ?? r.keterangan ?? '',
+          kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
+          shuffledOptions,
+          sumber: r.sumber ?? '',
+          hal: Number(r.hal ?? r.page ?? 0) || 0,
+          row: Number(r.row ?? 0) || 0
+        };
+      }).filter(r => r.soal);
+
+      this.rebuildBatches();
+      console.log('♻️ Data mentah dari localStorage digunakan.');
+
+      // 🔹 Sinkronisasi tampilan
+      this.loading = false;
+      this.jawabanSudahDikirim = false;
+      this.jawabanTerpilih = null;
+
+      // ✅ Tambahkan listener untuk simpan otomatis saat halaman ditutup
+      window.addEventListener('beforeunload', this.saveUserData);
+
+      // 👉 Hentikan eksekusi (jangan loadPage lagi)
+      return;
+    } catch (e) {
+      console.warn('⚠️ Gagal membaca data mentah dari localStorage:', e);
+      localStorage.removeItem('pmk_quiz_rawData');
     }
-    window.removeEventListener('beforeunload', this.saveUserData);
-    this.saveUserData(); // Final save
   }
+
+  // 🚀 6️⃣ Jika tidak ada data di localStorage, fetch dari API
+  this.loadPage();
+
+  // ✅ 7️⃣ Pastikan data selalu disimpan sebelum halaman ditutup
+  window.addEventListener('beforeunload', this.saveUserData);
+}
+,
+beforeDestroy() {
+  // 1️⃣ Hentikan semua interval agar tidak jalan di background
+  this.stopCountdown();
+  if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+
+  // 2️⃣ Hapus listener "beforeunload"
+  window.removeEventListener('beforeunload', this.saveUserData);
+
+  // 3️⃣ Simpan data terakhir *hanya kalau tidak kosong*
+  if (this.displaySoal && Object.keys(this.displaySoal).length > 0) {
+    this.saveUserData();
+    console.log('💾 Data disimpan sebelum destroy.');
+  } else {
+    console.log('⚠️ Tidak menyimpan karena data kosong.');
+  }
+}
+
 });
 </script>
 
