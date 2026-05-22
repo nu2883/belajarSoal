@@ -86,6 +86,11 @@
     font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
   }
   .btn-muted:hover { border-color: var(--neon); color: var(--neon); }
+  .theme-toggle i{
+  width:26px;
+  height:26px;
+  stroke-width:2.5;
+}
 .theme-toggle{
   position:fixed;
   top:18px;
@@ -300,6 +305,7 @@
   .qtype-tab.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); }
   .qtype-tab:not(.active):hover { color: var(--text); }
 </style>
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
@@ -307,7 +313,7 @@
 <div class="floating-orb" style="width:400px;height:400px;background:#7c3aed;bottom:-100px;left:-120px;"></div>
 
 <button class="theme-toggle" id="themeBtn" title="Ganti tema">
-  🌙
+  <i data-lucide="moon"></i>
 </button>
 <div id="toastEl" style="display:none" class="toast toast-green"></div>
 
@@ -316,8 +322,8 @@
   <!-- ══════════ HOME ══════════ -->
   <div v-if="screen==='home'" class="page-center">
     <div class="text-center mb-6 slide-up">
-      <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ QUIZ MASTER PRO</div>
-      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">QuizMaster</h1>
+      <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
+      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Belajar Soal</h1>
       <p style="color:var(--muted)">Belajar Cerdas · Belajar Tuntas</p>
     </div>
 
@@ -1323,6 +1329,9 @@ new Vue({
     },
   },
 });
+</script>
+<script>
+  lucide.createIcons();
 </script>
 </body>
 </html>
