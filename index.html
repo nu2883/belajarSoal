@@ -86,14 +86,76 @@
     font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
   }
   .btn-muted:hover { border-color: var(--neon); color: var(--neon); }
-  .theme-toggle {
-    position: fixed; top: 16px; right: 16px; z-index: 200;
-    width: 44px; height: 44px; border-radius: 50%;
-    background: var(--card); border: 1.5px solid var(--border);
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; transition: all 0.2s; box-shadow: 0 2px 8px var(--shadow);
-  }
-  .theme-toggle:hover { border-color: var(--neon); transform: rotate(15deg) scale(1.05); }
+.theme-toggle{
+  position:fixed;
+  top:18px;
+  right:18px;
+  z-index:999;
+
+  width:58px;
+  height:58px;
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:1.6rem;
+  font-weight:bold;
+
+  cursor:pointer;
+  user-select:none;
+
+  color:#fff;
+
+  background:
+    linear-gradient(135deg,
+      rgba(0,245,212,0.95),
+      rgba(99,102,241,0.95));
+
+  border:2px solid rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 0 0 4px rgba(0,245,212,0.12),
+    0 10px 30px rgba(0,245,212,0.28),
+    0 4px 12px rgba(0,0,0,0.35);
+
+  backdrop-filter: blur(10px);
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+}
+
+.theme-toggle:hover{
+  transform:scale(1.12) rotate(18deg);
+
+  border-color:rgba(255,255,255,0.45);
+
+  box-shadow:
+    0 0 0 6px rgba(0,245,212,0.16),
+    0 16px 40px rgba(0,245,212,0.45),
+    0 6px 16px rgba(0,0,0,0.45);
+}
+
+.theme-toggle:active{
+  transform:scale(.95);
+}
+
+.theme-toggle::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+
+  background:
+    radial-gradient(circle at top left,
+      rgba(255,255,255,0.35),
+      transparent 45%);
+
+  pointer-events:none;
+}
   .option-btn {
     width: 100%; text-align: left; background: var(--card2);
     border: 1.5px solid var(--border); color: var(--text);
@@ -244,7 +306,9 @@
 <div class="floating-orb" style="width:500px;height:500px;background:#00f5d4;top:-120px;right:-120px;"></div>
 <div class="floating-orb" style="width:400px;height:400px;background:#7c3aed;bottom:-100px;left:-120px;"></div>
 
-<button class="theme-toggle" id="themeBtn" title="Ganti tema">☀️</button>
+<button class="theme-toggle" id="themeBtn" title="Ganti tema">
+  🌙
+</button>
 <div id="toastEl" style="display:none" class="toast toast-green"></div>
 
 <div id="app" class="page-wrap">
@@ -544,7 +608,7 @@
   </div>
 
   <!-- ══════════ QUIZ ══════════ -->
-  <div v-if="screen==='quiz'" class="quiz-wrap">
+  <div v-if="screen==='quiz'" class="quiz-wrap" style="margin-top: 75px;">
     <div class="flex items-center gap-3 mb-2" style="padding-top:8px">
       <button @click="exitQuiz" class="btn-neon py-2 px-3" style="font-size:0.83rem">← Keluar</button>
       <div style="flex:1">
@@ -1154,6 +1218,14 @@ new Vue({
         this.queue.splice(pos, 0, { ...this.currentQ, _retry: true });
         if (!this.muteSound) this.speakText(`Salah. Jawaban yang benar adalah: ${this.currentQ.kunci}`);
       }
+
+       this.$nextTick(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  });
+
     },
 
     nextQuestion() {
