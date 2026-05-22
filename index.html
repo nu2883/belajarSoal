@@ -1,2352 +1,1234 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kuis — Review Jawaban 10s + Soal Salah</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-  <style>
-    /* Animations */
-    @keyframes achievement-popup {
-      0% { transform: translateX(100%) scale(0.5); opacity: 0; }
-      70% { transform: translateX(-10px) scale(1.05); }
-      100% { transform: translateX(0) scale(1); opacity: 1; }
-    }
-
-    @keyframes level-up {
-      0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-      50% { transform: scale(1.1) rotate(5deg); }
-      100% { transform: scale(1) rotate(0); opacity: 1; }
-    }
-
-    @keyframes streak-fire {
-      0% { transform: scale(0); opacity: 0; }
-      50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(1); opacity: 0; }
-    }
-
-    @keyframes flip {
-      0% { transform: rotateY(0); }
-      50% { transform: rotateY(90deg); }
-      100% { transform: rotateY(0); }
-    }
-
-    @keyframes bounce-gentle {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-
-    @keyframes pulse-soft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    @keyframes slide-in {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Animation Classes */
-    .animate-achievement-popup {
-      animation: achievement-popup 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .animate-level-up {
-      animation: level-up 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .animate-streak-fire {
-      animation: streak-fire 1.5s ease-out;
-    }
-
-    .animate-flip {
-      animation: flip 0.6s ease-in-out;
-    }
-
-    .animate-bounce-gentle {
-      animation: bounce-gentle 0.5s ease-in-out;
-    }
-
-    .animate-pulse-soft {
-      animation: pulse-soft 0.3s ease-in-out;
-    }
-
-    .animate-slide-in {
-      animation: slide-in 0.3s ease-out;
-    }
-
-    /* Custom Styles */
-    .hover-lift:hover {
-      transform: translateY(-2px);
-      transition: transform 0.2s ease;
-    }
-
-    .progress-glow {
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-    }
-
-    .dark-mode {
-      background-color: #1a202c;
-      color: #e2e8f0;
-    }
-
-    .dark-mode .card {
-      background-color: #2d3748;
-      border-color: #4a5568;
-    }
-
-    .dark-mode .text-gray-800 {
-      color: #e2e8f0;
-    }
-
-    .dark-mode .text-gray-600 {
-      color: #a0aec0;
-    }
-
-    .dark-mode .bg-white {
-      background-color: #2d3748;
-    }
-
-    .dark-mode .border-gray-200 {
-      border-color: #4a5568;
-    }
-
-    /* Loading Animation */
-    .flip-card {
-      perspective: 1000px;
-      width: 60px;
-      height: 60px;
-      margin: 0 auto 1rem;
-    }
-
-    .flip-card-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      text-align: center;
-      transition: transform 0.6s;
-      transform-style: preserve-3d;
-      animation: flip 2s infinite;
-    }
-
-    .flip-card-front, .flip-card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      border-radius: 12px;
-    }
-
-    .flip-card-front {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .flip-card-back {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      transform: rotateY(180deg);
-    }
-
-    /* Stat Cards */
-    .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 12px;
-      padding: 1rem;
-      text-align: center;
-      color: white;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .stat-icon {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-bottom: 0.25rem;
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
-
-    /* Theme Colors */
-    .theme-ocean {
-      --primary-color: #06B6D4;
-      --secondary-color: #0EA5E9;
-    }
-
-    .theme-forest {
-      --primary-color: #16A34A;
-      --secondary-color: #22C55E;
-    }
-
-    .theme-sunset {
-      --primary-color: #EA580C;
-      --secondary-color: #DC2626;
-    }
-
-    /* Power-up Styles */
-    .power-up-card {
-      background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
-      border-radius: 10px;
-      padding: 0.75rem;
-      text-align: center;
-      color: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .power-up-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Season Pass */
-    .season-tier {
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-      transition: all 0.3s ease;
-    }
-
-    .season-tier.unlocked {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #10b98120 0%, #05966920 100%);
-    }
-
-    .season-tier.current {
-      border-color: #3b82f6;
-      background: linear-gradient(135deg, #3b82f620 0%, #1d4ed820 100%);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizMaster Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --neon:   #00f5d4;
+    --neon2:  #f5a623;
+    --bg:     #080c14;
+    --card:   #0f1729;
+    --card2:  #131d35;
+    --border: #1e2d4a;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.4);
+    --grid:   rgba(0,245,212,0.03);
+    --orb-op: 0.06;
+  }
+  [data-theme="light"] {
+    --neon:   #00a896;
+    --neon2:  #d97706;
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --card2:  #f1f5f9;
+    --border: #cbd5e1;
+    --text:   #1e293b;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.07);
+    --grid:   rgba(0,168,150,0.05);
+    --orb-op: 0.1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); font-family: 'Sora', sans-serif;
+    color: var(--text); min-height: 100vh; overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .glow { text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; transition: all 0.3s;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .card:hover { border-color: var(--neon); }
+  .btn-neon {
+    background: transparent; border: 1.5px solid var(--neon);
+    color: var(--neon); padding: 10px 18px; border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-neon:hover:not(:disabled) { background: rgba(0,245,212,0.08); box-shadow: 0 0 16px rgba(0,245,212,0.25); }
+  .btn-neon:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-solid {
+    background: var(--neon); color: #080c14; border: none;
+    padding: 12px 22px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-solid:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,245,212,0.35); }
+  .btn-solid:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-orange {
+    background: var(--neon2); color: #fff; border: none;
+    padding: 12px 22px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-orange:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,166,35,0.35); }
+  .btn-danger {
+    background: transparent; border: 1.5px solid #ef4444; color: #ef4444;
+    padding: 6px 14px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+  .btn-muted {
+    background: transparent; border: 1.5px solid var(--border); color: var(--muted);
+    padding: 6px 14px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-muted:hover { border-color: var(--neon); color: var(--neon); }
+  .theme-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 200;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--card); border: 1.5px solid var(--border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; transition: all 0.2s; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--neon); transform: rotate(15deg) scale(1.05); }
+  .option-btn {
+    width: 100%; text-align: left; background: var(--card2);
+    border: 1.5px solid var(--border); color: var(--text);
+    padding: 14px 16px; border-radius: 12px; font-family: 'Sora', sans-serif;
+    font-size: 0.92rem; cursor: pointer; transition: all 0.22s;
+    display: flex; align-items: flex-start; gap: 12px; line-height: 1.55;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--neon); background: rgba(0,245,212,0.05); transform: translateX(3px); }
+  .option-btn.correct { border-color: #22c55e; background: rgba(34,197,94,0.09); color: #22c55e; }
+  .option-btn.wrong   { border-color: #ef4444; background: rgba(239,68,68,0.09); color: #ef4444; }
+  .option-btn:disabled { cursor: default; }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .tag-neon   { background: rgba(0,245,212,0.1);  color: var(--neon);  border: 1px solid rgba(0,245,212,0.3); }
+  .tag-orange { background: rgba(245,166,35,0.1); color: var(--neon2); border: 1px solid rgba(245,166,35,0.3); }
+  .tag-red    { background: rgba(239,68,68,0.1);  color: #ef4444;      border: 1px solid rgba(239,68,68,0.3); }
+  .tag-green  { background: rgba(34,197,94,0.1);  color: #22c55e;      border: 1px solid rgba(34,197,94,0.3); }
+  .tag-purple { background: rgba(124,58,237,0.1); color: #a78bfa;      border: 1px solid rgba(124,58,237,0.3); }
+  [data-theme="light"] .tag-neon   { background: rgba(0,168,150,0.1);  color: var(--neon); }
+  [data-theme="light"] .tag-orange { background: rgba(217,119,6,0.1);  color: var(--neon2); }
+  .progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--neon), #7c3aed);
+    border-radius: 3px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .level-btn {
+    padding: 12px 6px; border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--card2); color: var(--text); cursor: pointer;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.95rem;
+    transition: all 0.2s; text-align: center; position: relative;
+  }
+  .level-btn:hover  { border-color: var(--neon); color: var(--neon); transform: scale(1.04); }
+  .level-btn.active { border-color: var(--neon); background: rgba(0,245,212,0.1); color: var(--neon); }
+  .level-done-badge {
+    position: absolute; top: -6px; right: -6px;
+    background: #22c55e; color: #fff; font-size: 0.6rem;
+    border-radius: 999px; padding: 2px 5px; font-weight: 700;
+    border: 2px solid var(--bg);
+  }
+  .mode-tab {
+    padding: 9px 8px; border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: 0.8rem; border: 1.5px solid transparent;
+    transition: all 0.2s; text-align: center; flex: 1;
+  }
+  .mode-tab.active { border-color: var(--neon); background: rgba(0,245,212,0.09); color: var(--neon); }
+  .mode-tab:not(.active) { color: var(--muted); }
+  .mode-tab:not(.active):hover { color: var(--text); }
+  input[type=text], select, input[type=range] {
+    background: var(--card2); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 10px 14px; font-family: 'Sora', sans-serif;
+    width: 100%; outline: none; transition: border 0.2s;
+  }
+  input[type=range] { padding: 4px 0; cursor: pointer; accent-color: var(--neon); }
+  input[type=text]:focus, select:focus {
+    border-color: var(--neon); box-shadow: 0 0 0 3px rgba(0,245,212,0.1);
+  }
+  select option { background: var(--card); color: var(--text); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .badge-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(0,245,212,0.14); color: var(--neon); font-size: 0.75rem; font-weight: 700;
+  }
+  .speak-indicator { display: inline-flex; align-items: center; gap: 3px; }
+  .speak-indicator span {
+    display: inline-block; width: 3px; border-radius: 3px; background: var(--neon);
+    animation: wave 0.8s ease-in-out infinite;
+  }
+  .speak-indicator span:nth-child(2) { animation-delay: 0.1s; }
+  .speak-indicator span:nth-child(3) { animation-delay: 0.2s; }
+  .speak-indicator span:nth-child(4) { animation-delay: 0.3s; }
+  @keyframes wave { 0%,100%{height:4px} 50%{height:14px} }
+  .slide-up { animation: slideUp 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.3s ease both; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .floating-orb {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    filter: blur(90px); opacity: var(--orb-op); z-index: 0;
+  }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(8,12,20,0.3); border-top-color: #080c14;
+    animation: spin 0.7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 0.88rem;
+    z-index: 9999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s ease both;
+  }
+  @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  .toast-green { background: rgba(34,197,94,0.92); color: #fff; }
+  .toast-red   { background: rgba(239,68,68,0.92);  color: #fff; }
+  .toast-blue  { background: rgba(99,102,241,0.92); color: #fff; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--card); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .page-wrap { position: relative; z-index: 1; }
+  .page-center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; }
+  .quiz-wrap { max-width: 700px; margin: 0 auto; padding: 16px 16px 24px; min-height: 100vh; display: flex; flex-direction: column; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .sumber-chip {
+    padding: 5px 13px; border-radius: 999px; font-size: 0.76rem; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--card2);
+    color: var(--muted); transition: all 0.2s; white-space: nowrap;
+  }
+  .sumber-chip:hover  { border-color: var(--neon); color: var(--neon); }
+  .sumber-chip.active { border-color: var(--neon); background: rgba(0,245,212,0.08); color: var(--neon); }
+  /* Level grid */
+  .level-grid { display: grid; gap: 8px; }
+  /* Wrong items */
+  .wrong-item {
+    background: var(--card2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; transition: all 0.2s;
+  }
+  .wrong-item:hover { border-color: var(--neon2); }
+  .sub-tab {
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.78rem;
+    font-weight: 600; border: 1.5px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Sora', sans-serif; transition: all 0.2s; white-space: nowrap;
+  }
+  .sub-tab.active { border-color: var(--neon2); color: var(--neon2); background: rgba(245,166,35,0.08); }
+  .sub-tab:not(.active):hover { color: var(--text); border-color: var(--muted); }
+  /* Mute btn active */
+  .muted-active { background: rgba(239,68,68,0.12) !important; border-color: #ef4444 !important; color: #ef4444 !important; }
+  /* Speed badge */
+  .speed-badge {
+    font-size: 0.72rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    color: var(--neon); background: rgba(0,245,212,0.1); border-radius: 4px;
+    padding: 1px 5px;
+  }
+  /* Quiz type tab */
+  .qtype-tab {
+    padding: 8px 6px; border-radius: 8px; cursor: pointer; font-size: 0.72rem;
+    font-weight: 700; border: 1.5px solid var(--border); background: var(--card2);
+    color: var(--muted); transition: all 0.2s; text-align: center; flex: 1;
+  }
+  .qtype-tab.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); }
+  .qtype-tab:not(.active):hover { color: var(--text); }
+</style>
 </head>
-<body class="bg-gray-50 antialiased min-h-screen transition-colors duration-300" :class="{ 'dark-mode': darkMode }">
-  <div id="app" class="mx-auto w-full max-w-5xl p-4 sm:p-8">
-    <!-- HEADER -->
-    <header class="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 leading-tight">✅ Belajar Soal</h1>
-        <p class="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">Tampil jawaban benar selama 10 detik + Fitur Gamifikasi</p>
+<body>
+
+<div class="floating-orb" style="width:500px;height:500px;background:#00f5d4;top:-120px;right:-120px;"></div>
+<div class="floating-orb" style="width:400px;height:400px;background:#7c3aed;bottom:-100px;left:-120px;"></div>
+
+<button class="theme-toggle" id="themeBtn" title="Ganti tema">☀️</button>
+<div id="toastEl" style="display:none" class="toast toast-green"></div>
+
+<div id="app" class="page-wrap">
+
+  <!-- ══════════ HOME ══════════ -->
+  <div v-if="screen==='home'" class="page-center">
+    <div class="text-center mb-6 slide-up">
+      <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ QUIZ MASTER PRO</div>
+      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">QuizMaster</h1>
+      <p style="color:var(--muted)">Belajar Cerdas · Belajar Tuntas</p>
+    </div>
+
+    <div class="card w-full slide-up" style="max-width:560px;padding:28px;animation-delay:0.08s">
+
+      <!-- Mode Tabs -->
+      <div class="flex gap-2 mb-5 p-1 rounded-xl" style="background:var(--card2)">
+        <div class="mode-tab" :class="{active:homeMode==='kuis'}"    @click="homeMode='kuis'">🧠 Kuis</div>
+        <div class="mode-tab" :class="{active:homeMode==='belajar'}" @click="homeMode='belajar'">📖 Belajar</div>
+        <div class="mode-tab" :class="{active:homeMode==='salah'}"   @click="homeMode='salah'">🔁 Soal Salah</div>
       </div>
 
-      <!-- Theme & Settings Controls -->
-      <div class="flex items-center gap-3 flex-wrap">
-        <!-- Theme Selector -->
-        <select v-model="selectedTheme" @change="changeTheme" class="p-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-          <option value="default">Default</option>
-          <option value="ocean">Ocean</option>
-          <option value="forest">Forest</option>
-          <option value="sunset">Sunset</option>
-        </select>
-
-        <!-- Dark Mode Toggle -->
-        <button @click="toggleDarkMode" class="p-2 rounded-md border hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Dark Mode">
-          <span v-if="darkMode">🌙</span>
-          <span v-else>☀️</span>
-        </button>
-
-<input
-  list="datasets"
-  v-model="selectedDataset"
-  placeholder="Ketik atau pilih dataset"
-  class="w-full md:w-56 p-2 border rounded-lg text-sm md:text-base focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-/>
-<datalist id="datasets">
-  <option v-for="d in datasets" :key="d" :value="d">{{ d }}</option>
-</datalist>
-
-        <button
-          @click="insertThenFetch"
-          :disabled="loading || !selectedDataset"
-          class="px-3 py-2 text-sm md:text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition animate-pulse-soft"
-          type="button"
-        >
-          Tampil Soal
-        </button>
-
-        <button
-          @click="openSettings"
-          type="button"
-          class="ml-1 p-2 rounded-md border hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-          title="Pengaturan Soal"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 dark:text-gray-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M11.3 1.046a1 1 0 00-2.6 0l-.2.657a7.002 7.002 0 00-1.78.846l-.6-.35a1 1 0 00-1.22.18L2.84 5.34a1 1 0 00.18 1.41l.613.49a7.017 7.017 0 000 2.78l-.613.49a1 1 0 00-.18 1.41l1.17 1.37a1 1 0 001.22.18l.6-.35a7.002 7.002 0 001.78.846l.2.657a1 1 0 002.6 0l.2-.657a7.002 7.002 0 001.78-.846l.6.35a1 1 0 001.22-.18l1.17-1.37a1 1 0 00-.18-1.41l-.613-.49a7.017 7.017 0 000-2.78l.613-.49a1 1 0 00.18-1.41L15.7 2.73a1 1 0 00-1.22-.18l-.6.35a7.002 7.002 0 00-1.78-.846L11.3 1.046zM10 13a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"/>
-          </svg>
-        </button>
+      <!-- LOAD DB -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">LOAD SOAL DARI DATABASE</label>
+        <div class="flex gap-2">
+          <input type="text" v-model="filterSumber" @keyup.enter="doLoadDB"
+                 placeholder="Ketik sumber/topik... (kosong = semua)" style="flex:1;min-width:0" />
+          <button @click="doLoadDB" class="btn-solid" :disabled="loadingDB"
+                  style="min-width:110px;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span v-if="loadingDB" class="spinner"></span>
+            <span>{{ loadingDB ? 'Memuat...' : '⚡ Load DB' }}</span>
+          </button>
+        </div>
       </div>
-    </header>
 
-    <!-- ACHIEVEMENT NOTIFICATION -->
-    <div v-if="showAchievementNotification" class="fixed top-4 right-4 z-50 animate-achievement-popup">
-      <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-2xl shadow-2xl max-w-sm border-2 border-yellow-300 transform rotate-[-2deg]">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl animate-bounce">{{ achievementNotification.emoji }}</div>
-          <div class="flex-1">
-            <div class="font-bold text-lg mb-1">{{ achievementNotification.title }}</div>
-            <div class="text-sm opacity-90 mb-2">{{ achievementNotification.message }}</div>
-            <div class="flex items-center justify-between">
-              <span class="text-xs bg-yellow-600 px-2 py-1 rounded-full">+{{ achievementNotification.points }} ⭐</span>
-              <span class="text-xs opacity-75">{{ achievementNotification.type }}</span>
+      <!-- Sumber chips -->
+      <div v-if="uniqueSumbers.length > 0" class="mb-4">
+        <div class="text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">FILTER CEPAT</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <div v-for="s in uniqueSumbers" :key="s"
+               class="sumber-chip" :class="{active: filterSumber===s}"
+               @click="filterSumber = filterSumber===s ? '' : s">{{s}}</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ── KUIS MODE ── -->
+      <div v-if="homeMode==='kuis'">
+        <!-- Kuis Type -->
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">TIPE KUIS</label>
+          <div class="flex gap-2">
+            <div class="qtype-tab" :class="{active:kuisType==='level'}" @click="kuisType='level'">
+              🎯 Per Level
+            </div>
+            <div class="qtype-tab" :class="{active:kuisType==='kumulatif'}" @click="kuisType='kumulatif'">
+              📈 Kumulatif
+            </div>
+            <div class="qtype-tab" :class="{active:kuisType==='custom'}" @click="kuisType='custom'">
+              ⚙️ Custom
             </div>
           </div>
+          <div class="mt-2 text-xs" style="color:var(--muted)">
+            <span v-if="kuisType==='level'">Soal per kelompok (misalnya 10 soal per level)</span>
+            <span v-if="kuisType==='kumulatif'">Level 2 = soal 1–20, Level 3 = soal 1–30, dst.</span>
+            <span v-if="kuisType==='custom'">Pilih jumlah soal bebas dari pool yang difilter</span>
+          </div>
         </div>
-        <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-pulse">
-          !
+
+        <!-- Level size (for per-level & kumulatif) -->
+        <div v-if="kuisType==='level' || kuisType==='kumulatif'" class="mb-4">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">
+            SOAL PER LEVEL &nbsp;
+            <span class="speed-badge">{{levelSize}}</span>
+          </label>
+          <div class="grid grid-cols-5 gap-2">
+            <div v-for="n in [5,10,15,20,25]" :key="n"
+                 class="level-btn" :class="{active: levelSize===n}"
+                 @click="levelSize=n">{{n}}</div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- LEVEL UP NOTIFICATION -->
-    <div v-if="showLevelUpNotification" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div class="bg-gradient-to-br from-purple-600 to-blue-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-level-up">
-        <div class="text-6xl mb-4">🎉</div>
-        <div class="text-2xl font-bold mb-2">LEVEL UP!</div>
-        <div class="text-4xl font-extrabold mb-4">Level {{ userStats.level }}</div>
-        <div class="text-lg opacity-90 mb-6">Selamat! Kamu semakin hebat!</div>
-        <button @click="showLevelUpNotification = false" class="px-6 py-2 bg-white text-purple-600 rounded-full font-bold hover:scale-105 transition-transform">
-          Lanjutkan
-        </button>
-      </div>
-    </div>
+        <!-- Level selector (per-level) -->
+        <div v-if="kuisType==='level' && filteredPool.length>0" class="mb-4">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">
+            PILIH LEVEL
+            <span class="ml-2" style="color:var(--neon);font-size:0.7rem">{{totalLevels}} level tersedia</span>
+          </label>
+          <div class="level-grid" :style="'grid-template-columns: repeat('+Math.min(totalLevels,5)+', 1fr)'">
+            <div v-for="lv in totalLevels" :key="lv"
+                 class="level-btn" :class="{active: selectedLevel===lv}"
+                 @click="selectedLevel=lv" style="position:relative">
+              Lvl {{lv}}
+              <div v-if="completedLevels.includes(levelKey(lv))" class="level-done-badge">✓</div>
+            </div>
+          </div>
+          <div class="mt-2 text-xs" style="color:var(--muted)">
+            Level {{selectedLevel}}: soal #{{(selectedLevel-1)*levelSize+1}} – #{{Math.min(selectedLevel*levelSize, filteredPool.length)}}
+          </div>
+        </div>
 
-    <!-- STREAK FIRE ANIMATION -->
-    <div v-if="showStreakFire" class="fixed top-20 right-20 z-40 animate-streak-fire">
-      <div class="text-6xl">🔥</div>
-      <div class="text-center text-white font-bold text-sm bg-orange-500 rounded-full px-2 -mt-2">+3</div>
-    </div>
+        <!-- Kumulatif level selector -->
+        <div v-if="kuisType==='kumulatif' && filteredPool.length>0" class="mb-4">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">
+            SAMPAI LEVEL
+            <span class="ml-2" style="color:var(--neon);font-size:0.7rem">{{totalLevels}} level total</span>
+          </label>
+          <div class="level-grid" :style="'grid-template-columns: repeat('+Math.min(totalLevels,5)+', 1fr)'">
+            <div v-for="lv in totalLevels" :key="lv"
+                 class="level-btn" :class="{active: selectedLevel===lv}"
+                 @click="selectedLevel=lv" style="position:relative">
+              s/d {{lv}}
+              <div v-if="completedLevels.includes(levelKey(lv))" class="level-done-badge">✓</div>
+            </div>
+          </div>
+          <div class="mt-2 text-xs" style="color:var(--muted)">
+            Soal #1 – #{{Math.min(selectedLevel*levelSize, filteredPool.length)}} (total {{Math.min(selectedLevel*levelSize, filteredPool.length)}} soal)
+          </div>
+        </div>
 
-    <!-- DAILY LOGIN BONUS -->
-    <div v-if="showDailyBonus" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div class="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-8 rounded-3xl shadow-2xl max-w-md text-center animate-slide-in">
-        <div class="text-6xl mb-4">🎁</div>
-        <div class="text-2xl font-bold mb-2">Bonus Harian!</div>
-        <div class="text-4xl font-extrabold mb-4">+{{ dailyBonusAmount }} ⭐</div>
-        <div class="text-lg opacity-90 mb-2">Login hari ke-{{ loginStreak.current }} berturut-turut!</div>
-        <div class="text-sm opacity-75 mb-6">Besok dapat {{ loginStreak.rewards[loginStreak.current] || 0 }} poin</div>
-        <button @click="claimDailyBonus" class="px-6 py-2 bg-white text-green-600 rounded-full font-bold hover:scale-105 transition-transform">
-          Klaim
-        </button>
-      </div>
-    </div>
+        <!-- Custom jumlah -->
+        <div v-if="kuisType==='custom'" class="mb-4">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">JUMLAH SOAL</label>
+          <div class="grid grid-cols-5 gap-2">
+            <div v-for="n in [5,10,25,50,'Semua']" :key="n"
+                 class="level-btn" :class="{active: jumlahSoal===n}"
+                 @click="jumlahSoal=n">{{n}}</div>
+          </div>
+        </div>
 
-    <!-- MAIN CONTENT GRID -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-      <!-- LEFT SIDEBAR - Stats & Features -->
-      <div class="lg:col-span-1 space-y-4">
-        <!-- User Profile Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+        <!-- Mute & Speed -->
+        <div class="mb-5 rounded-xl p-4" style="background:var(--card2);border:1px solid var(--border)">
+          <div class="text-xs font-bold mb-3 tracking-widest" style="color:var(--muted)">PENGATURAN SUARA</div>
           <div class="flex items-center gap-3 mb-3">
-            <div class="text-3xl">{{ userAvatar.emoji }}</div>
-            <div class="flex-1">
-              <div class="font-bold text-gray-800 dark:text-white">{{ userStats.rank }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</div>
+            <button @click="muteSound=!muteSound"
+                    class="btn-neon py-2 px-3" :class="{'muted-active':muteSound}"
+                    style="font-size:0.82rem;flex-shrink:0">
+              {{muteSound ? '🔇 Mute' : '🔊 Suara'}}
+            </button>
+            <span class="text-xs" style="color:var(--muted)">{{muteSound ? 'Suara dimatikan' : 'Suara aktif'}}</span>
+          </div>
+          <div v-if="!muteSound">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs" style="color:var(--muted)">Kecepatan Baca</span>
+              <span class="speed-badge">{{speechRate}}x</span>
             </div>
-          </div>
-          
-          <!-- Progress Bar -->
-          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-            <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-2 rounded-full transition-all duration-1000 ease-out" 
-                 :style="{ width: userStats.progress + '%' }"></div>
-          </div>
-          
-          <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-            <span>{{ userStats.points }} XP</span>
-            <span>{{ userStats.level * 100 }} XP</span>
-          </div>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-value">{{ accuracyRate }}%</div>
-            <div class="stat-label">Akurasi</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⚡</div>
-            <div class="stat-value">{{ averageTime }}s</div>
-            <div class="stat-label">Rata-rata</div>
-          </div>
-        </div>
-
-        <!-- Daily Challenge -->
-        <div v-if="dailyChallenge" class="bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900 dark:to-emerald-900 rounded-2xl border border-green-200 dark:border-green-800 p-4">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="text-2xl">🎯</div>
-            <div>
-              <div class="font-bold text-green-800 dark:text-green-200">Tantangan Harian</div>
-              <div class="text-sm text-green-700 dark:text-green-300">{{ dailyChallenge.description }}</div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between mb-2">
-            <div class="text-xs text-green-600 dark:text-green-400">
-              {{ dailyChallenge.progress }}/{{ dailyChallenge.requirement }}
-            </div>
-            <div class="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
-              +{{ dailyChallenge.reward }} ⭐
-            </div>
-          </div>
-          <div class="w-full bg-green-200 dark:bg-green-700 rounded-full h-2">
-            <div class="bg-green-500 h-2 rounded-full transition-all duration-500" 
-                 :style="{ width: (dailyChallenge.progress / dailyChallenge.requirement * 100) + '%' }"></div>
-          </div>
-        </div>
-
-        <!-- Power-ups -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-          <div class="font-bold text-gray-800 dark:text-white mb-3">Power-ups</div>
-          <div class="grid grid-cols-2 gap-2">
-            <div v-for="(count, type) in powerUps" :key="type" 
-                 @click="usePowerUp(type)"
-                 class="power-up-card"
-                 :class="{ 'opacity-50 cursor-not-allowed': count === 0 }">
-              <div class="text-2xl mb-1">{{ powerUpIcons[type] }}</div>
-              <div class="text-xs font-bold">{{ count }}</div>
-              <div class="text-xs opacity-90">{{ powerUpNames[type] }}</div>
+            <input type="range" min="0.5" max="2" step="0.1" v-model.number="speechRate"
+                   style="border:none;padding:4px 0;background:transparent" />
+            <div class="flex justify-between text-xs" style="color:var(--muted)">
+              <span>🐢 0.5x</span><span>Normal 1x</span><span>🚀 2x</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- MAIN CONTENT - Questions -->
-      <div class="lg:col-span-3">
-        <!-- Progress & Controls -->
-        <div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900 dark:to-indigo-900 rounded-2xl border border-purple-200 dark:border-purple-800 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Level {{ userStats.level }}</div>
-              <div class="text-xs bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full">
-                {{ userStats.points }}/{{ userStats.level * 100 }} XP
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <!-- Streak Display -->
-              <div v-if="userStats.streak > 0" class="flex items-center gap-2 bg-orange-100 dark:bg-orange-900 px-3 py-1 rounded-full">
-                <span class="text-orange-600 dark:text-orange-400 font-bold">🔥 {{ userStats.streak }}</span>
-                <span class="text-orange-800 dark:text-orange-200 text-sm">Hari</span>
-              </div>
-              
-              <!-- Points Display -->
-              <div class="flex items-center gap-2 bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full">
-                <span class="text-green-600 dark:text-green-400 font-bold">⭐ {{ userStats.points }}</span>
-                <span class="text-green-800 dark:text-green-200 text-sm">Poin</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Animated Progress Bar -->
-          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-3 overflow-hidden">
-            <div class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out progress-glow" 
-                 :style="{ width: userStats.progress + '%' }"></div>
-          </div>
-          
-          <!-- Mini Stats -->
-          <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-            <div class="flex items-center gap-1">
-              <span>🔥 {{ userStats.streak }} hari</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span>⭐ {{ userStats.totalPoints }} XP</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span>✅ {{ userStats.totalCorrect }}/{{ userStats.totalAnswered }}</span>
-            </div>
+      <!-- ── BELAJAR MODE ── -->
+      <div v-if="homeMode==='belajar'">
+        <div class="mb-5">
+          <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">JUMLAH SOAL</label>
+          <div class="grid grid-cols-5 gap-2">
+            <div v-for="n in [5,10,25,50,'Semua']" :key="n"
+                 class="level-btn" :class="{active: jumlahSoal===n}"
+                 @click="jumlahSoal=n">{{n}}</div>
           </div>
         </div>
-
-        <!-- BADGES DISPLAY -->
-        <div class="mb-4 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="font-medium text-gray-800 dark:text-white">Pencapaian Aktif</div>
-            <div class="text-xs text-gray-500">{{ unlockedAchievements.length }}/{{ Object.keys(ACHIEVEMENTS).length }}</div>
+        <div class="mb-5 rounded-xl p-4" style="background:var(--card2);border:1px solid var(--border)">
+          <div class="text-xs font-bold mb-3 tracking-widest" style="color:var(--muted)">PENGATURAN SUARA</div>
+          <div class="flex items-center gap-3 mb-3">
+            <button @click="muteSound=!muteSound" class="btn-neon py-2 px-3"
+                    :class="{'muted-active':muteSound}" style="font-size:0.82rem;flex-shrink:0">
+              {{muteSound ? '🔇 Mute' : '🔊 Suara'}}
+            </button>
           </div>
-          <div class="flex gap-3 overflow-x-auto pb-2">
-            <div v-for="badge in activeBadges" :key="badge.id" 
-                 class="flex-shrink-0 text-center group relative mt-1">
-              <div class="text-4xl transform group-hover:scale-110 transition-transform duration-200 animate-bounce-gentle mt-2">
-                {{ badge.emoji }}
-              </div>
-              <div class="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">{{ badge.name }}</div>
-              <div class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
-                ⭐
-              </div>
+          <div v-if="!muteSound">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs" style="color:var(--muted)">Kecepatan Baca</span>
+              <span class="speed-badge">{{speechRate}}x</span>
             </div>
-            
-            <!-- Badge placeholder untuk yang belum unlocked -->
-            <div v-for="n in (3 - activeBadges.length)" :key="'placeholder-' + n"
-                 class="flex-shrink-0 text-center opacity-40">
-              <div class="text-4xl">🔒</div>
-              <div class="text-xs font-medium mt-1 text-gray-500">Terkunci</div>
-            </div>
+            <input type="range" min="0.5" max="2" step="0.1" v-model.number="speechRate"
+                   style="border:none;padding:4px 0;background:transparent" />
           </div>
         </div>
+      </div>
 
-        <!-- MAIN CARD -->
-        <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-xl" ref="soalContainer">
-          <div v-if="loading" class="text-center py-16 text-indigo-600 dark:text-indigo-400">
-            <div class="flip-card">
-              <div class="flip-card-inner">
-                <div class="flip-card-front">📚</div>
-                <div class="flip-card-back">🎯</div>
-              </div>
+      <!-- ── SOAL SALAH MODE ── -->
+      <div v-if="homeMode==='salah'">
+        <div class="mb-4 rounded-xl p-4" style="background:var(--card2);border:1px solid var(--border)">
+          <div class="flex items-center gap-3">
+            <span style="font-size:1.7rem">📋</span>
+            <div style="flex:1">
+              <div class="font-bold">Soal Pernah Salah</div>
+              <div class="text-sm" style="color:var(--muted)">{{wrongQIds.length}} soal tersimpan</div>
             </div>
-            <div class="text-lg font-medium mt-4">Mempersiapkan soal terbaik untukmu...</div>
+            <button v-if="wrongQIds.length>0" @click="screen='wrongreview'" class="btn-neon py-1 px-3" style="font-size:0.78rem">📊 Review</button>
           </div>
-
-          <div v-else-if="poolEmpty" class="text-center py-16 text-gray-500 dark:text-gray-400">
-            <h3 class="text-lg md:text-xl font-medium text-gray-900 dark:text-white">Selesai — tidak ada soal tersisa</h3>
-            <p class="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-400">Semua soal yang benar telah dikeluarkan dari pool.</p>
-            
-            <!-- Achievement Summary -->
-            <div v-if="sessionStats.questionsAnswered > 0" class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900 dark:to-blue-900 rounded-lg max-w-md mx-auto">
-              <h4 class="font-bold text-lg text-gray-800 dark:text-white mb-3">🎉 Sesi Selesai!</h4>
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ sessionStats.correctAnswers }}</div>
-                  <div class="text-gray-600 dark:text-gray-400">Jawaban Benar</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">+{{ sessionStats.pointsEarned }}</div>
-                  <div class="text-gray-600 dark:text-gray-400">Poin Diperoleh</div>
-                </div>
-              </div>
-            </div>
+        </div>
+        <!-- Sort soal salah -->
+        <div v-if="wrongQIds.length>0" class="mb-4">
+          <div class="text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">URUTAN KUIS SOAL SALAH</div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="sub-tab" :class="{active:wrongSortMode==='terbaru'}" @click="wrongSortMode='terbaru'">🕐 Terbaru</button>
+            <button class="sub-tab" :class="{active:wrongSortMode==='terbanyak'}" @click="wrongSortMode='terbanyak'">📈 Terbanyak Salah</button>
+            <button class="sub-tab" :class="{active:wrongSortMode==='tersedikit'}" @click="wrongSortMode='tersedikit'">📉 Tersedikit Salah</button>
           </div>
+        </div>
+        <div class="mb-4 rounded-xl p-3" style="background:var(--card2);border:1px solid var(--border)">
+          <div class="text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">PENGATURAN SUARA</div>
+          <div class="flex items-center gap-3">
+            <button @click="muteSound=!muteSound" class="btn-neon py-2 px-3"
+                    :class="{'muted-active':muteSound}" style="font-size:0.82rem;flex-shrink:0">
+              {{muteSound ? '🔇 Mute' : '🔊 Suara'}}
+            </button>
+            <span class="text-xs" style="color:var(--muted)">Kecepatan: {{speechRate}}x</span>
+            <input v-if="!muteSound" type="range" min="0.5" max="2" step="0.1" v-model.number="speechRate"
+                   style="flex:1;border:none;padding:4px 0;background:transparent" />
+          </div>
+        </div>
+      </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- LEFT: Soal & Opsi (2 cols on desktop) -->
-<section class="md:col-span-2">
-<div class="flex items-center justify-between mb-4 h-12">
-  <!-- Soal tersisa dengan gaya tombol -->
-  <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-3 py-1 h-full">
-    <span class="text-sm text-gray-500 dark:text-gray-400 mr-2">Soal tersisa:</span>
-    <span class="font-semibold text-indigo-700 dark:text-indigo-400 text-lg">
-      {{ currentQuestions.length }}
-    </span>
+      <!-- Mulai btn -->
+      <button @click="startSession" class="btn-solid w-full py-4 text-base" :disabled="!canStart">
+        {{ homeMode==='kuis' ? '🚀 Mulai Kuis'
+         : homeMode==='belajar' ? '📖 Mulai Belajar'
+         : '🔁 Ulangi Soal Salah' }}
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div v-if="allQuestions.length>0" class="w-full grid grid-cols-3 gap-3 mt-4 slide-up"
+         style="max-width:560px;animation-delay:0.15s">
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:var(--neon)">{{allQuestions.length}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Total Soal</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:var(--neon2)">{{wrongQIds.length}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Pernah Salah</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:#22c55e">{{completedLevels.length}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Level Selesai</div>
+      </div>
+    </div>
+    <div v-if="allQuestions.length===0" class="w-full card mt-4 p-6 text-center slide-up"
+         style="max-width:560px;animation-delay:0.15s">
+      <div style="font-size:2.5rem;margin-bottom:8px">📭</div>
+      <p class="font-semibold" style="color:var(--muted)">Belum ada soal. Klik ⚡ Load DB dulu!</p>
+    </div>
   </div>
 
-  <!-- Kontrol & Sumber -->
-  <div class="flex items-center gap-3 h-full">
-    <!-- tombol kontrol ukuran huruf -->
-    <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md shadow px-2 py-1 h-full">
-      <button @click="ubahUkuranHuruf(-1)" class="px-2 text-lg text-gray-700 dark:text-white hover:text-indigo-600">A−</button>
-      <button @click="ubahUkuranHuruf(1)" class="px-2 text-xl font-semibold text-gray-700 dark:text-white hover:text-indigo-600">A+</button>
+  <!-- ══════════ WRONG REVIEW SCREEN ══════════ -->
+  <div v-if="screen==='wrongreview'" class="quiz-wrap">
+    <div class="flex items-center gap-3 mb-4" style="padding-top:8px">
+      <button @click="screen='home'" class="btn-neon py-2 px-3" style="font-size:0.83rem">← Kembali</button>
+      <h2 class="font-bold text-base" style="flex:1">📋 Daftar Soal Salah</h2>
     </div>
-    <!-- sumber / dataset -->
-    <div class="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded h-full flex items-center">
-      {{ displaySoal.sumber || selectedDataset || '-' }}
+    <!-- sort tabs -->
+    <div class="flex gap-2 flex-wrap mb-4">
+      <button class="sub-tab" :class="{active:wrongSortMode==='terbaru'}" @click="wrongSortMode='terbaru'">🕐 Terbaru</button>
+      <button class="sub-tab" :class="{active:wrongSortMode==='terbanyak'}" @click="wrongSortMode='terbanyak'">📈 Terbanyak</button>
+      <button class="sub-tab" :class="{active:wrongSortMode==='tersedikit'}" @click="wrongSortMode='tersedikit'">📉 Tersedikit</button>
+    </div>
+    <div v-if="sortedWrongItems.length===0" class="card p-8 text-center">
+      <div style="font-size:2.5rem;margin-bottom:8px">🎉</div>
+      <p class="font-semibold" style="color:var(--muted)">Tidak ada soal yang salah!</p>
+    </div>
+    <div v-for="item in sortedWrongItems" :key="item.no" class="wrong-item mb-3 fade-in">
+      <div class="flex items-start gap-3">
+        <div>
+          <div class="flex flex-wrap gap-2 mb-1">
+            <span class="tag tag-neon mono">#{{item.no}}</span>
+            <span v-if="item.sumber" class="tag tag-orange">{{item.sumber}}</span>
+            <span class="tag tag-red">❌ {{item.count}}× salah</span>
+            <span class="tag" style="background:rgba(100,116,139,0.1);color:var(--muted);border:1px solid var(--border);font-size:0.65rem">
+              {{formatTime(item.lastWrong)}}
+            </span>
+          </div>
+          <p class="text-sm mb-2" style="line-height:1.5">{{item.soal}}</p>
+          <p class="text-xs" style="color:#22c55e">✅ {{item.kunci}}</p>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3">
+        <button @click="removeWrongItem(item.no)" class="btn-muted">✓ Sudah Dikuasai</button>
+      </div>
     </div>
   </div>
+
+  <!-- ══════════ QUIZ ══════════ -->
+  <div v-if="screen==='quiz'" class="quiz-wrap">
+    <div class="flex items-center gap-3 mb-2" style="padding-top:8px">
+      <button @click="exitQuiz" class="btn-neon py-2 px-3" style="font-size:0.83rem">← Keluar</button>
+      <div style="flex:1">
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{width: progressPct+'%'}"></div>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span class="mono text-xs" style="color:var(--muted)">{{doneCount}}/{{sessionTotal}}</span>
+          <span class="mono text-xs" style="color:var(--muted)">{{progressPct}}%</span>
+        </div>
+      </div>
+      <!-- Mute toggle -->
+      <button @click="muteSound=!muteSound" class="btn-neon py-2 px-3"
+              :class="{'muted-active':muteSound}" title="Mute/Unmute">
+        <span v-if="!muteSound && isSpeaking" class="speak-indicator">
+          <span></span><span></span><span></span><span></span>
+        </span>
+        <span v-else>{{muteSound ? '🔇' : '🔊'}}</span>
+      </button>
+      <!-- Speed panel toggle -->
+      <button @click="showSoundPanel=!showSoundPanel" class="btn-neon py-2 px-3"
+              :style="showSoundPanel?'border-color:var(--neon2);color:var(--neon2)':''"
+              title="Atur kecepatan">
+        <span class="speed-badge" style="background:transparent;padding:0">{{speechRate}}x</span>
+      </button>
+    </div>
+
+    <!-- Inline sound panel -->
+    <div v-if="showSoundPanel" class="mb-3 rounded-xl p-3 fade-in"
+         style="background:var(--card2);border:1px solid var(--border)">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-bold" style="color:var(--muted);white-space:nowrap">🐢 0.5x</span>
+        <input type="range" min="0.5" max="2" step="0.1" v-model.number="speechRate"
+               style="flex:1;border:none;padding:4px 0;background:transparent" />
+        <span class="text-xs font-bold" style="color:var(--muted);white-space:nowrap">🚀 2x</span>
+        <span class="speed-badge" style="min-width:36px;text-align:center">{{speechRate}}x</span>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mb-4">
+      <div class="card flex-1 p-3 text-center">
+        <div class="text-xl font-bold" style="color:#22c55e">{{correctCount}}</div>
+        <div class="text-xs" style="color:var(--muted)">Benar</div>
+      </div>
+      <div class="card flex-1 p-3 text-center">
+        <div class="text-xl font-bold" style="color:#ef4444">{{wrongCount}}</div>
+        <div class="text-xs" style="color:var(--muted)">Salah</div>
+      </div>
+      <div class="card flex-1 p-3 text-center">
+        <div class="text-xl font-bold" style="color:var(--neon2)">{{queue.length}}</div>
+        <div class="text-xs" style="color:var(--muted)">Antrian</div>
+      </div>
+    </div>
+
+    <div v-if="currentQ" class="card p-6 mb-4 slide-up" :key="attemptKey">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px">
+        <span class="tag tag-neon mono">#{{currentQ.no}}</span>
+        <span v-if="currentQ.sumber" class="tag tag-orange">{{currentQ.sumber}}</span>
+        <span v-if="isRetry" class="tag tag-red">🔄 Ulangi</span>
+        <span v-if="sessionLevelLabel" class="tag tag-purple">{{sessionLevelLabel}}</span>
+        <span v-if="!muteSound && isSpeaking" class="speak-indicator" style="margin-left:4px">
+          <span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{currentQ.soal}}</p>
+      <div class="flex flex-col gap-3">
+        <button v-for="(opt, idx) in currentOptions" :key="idx"
+                class="option-btn" :class="getOptionClass(idx)"
+                :disabled="answered" @click="selectAnswer(idx)">
+          <span class="badge-count" :style="getLetterStyle(idx)">{{['A','B','C','D'][idx]}}</span>
+          <span style="flex:1">{{opt}}</span>
+          <span v-if="answered && idx===correctIdx">✅</span>
+          <span v-if="answered && idx===selectedIdx && idx!==correctIdx">❌</span>
+        </button>
+      </div>
+      <div v-if="answered" class="mt-5 rounded-xl p-4 fade-in"
+           :style="lastCorrect
+             ? 'background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.28)'
+             : 'background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.28)'">
+        <div class="font-bold text-base mb-1" :style="lastCorrect?'color:#22c55e':'color:#ef4444'">
+          {{ lastCorrect ? '🎉 Benar!' : '😅 Kurang Tepat — soal akan muncul lagi!' }}
+        </div>
+        <div class="text-sm mb-1" style="color:var(--muted)">
+          Jawaban benar: <span class="font-bold" style="color:var(--text)">{{currentOptions[correctIdx]}}</span>
+        </div>
+        <div v-if="currentQ.penjelasan" class="text-sm mt-2 p-3 rounded-lg"
+             style="background:rgba(0,245,212,0.05);color:var(--muted)">
+          💡 {{currentQ.penjelasan}}
+        </div>
+        <button @click="nextQuestion" class="btn-solid mt-4 w-full">
+          {{ queue.length > 0 ? 'Soal Berikutnya →' : '🏆 Lihat Hasil' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ BELAJAR ══════════ -->
+  <div v-if="screen==='belajar'" class="quiz-wrap">
+    <div class="flex items-center gap-3 mb-4" style="padding-top:8px">
+      <button @click="exitQuiz" class="btn-neon py-2 px-3" style="font-size:0.83rem">← Keluar</button>
+      <div style="flex:1">
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{width: bProgressPct+'%'}"></div>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span class="mono text-xs" style="color:var(--muted)">{{bIdx+1}}/{{sessionQuestions.length}}</span>
+          <span class="mono text-xs" style="color:var(--muted)">{{bProgressPct}}%</span>
+        </div>
+      </div>
+      <button @click="muteSound=!muteSound" class="btn-neon py-2 px-3"
+              :class="{'muted-active':muteSound}">{{muteSound?'🔇':'🔊'}}</button>
+      <button @click="toggleAutoPlay" class="btn-neon py-2 px-3"
+              :style="autoPlay?'border-color:var(--neon2);color:var(--neon2)':''">
+        {{autoPlay?'⏸':'▶'}}
+      </button>
+    </div>
+
+    <div v-if="sessionQuestions.length>0" class="card p-6 mb-4 slide-up" :key="'b'+bIdx" style="flex:1">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px">
+        <span class="tag tag-neon mono">#{{sessionQuestions[bIdx].no}}</span>
+        <span v-if="sessionQuestions[bIdx].sumber" class="tag tag-orange">{{sessionQuestions[bIdx].sumber}}</span>
+        <span class="tag tag-green">📖 BELAJAR</span>
+        <span v-if="!muteSound && isSpeaking" class="speak-indicator" style="margin-left:4px">
+          <span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{sessionQuestions[bIdx].soal}}</p>
+      <div class="flex flex-col gap-3 mb-4">
+        <div v-for="(opt,idx) in getBelajarOptions(bIdx)" :key="idx"
+             class="option-btn" :class="idx===0?'correct':''" style="cursor:default">
+          <span class="badge-count" :style="idx===0?'background:rgba(34,197,94,0.2);color:#22c55e':''">
+            {{['A','B','C','D'][idx]}}
+          </span>
+          <span style="flex:1">{{opt}}</span>
+          <span v-if="idx===0">✅</span>
+        </div>
+      </div>
+      <div v-if="sessionQuestions[bIdx].penjelasan" class="rounded-xl p-4 text-sm"
+           style="background:rgba(0,245,212,0.05);border:1px solid rgba(0,245,212,0.15);color:var(--muted)">
+        💡 {{sessionQuestions[bIdx].penjelasan}}
+      </div>
+    </div>
+
+    <div class="flex gap-3 pb-2">
+      <button @click="bPrev" :disabled="bIdx===0" class="btn-neon flex-1 py-3">← Prev</button>
+      <button @click="bSpeakCurrent" class="btn-neon px-5 py-3" :disabled="muteSound">🔊</button>
+      <button @click="bNext" :disabled="bIdx>=sessionQuestions.length-1" class="btn-solid flex-1 py-3">Next →</button>
+    </div>
+  </div>
+
+  <!-- ══════════ RESULT ══════════ -->
+  <div v-if="screen==='result'" class="page-center">
+    <div class="card w-full text-center slide-up" style="max-width:460px;padding:32px">
+      <div style="font-size:4rem;margin-bottom:12px">
+        {{ scorePercent>=90?'🏆':scorePercent>=75?'🌟':scorePercent>=60?'😊':'📚' }}
+      </div>
+      <!-- Level complete badge -->
+      <div v-if="justCompletedLevel" class="tag tag-green mb-3" style="font-size:0.72rem">
+        ✅ {{justCompletedLevel}} Selesai!
+      </div>
+      <h2 class="text-4xl font-extrabold glow mb-1" style="color:var(--neon)">{{scorePercent}}%</h2>
+      <p class="text-base mb-1">{{correctCount}} Benar dari {{doneCount}} Soal</p>
+      <p class="text-sm mb-6" style="color:var(--muted)">{{resultMsg}}</p>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="rounded-xl p-4" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.22)">
+          <div class="text-2xl font-bold" style="color:#22c55e">{{correctCount}}</div>
+          <div class="text-sm" style="color:var(--muted)">Jawaban Benar</div>
+        </div>
+        <div class="rounded-xl p-4" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22)">
+          <div class="text-2xl font-bold" style="color:#ef4444">{{wrongCount}}</div>
+          <div class="text-sm" style="color:var(--muted)">Jawaban Salah</div>
+        </div>
+      </div>
+      <div v-if="wrongQIds.length>0" class="rounded-xl p-3 mb-5 text-sm"
+           style="background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.22)">
+        <span style="color:var(--neon2)">⚠️ {{wrongQIds.length}} soal tersimpan untuk latihan ulang</span>
+      </div>
+      <p class="font-semibold mb-3 text-sm" style="color:var(--muted)">Apa yang ingin kamu lakukan?</p>
+      <div class="flex flex-col gap-3">
+        <button @click="nextLevel" class="btn-solid w-full py-3">🚀 Lanjut Level Berikutnya</button>
+        <button @click="retryWrong" v-if="wrongQIds.length>0" class="btn-orange w-full py-3">
+          🔁 Ulangi Soal Salah ({{wrongQIds.length}})
+        </button>
+        <button @click="goHome" class="btn-neon w-full py-3">🏠 Kembali ke Menu</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-
-
-  <!-- area soal -->
- <article class="prose prose-sm md:prose lg:prose-lg max-w-none dark:prose-invert">
-  <p class="text-gray-900 dark:text-white font-semibold border-b pb-4 dark:border-gray-600 transition-all duration-200"
-     :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
-     v-html="displaySoal.soal">
-  </p>
-</article>
-<!-- {{displaySoal}} <br><br> -->
-  <!-- OPSI -->
-   <!-- {{dataAwal}} -->
-<div class="mt-6 space-y-3">
-   <div v-for="(opt, index) in displayOptions" :key="opt.key + '-' + index">
-     <div class="flex items-start gap-3">
-       <button
-         type="button"
-         @click="selectAnswer(opt.key)"
-         @dblclick.prevent="selectAnswer(opt.key, true)"
-         :disabled="jawabanSudahDikirim"
-         class="flex-1 text-left p-4 rounded-lg border-2 transition duration-200 shadow-sm text-sm md:text-base hover-lift"
-         :class="getOptionClasses(opt.key)"
-       >
-         <div class="flex items-start">
-           <div class="mr-4 flex-shrink-0">
-             <div class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-gray-700 border text-sm font-bold text-gray-800 dark:text-white">
-               {{ optionLabels[index] || opt.key.toUpperCase() }}
-             </div>
-           </div>
-           <div 
-             class="flex-1 text-left" 
-             v-html="opt.text"
-             :style="{ fontSize: ukuranHuruf + 'px' }" 
-           ></div>
-         </div>
-       </button>
-
-       <button
-         v-show="opt.key === jawabanTerpilih && !jawabanSudahDikirim"
-         @click.stop="submitAnswer"
-         type="button"
-         class="w-10 h-10 flex-shrink-0 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition flex items-center justify-center animate-pulse-soft"
-         title="Kirim Jawaban"
-       >
-         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-         </svg>
-       </button>
-     </div>
-   </div>
- </div>
-</section>
-
-
-            <!-- RIGHT: Info, Kontrol, Statistik -->
-            <aside class="md:col-span-1 border-l md:border-l-0 md:pl-6 dark:border-gray-600" ref="controlsAside">
-              <div class="sticky top-6">
-                <!-- Weakness Analysis -->
-                <!-- <div v-if="weaknessAnalysis.weakTopics.length > 0" class="mb-4 p-4 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900 dark:to-orange-900 rounded-lg border border-red-200 dark:border-red-800">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div class="text-xl">🎯</div>
-                    <div class="font-medium text-red-800 dark:text-red-200">Area Perbaikan</div>
-                  </div>
-                  <div class="text-sm text-red-700 dark:text-red-300 mb-2">{{ weaknessAnalysis.suggestion }}</div>
-                  <div class="text-xs text-red-600 dark:text-red-400">
-                    Topik: {{ weaknessAnalysis.weakTopics.join(', ') }}
-                  </div>
-                </div> -->
-
-                <div class="mb-4">
-                  <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                  <div class="mt-2 text-base font-medium" :class="{'text-green-600 dark:text-green-400': isLastAnswerCorrect, 'text-red-600 dark:text-red-400': !isLastAnswerCorrect}">
-                    <span v-if="jawabanSudahDikirim">{{ isLastAnswerCorrect ? '✅ Jawaban Benar!' : '❌ Jawaban Salah!' }}</span>
-                    <span v-else class="text-gray-600 dark:text-gray-400">Pilih opsi, lalu kirim atau double-click.</span>
-                  </div>
-                  <div v-if="jawabanSudahDikirim" 
-                      class="mt-3 text-gray-700 dark:text-gray-300 transition-all duration-200"
-                      :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }">
-
-                    <div>
-                      Kunci jawaban: 
-                      <div class="font-semibold mt-1">{{ correctAnswerText }}</div>
-                    </div>
-
-                    <div v-if="displaySoal.penjelasan" class="mt-3 pt-3 border-t dark:border-gray-600">
-                      <strong class="text-indigo-600 dark:text-indigo-400">
-                        <span role="img" aria-label="penjelasan">💡</span> Penjelasan:
-                      </strong>
-                      <p class="mt-1"
-                        :style="{ fontSize: ukuranHuruf + 'px', lineHeight: (ukuranHuruf + 8) + 'px' }"
-                        v-html="displaySoal.penjelasan">
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mb-4 flex items-stretch gap-2">
-                  <button
-                    @click="manualNext"
-                    :disabled="!jawabanSudahDikirim || poolEmpty"
-                    class="flex-1 px-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50 text-sm md:text-base transition-transform hover:scale-105"
-                    style="height: 48px;"
-                  >
-                    <span v-if="countdownActive">
-                      Next {{ countdown }} s
-                    </span>
-                    <span v-else>
-                      {{ poolEmpty ? 'Selesai' : 'Soal Berikutnya (tekan spasi)' }}
-                    </span>
-                  </button>
-
-                  <button
-                    v-if="countdownActive"
-                    @click.stop="toggleCountdown"
-                    :disabled="countdown <= 0"
-                    class="px-3 bg-green-700 hover:bg-green-800 rounded-md text-white disabled:opacity-70 text-sm transition-transform hover:scale-105"
-                    style="height: 48px;"
-                    title="Jeda / Lanjutkan countdown"
-                  >
-                    <span v-if="isPaused">▶️ Lanjutkan</span>
-                    <span v-else>⏸️ Jeda (tekan spasi)</span>
-                    
-                  </button>
-                </div>
-
-                <div class="mb-4 grid grid-cols-2 gap-2">
-                  <button @click="openAchievementsModal" class="w-full px-3 py-2 bg-yellow-500 text-white rounded-md shadow hover:bg-yellow-600 text-sm transition-transform hover:scale-105">
-                    Pencapaian ({{ unlockedAchievements.length }})
-                  </button>
-                  <button @click="openWrongModal" class="w-full px-3 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 text-sm transition-transform hover:scale-105">
-                    Soal Salah ({{ wrongQuestions.length }})
-                  </button>
-                </div>
-
-                <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                  <div>Dataset: <span class="font-medium text-gray-700 dark:text-gray-300">{{ selectedDataset || '-' }}</span></div>
-                  <div class="mt-2">Soal tersisa: <span class="font-semibold text-indigo-700 dark:text-indigo-400">{{ currentQuestions.length }}</span></div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- footer controls (mobile-friendly) -->
-    <div class="mt-6 flex items-center justify-between gap-3">
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-        Progress tersimpan: <span class="font-medium text-green-600 dark:text-green-400">{{ lastSavedTime }}</span>
-      </div>
-      <div class="text-sm text-gray-500 dark:text-gray-400">Total soal salah: <span class="font-medium text-red-600 dark:text-red-400">{{ wrongQuestions.length }}</span></div>
-    </div>
-
-    <!-- Modal: Soal Salah -->
-    <div v-if="showWrongModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-          <h3 class="font-bold text-lg dark:text-white">Daftar Soal Salah ({{ wrongQuestions.length }})</h3>
-          <div class="flex items-center gap-2">
-            <button @click="exportWrongAsCSV" class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600">Export CSV</button>
-            <button @click="closeWrongModal" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Tutup</button>
-          </div>
-        </div>
-        <div class="p-4 max-h-[60vh] overflow-auto">
-          <table class="w-full table-auto text-sm">
-            <thead>
-              <tr class="bg-gray-50 dark:bg-gray-700">
-                <th class="p-3 text-left dark:text-white">#</th>
-                <th class="p-3 text-left dark:text-white">Soal</th>
-                <th class="p-3 text-left dark:text-white">Kunci</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(w, i) in wrongQuestions" :key="i" class="border-t dark:border-gray-600">
-                <td class="p-3 align-top w-12 dark:text-white">{{ i+1 }}</td>
-                <td class="p-3 align-top dark:text-white" v-html="w.soal"></td>
-                <td class="p-3 align-top dark:text-white">{{ w.kunciText || (w.kunciKey || '').toString().toUpperCase() }}</td>
-              </tr>
-              <tr v-if="wrongQuestions.length === 0">
-                <td colspan="3" class="p-4 text-center text-gray-500 dark:text-gray-400">Belum ada soal salah.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal: Achievements -->
-    <div v-if="showAchievementsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-          <h3 class="font-bold text-lg dark:text-white">🏆 Pencapaian</h3>
-          <div class="flex items-center gap-2">
-            <button @click="closeAchievementsModal" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Tutup</button>
-          </div>
-        </div>
-        <div class="p-4 max-h-[60vh] overflow-auto">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="achievement in allAchievements" :key="achievement.id"
-                 class="p-4 border rounded-lg transition-all duration-300 hover:scale-105"
-                 :class="achievement.unlocked ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200 dark:from-green-900 dark:to-blue-900 dark:border-green-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'">
-              <div class="flex items-center gap-3">
-                <div class="text-3xl">{{ achievement.emoji }}</div>
-                <div class="flex-1">
-                  <div class="font-bold text-gray-800 dark:text-white">{{ achievement.name }}</div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ achievement.description }}</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                    <span v-if="achievement.unlocked" class="text-green-600 dark:text-green-400">✅ Terbuka</span>
-                    <span v-else>{{ achievement.progress }}/{{ achievement.requirement }}</span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-sm font-bold text-yellow-600 dark:text-yellow-400">+{{ achievement.points }}</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">poin</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal: Settings -->
-    <div v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
-        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-          <h3 class="font-bold text-lg dark:text-white">Pengaturan Soal</h3>
-          <div class="flex items-center gap-2">
-            <button @click="closeSettings" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md dark:text-white">Batal</button>
-          </div>
-        </div>
-        <div class="p-4 space-y-6">
-          <!-- Input jumlah soal -->
-          <div class="flex items-center gap-4">
-            <div>
-              <label class="block font-medium mb-1 dark:text-white">Jumlah Soal per Batch</label>
-              <input
-                type="number"
-                v-model.number="jumlahSoalDraft"
-                min="1"
-                class="w-32 border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-
-            <div class="flex items-end gap-2">
-              <button
-                :disabled="!canApplyJumlahSoal"
-                @click="applySettings"
-                class="px-3 py-1 rounded-md bg-indigo-600 text-white disabled:opacity-60 hover:bg-indigo-700"
-              >
-                Simpan
-              </button>
-
-              <button
-                @click="applySettings(true)"
-                class="px-3 py-1 rounded-md border bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
-                title="Simpan dan pilih batch pertama"
-              >
-                Simpan & Pilih
-              </button>
-            </div>
-          </div>
-
-          <!-- Tombol batch soal -->
-          <div>
-            <label class="block font-medium mb-2 dark:text-white">Pilih Batch:</label>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="(batch, idx) in batches"
-                :key="idx"
-                @click="pilihBatch(idx)"
-                :class="[
-                  'px-3 py-1 rounded-md text-sm transition-transform hover:scale-105',
-                  idx === currentBatchIndex ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 dark:text-white'
-                ]"
-              >
-                Soal {{ idx * jumlahSoalDraft + 1 }} – {{ idx * jumlahSoalDraft + batch.length }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Tombol pilih batch berikutnya -->
-          <div v-if="currentBatchIndex != null" class="pt-2">
-            <button
-              v-if="currentBatchIndex < (batches.length - 1)"
-              @click="applyAndSelectNextBatch"
-              class="px-3 py-1 rounded-md bg-green-500 text-white hover:bg-green-600 transition-transform hover:scale-105"
-            >
-              Pilih Batch Berikutnya
-            </button>
-            <span v-else class="text-sm text-gray-500 dark:text-gray-400">Tidak ada batch berikutnya.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 <script>
-function shuffleArray(array) {
-  const a = array.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+const DB_URL   = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
+const LS_Q     = 'qm_questions';
+const LS_WRONG = 'qm_wrong';
+const LS_THEME = 'qm_theme';
+const LS_DONE  = 'qm_completed';
+const LS_SETTINGS = 'qm_settings';
+
+/* ─── Theme bootstrap ─── */
+(function() {
+  const t = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(LS_THEME, next);
+  this.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+let _toastT;
+function showToast(msg, type='green', dur=3200) {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.className = 'toast toast-' + type;
+  el.style.display = '';
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => { el.style.display = 'none'; }, dur);
 }
-
-// Enhanced ACHIEVEMENTS dengan lebih banyak variasi
-const ACHIEVEMENTS = {
-  FIRST_QUESTION: {
-    id: 'first_question',
-    name: 'Pemula',
-    description: 'Jawab soal pertama',
-    emoji: '🎯',
-    points: 20,
-    requirement: 1,
-    type: 'Milenium',
-    check: (stats) => stats.totalAnswered >= 1
-  },
-  STREAK_3: {
-    id: 'streak_3',
-    name: 'Hot Streak',
-    description: '3 jawaban benar berturut-turut',
-    emoji: '🔥',
-    points: 30,
-    requirement: 3,
-    type: 'Kombo',
-    check: (stats) => stats.currentStreak >= 3
-  },
-  STREAK_10: {
-    id: 'streak_10',
-    name: 'Master Combo',
-    description: '10 jawaban benar berturut-turut',
-    emoji: '⚡',
-    points: 100,
-    requirement: 10,
-    type: 'Kombo',
-    check: (stats) => stats.currentStreak >= 10
-  },
-  PERFECT_SESSION: {
-    id: 'perfect_session',
-    name: 'Sempurna',
-    description: 'Selesaikan sesi tanpa salah',
-    emoji: '⭐',
-    points: 80,
-    requirement: 1,
-    type: 'Presisi',
-    check: (stats) => stats.perfectSessions >= 1
-  },
-  NIGHT_OWL: {
-    id: 'night_owl',
-    name: 'Burung Hantu',
-    description: 'Belajar setelah jam 10 malam',
-    emoji: '🦉',
-    points: 25,
-    requirement: 1,
-    type: 'Waktu',
-    check: (stats) => stats.nightSessions >= 1
-  },
-  EARLY_BIRD: {
-    id: 'early_bird',
-    name: 'Early Bird',
-    description: 'Belajar sebelum jam 6 pagi',
-    emoji: '🌅',
-    points: 25,
-    requirement: 1,
-    type: 'Waktu',
-    check: (stats) => stats.earlySessions >= 1
-  },
-  MARATHON: {
-    id: 'marathon',
-    name: 'Maraton',
-    description: '50 soal dalam satu sesi',
-    emoji: '🏃',
-    points: 150,
-    requirement: 50,
-    type: 'Ketahanan',
-    check: (stats) => stats.sessionQuestions >= 50
-  },
-  MASTER: {
-    id: 'master',
-    name: 'Master',
-    description: 'Kumpulkan 1000 poin',
-    emoji: '👑',
-    points: 200,
-    requirement: 1000,
-    type: 'Prestasi',
-    check: (stats) => stats.totalPoints >= 1000
-  },
-  SPEED_DEMON: {
-    id: 'speed_demon',
-    name: 'Speed Demon',
-    description: 'Jawab 10 soal dalam 2 menit',
-    emoji: '💨',
-    points: 60,
-    requirement: 1,
-    type: 'Kecepatan',
-    check: (stats) => stats.fastAnswers >= 1
-  },
-  CONSISTENT: {
-    id: 'consistent',
-    name: 'Konsisten',
-    description: 'Aktif 7 hari berturut-turut',
-    emoji: '📅',
-    points: 120,
-    requirement: 7,
-    type: 'Dedikasi',
-    check: (stats) => stats.streak >= 7
-  }
-};
-
-// DAILY CHALLENGES
-const DAILY_CHALLENGES = {
-  ANSWER_10: {
-    id: 'answer_10',
-    description: 'Jawab 10 soal hari ini',
-    requirement: 10,
-    reward: 50,
-    type: 'Soal'
-  },
-  PERFECT_5: {
-    id: 'perfect_5',
-    description: '5 jawaban benar berturut-turut',
-    requirement: 5,
-    reward: 75,
-    type: 'Akurasi'
-  },
-  STREAK_3_DAYS: {
-    id: 'streak_3_days',
-    description: 'Aktif 3 hari berturut-turut',
-    requirement: 3,
-    reward: 100,
-    type: 'Konsistensi'
-  }
-};
-
-const SOAL_STORAGE_KEY = 'kitab_soal_aktif';
 
 new Vue({
   el: '#app',
-  data() {
-    return {
-      //  displaySoal: {}, // ✅ penting! harus di sini, bukan di computed
-      
-      GAS_BASE: 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec',
-      optionLabels: ['A','B','C','D'],
+  data: {
+    screen:   'home',
+    homeMode: 'kuis',
+    kuisType: 'level',      // 'level' | 'kumulatif' | 'custom'
+    levelSize: 10,
+    selectedLevel: 1,
+    jumlahSoal: 10,
 
-      // --- dataset select & insert config ---
-      datasets: ['PMK 62', 'Pejabat Perbendaharaan', 'Mekanisme Pembayaran APBN', 'MP PNPB', 'PENGELOLAAN HIBAH', 'TRANSFER KE DAERAH', 'MONEV PA'],
-      selectedDataset: '',
+    muteSound: false,
+    speechRate: 1.0,
 
-      // insert URL base
-      insertUrlBase: 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec?action=insert',
+    filterSumber: '',
+    allQuestions: [],
+    loadingDB: false,
 
-      // umum / UI
-      loading: false,
-      raw: null,
-      showWrongModal: false,
-      showSettings: false,
-      showAchievementsModal: false,
-      showAchievementNotification: false,
-      achievementNotification: {},
+    // completed level keys array
+    completedLevels: [],
+    justCompletedLevel: '',
 
-      // Auto-save
-      lastSavedTime: 'Belum tersimpan',
-      autoSaveInterval: null,
+    sessionQuestions: [],
+    sessionTotal: 0,
+    sessionLevelLabel: '',
+    queue: [],
+    currentQ: null,
+    currentOptions: [],
+    correctIdx: 0,
+    selectedIdx: null,
+    answered: false,
+    lastCorrect: false,
+    isRetry: false,
+    correctCount: 0,
+    wrongCount: 0,
+    doneCount: 0,
+    attemptKey: 0,
+    pendingLevelKey: '',
+    showSoundPanel: false,
 
-      // Enhanced Features
-      darkMode: false,
-      selectedTheme: 'default',
-      
-      // User Avatar & Customization
-      userAvatar: {
-        emoji: '👨‍💼',
-        frame: 'basic',
-        effects: 'none'
-      },
+    // wrongData: Array of { no, soal, kunci, sumber, count, lastWrong }
+    wrongData: [],
+    wrongSortMode: 'terbaru',  // 'terbaru' | 'terbanyak' | 'tersedikit'
 
-      // Power-ups System
-      powerUps: {
-        doublePoints: 2,
-        timeExtender: 3,
-        skipQuestion: 1,
-        hint: 5
-      },
+    bIdx: 0,
+    autoPlay: false,
+    autoPlayTimer: null,
 
-      powerUpIcons: {
-        doublePoints: '⚡',
-        timeExtender: '⏱️',
-        skipQuestion: '🚀',
-        hint: '💡'
-      },
-
-      powerUpNames: {
-        doublePoints: '2x Poin',
-        timeExtender: '+10s',
-        skipQuestion: 'Skip',
-        hint: 'Petunjuk'
-      },
-
-      // Weakness Analysis
-      weaknessAnalysis: {
-        weakTopics: [],
-        suggestion: "",
-        recommendedQuestions: []
-      },
-
-      // Daily Bonus
-      showDailyBonus: false,
-      dailyBonusAmount: 0,
-      loginStreak: {
-        current: 0,
-        lastLogin: null,
-        rewards: [10, 20, 30, 50, 100, 150, 200]
-      },
-
-      // Enhanced Gamification
-      showLevelUpNotification: false,
-      showStreakFire: false,
-      dailyChallenge: null,
-      userStats: {
-        points: 0,
-        level: 1,
-        progress: 0,
-        streak: 0,
-        lastActiveDate: null,
-        totalAnswered: 0,
-        totalCorrect: 0,
-        currentStreak: 0,
-        perfectSessions: 0,
-        nightSessions: 0,
-        earlySessions: 0,
-        sessionQuestions: 0,
-        totalPoints: 0,
-        fastAnswers: 0,
-        rank: 'Pemula',
-        dailyProgress: 0,
-      },
-      ukuranHuruf: 20, // default ukuran huruf soal
-      
-      // Session tracking untuk challenge
-      sessionStartTime: null,
-      answersThisSession: 0,
-      correctStreakThisSession: 0,
-      answerTimes: [],
-
-      // Achievement system
-      ACHIEVEMENTS: ACHIEVEMENTS,
-      unlockedAchievements: [],
-      activeBadges: [],
-
-      // pool & indices
-      dataAwal: [],
-      originalQuestions: [],
-      currentIndex: 0,
-      tampilIndex: 0,
-
-      // batch
-      jumlahSoal: 15,
-      jumlahSoalDraft: 15,
-      batches: [],
-      currentBatchIndex: null,
-      currentQuestions: [],
-
-      // jawaban & riwayat
-      jawabanTerpilih: null,
-      jawabanSudahDikirim: false,
-      submittedSoal: null,
-      riwayatJawaban: [],
-      wrongQuestions: [],
-
-      // countdown
-      countdown: 10,
-      countdownActive: false,
-      _countdownTimer: null,
-      isPaused: false,
-
-      // Session stats
-      sessionStats: {
-        questionsAnswered: 0,
-        correctAnswers: 0,
-        pointsEarned: 0
-      }
-    };
+    isSpeaking: false,
+    speechSynth: null,
   },
+
   computed: {
-    poolEmpty() {
-      const poolSize = (this.currentQuestions && this.currentQuestions.length)
-        ? this.currentQuestions.length
-        : (this.dataAwal ? this.dataAwal.length : 0);
-      return poolSize === 0 && !this.submittedSoal;
-    },
+    wrongQIds() { return this.wrongData.map(w => String(w.no)); },
 
-    totalPool() {
-      const poolSize = (this.currentQuestions && this.currentQuestions.length)
-        ? this.currentQuestions.length
-        : (this.dataAwal ? this.dataAwal.length : 0);
-      return poolSize + (this.submittedSoal ? 1 : 0);
-    },
-
-    displaySoal() {
-      if (this.submittedSoal) return this.submittedSoal;
-      if (this.currentQuestions && this.currentQuestions.length) {
-        return this.currentQuestions[this.tampilIndex] || {};
-      }
-      return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
-    },
-
-    displayOptions() {
-      const s = this.displaySoal && this.displaySoal.shuffledOptions;
-      if (!s) return [];
-
-      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object' && ('text' in s[0] || 'key' in s[0])) {
-        return s.map((o, i) => ({ key: o.key ?? String.fromCharCode(97 + i), text: o.text ?? '' }));
-      }
-      if (s && typeof s === 'object' && !Array.isArray(s)) {
-        return Object.keys(s).map(k => ({ key: k, text: s[k] }));
-      }
-      if (Array.isArray(s) && typeof s[0] === 'string') {
-        return s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
-      }
-      return [];
-    },
-
-    isLastAnswerCorrect() {
-      const last = this.riwayatJawaban && this.riwayatJawaban[this.riwayatJawaban.length - 1];
-      return !!last && last.benar === true;
-    },
-
-    correctAnswerText() {
-      const soal = this.displaySoal;
-      if (!soal) return '';
-      return this.getAnswerTextByKey(soal, soal.kunciKey);
-    },
-
-    allAchievements() {
-      return Object.values(ACHIEVEMENTS).map(achievement => ({
-        ...achievement,
-        unlocked: this.unlockedAchievements.includes(achievement.id),
-        progress: this.getAchievementProgress(achievement)
-      }));
-    },
-
-    accuracyRate() {
-      if (this.userStats.totalAnswered === 0) return 0;
-      return Math.round((this.userStats.totalCorrect / this.userStats.totalAnswered) * 100);
-    },
-
-    averageTime() {
-      if (this.answerTimes.length === 0) return 0;
-      const avg = this.answerTimes.reduce((a, b) => a + b, 0) / this.answerTimes.length;
-      return Math.round(avg * 10) / 10;
-    }
-  },
-  methods: {
-       handleSpaceKey(e) {
-    if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
-      e.preventDefault();
-
-      // ✅ Jika countdown masih aktif, jeda / lanjutkan
-      if (this.countdownActive) {
-        this.toggleCountdown();
-      } 
-      // ✅ Jika countdown sudah habis atau soal sudah dijawab, lanjut soal berikutnya
-      else if (this.jawabanSudahDikirim && !this.poolEmpty) {
-        this.manualNext();
-      }
-    }
-  },
-     saveSoalToLocal() {
-    localStorage.setItem(SOAL_STORAGE_KEY, JSON.stringify({
-      timestamp: Date.now(),
-      dataset: this.selectedDataset,
-      soal: this.displaySoal,
-      pool: this.poolSoal || [],
-      index: this.tampilIndex || 0
-    }));
-    console.log('💾 Soal disimpan otomatis ke localStorage.');
-  },
-     ubahUkuranHuruf(delta) {
-    const min = 14;
-    const max = 40;
-    this.ukuranHuruf = Math.min(max, Math.max(min, this.ukuranHuruf + delta));
-  },
-    // ==================== ENHANCED FEATURES ====================
-    toggleDarkMode() {
-      this.darkMode = !this.darkMode;
-      localStorage.setItem('pmk_quiz_darkMode', this.darkMode);
-    },
-
-    changeTheme() {
-      document.body.className = document.body.className.replace(/theme-\w+/g, '');
-      if (this.selectedTheme !== 'default') {
-        document.body.classList.add(`theme-${this.selectedTheme}`);
-      }
-      localStorage.setItem('pmk_quiz_theme', this.selectedTheme);
-    },
-
-    usePowerUp(powerUpType) {
-      if (this.powerUps[powerUpType] > 0) {
-        this.powerUps[powerUpType]--;
-        
-        switch(powerUpType) {
-          case 'doublePoints':
-            this.activateDoublePoints();
-            break;
-          case 'timeExtender':
-            this.extendTime();
-            break;
-          case 'skipQuestion':
-            this.skipQuestion();
-            break;
-          case 'hint':
-            this.showHint();
-            break;
-        }
-        
-        this.saveUserData();
-      }
-    },
-
-    activateDoublePoints() {
-      this.showAchievement({
-        title: 'Double Points Activated!',
-        message: 'Poin 2x untuk jawaban berikutnya',
-        points: 0,
-        emoji: '⚡',
-        type: 'Power-up'
-      });
-      // Implement double points logic
-    },
-
-    extendTime() {
-      this.countdown += 10;
-      this.showAchievement({
-        title: 'Time Extended!',
-        message: '+10 detik ditambahkan',
-        points: 0,
-        emoji: '⏱️',
-        type: 'Power-up'
-      });
-    },
-
-    skipQuestion() {
-      this.showAchievement({
-        title: 'Question Skipped!',
-        message: 'Soal dilewati',
-        points: 0,
-        emoji: '🚀',
-        type: 'Power-up'
-      });
-      this.nextQuestion();
-    },
-
-    showHint() {
-      // Implement hint system
-      const correctOption = this.displayOptions.find(opt => 
-        opt.key.toLowerCase() === this.displaySoal.kunciKey.toLowerCase()
+    filteredPool() {
+      if (!this.allQuestions.length) return [];
+      if (!this.filterSumber.trim()) return this.allQuestions;
+      const kw = this.filterSumber.trim().toLowerCase();
+      return this.allQuestions.filter(q =>
+        (q.sumber && q.sumber.toLowerCase().includes(kw)) ||
+        (q.soal   && q.soal.toLowerCase().includes(kw))
       );
-      
-      if (correctOption) {
-        this.showAchievement({
-          title: 'Hint Activated!',
-          message: `Jawaban benar ada di opsi ${correctOption.key.toUpperCase()}`,
-          points: 0,
-          emoji: '💡',
-          type: 'Power-up'
+    },
+
+    totalLevels() {
+      const n = this.filteredPool.length;
+      return n ? Math.ceil(n / this.levelSize) : 0;
+    },
+
+    canStart() {
+      if (this.homeMode === 'salah') return this.wrongQIds.length > 0;
+      return this.filteredPool.length > 0;
+    },
+
+    progressPct() {
+      return this.sessionTotal ? Math.round((this.doneCount / this.sessionTotal) * 100) : 0;
+    },
+    bProgressPct() {
+      return this.sessionQuestions.length
+        ? Math.round(((this.bIdx + 1) / this.sessionQuestions.length) * 100) : 0;
+    },
+    scorePercent() {
+      return this.doneCount ? Math.round((this.correctCount / this.doneCount) * 100) : 0;
+    },
+    resultMsg() {
+      const p = this.scorePercent;
+      if (p >= 90) return 'Luar biasa! Kamu sangat menguasai materi ini! 🌟';
+      if (p >= 75) return 'Bagus! Terus tingkatkan kemampuanmu! 💪';
+      if (p >= 60) return 'Cukup baik, tapi masih ada ruang untuk berkembang. 📈';
+      return 'Jangan menyerah! Pelajari lagi soal-soal yang salah. 📚';
+    },
+    uniqueSumbers() {
+      const s = new Set(this.allQuestions.map(q => q.sumber).filter(Boolean));
+      return [...s];
+    },
+
+    sortedWrongItems() {
+      const items = [...this.wrongData];
+      if (this.wrongSortMode === 'terbaru') {
+        return items.sort((a,b) => (b.lastWrong||0) - (a.lastWrong||0));
+      } else if (this.wrongSortMode === 'terbanyak') {
+        return items.sort((a,b) => b.count - a.count);
+      } else {
+        return items.sort((a,b) => a.count - b.count);
+      }
+    },
+  },
+
+  watch: {
+    muteSound(v) { if (v) this.stopSpeak(); this._saveSettings(); },
+    speechRate()  { this._saveSettings(); },
+  },
+
+  mounted() {
+    this.speechSynth = window.speechSynthesis;
+    if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => {};
+    this._loadLS();
+  },
+
+  methods: {
+    /* ── LS ── */
+    _loadLS() {
+      try { const q = localStorage.getItem(LS_Q); if (q) this.allQuestions = JSON.parse(q); } catch(e) {}
+      try {
+        const w = localStorage.getItem(LS_WRONG);
+        if (w) {
+          const parsed = JSON.parse(w);
+          // Support both old object format and new array format
+          if (Array.isArray(parsed)) {
+            this.wrongData = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            // migrate from old object format
+            this.wrongData = Object.values(parsed);
+          }
+        }
+      } catch(e) { this.wrongData = []; }
+      try { const d = localStorage.getItem(LS_DONE);  if (d) this.completedLevels = JSON.parse(d); } catch(e) {}
+      try {
+        const s = localStorage.getItem(LS_SETTINGS);
+        if (s) { const p = JSON.parse(s); this.muteSound = !!p.mute; this.speechRate = p.rate || 1.0; }
+      } catch(e) {}
+    },
+    _saveWrong()    { localStorage.setItem(LS_WRONG, JSON.stringify(this.wrongData)); },
+    _saveDone()     { localStorage.setItem(LS_DONE,  JSON.stringify(this.completedLevels)); },
+    _saveSettings() { localStorage.setItem(LS_SETTINGS, JSON.stringify({ mute: this.muteSound, rate: this.speechRate })); },
+
+    /* ── Wrong item helpers ── */
+    removeWrongItem(no) {
+      const idx = this.wrongData.findIndex(w => String(w.no) === String(no));
+      if (idx !== -1) {
+        this.wrongData.splice(idx, 1);
+        this._saveWrong();
+        showToast('Soal dihapus dari daftar salah', 'blue');
+      }
+    },
+    formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return `${d.getDate()}/${d.getMonth()+1} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    },
+
+    /* ── Level key — unique per (type, filter, size, level) ── */
+    levelKey(lv) {
+      const prefix = this.filterSumber.trim() || 'all';
+      const type   = this.kuisType === 'kumulatif' ? 'kumul' : 'level';
+      return `${type}__${prefix}__sz${this.levelSize}__lv${lv}`;
+    },
+
+    /* ── DB Load ── */
+    _now() {
+      const d = new Date(), p = n => String(n).padStart(2,'0');
+      return { ts: d.getTime(),
+               date: `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`,
+               time: `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` };
+    },
+
+    async doLoadDB() {
+      this.loadingDB = true;
+      const now = this._now();
+      const payload = { no: now.ts, tanggal: now.date, waktu: now.time, noHalaman: this.filterSumber.trim() };
+      const enc = encodeURIComponent(JSON.stringify(payload));
+      try {
+        const r1 = await fetch(`${DB_URL}?action=insert&table=request&data=${enc}`);
+        if (!r1.ok) throw new Error(`HTTP ${r1.status}`);
+        await this._readDB();
+      } catch(e) {
+        showToast('Gagal load DB: ' + e.message, 'red');
+        this.loadingDB = false;
+      }
+    },
+
+    async _readDB() {
+      try {
+        const res = await fetch(`${DB_URL}?action=read&table=queryLEGO`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { throw new Error('Response bukan JSON'); }
+        const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : null;
+        if (!arr || arr.length === 0) { showToast('Data kosong dari DB', 'blue'); return; }
+        const questions = arr.map((row, i) => {
+          const get = (...keys) => {
+            for (const k of keys) {
+              const v = row[k];
+              if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+            }
+            return '';
+          };
+          return {
+            no:         get('no','No','NO','id','ID','nomor') || String(i+1),
+            soal:       get('soal','Soal','SOAL','pertanyaan','question'),
+            kunci:      get('kunci','Kunci','KUNCI','a','A','jawaban_a','opsiA'),
+            b:          get('b','B','jawaban_b','opsiB'),
+            c:          get('c','C','jawaban_c','opsiC'),
+            d:          get('d','D','jawaban_d','opsiD'),
+            sumber:     get('sumber','Sumber','SUMBER','kategori','topik'),
+            penjelasan: get('penjelasan','Penjelasan','PENJELASAN','pembahasan'),
+          };
+        }).filter(q => q.soal && q.kunci);
+
+        if (!questions.length) { showToast('Tidak ada soal valid — periksa nama kolom DB', 'red'); return; }
+
+        // Reset progress when loading new DB
+        this.allQuestions    = questions;
+        this.wrongData       = [];
+        this.completedLevels = [];
+        localStorage.setItem(LS_Q, JSON.stringify(questions));
+        this._saveWrong();
+        this._saveDone();
+        showToast(`✅ ${questions.length} soal dimuat. Progress direset.`, 'green');
+      } catch(e) {
+        showToast('Gagal baca DB: ' + e.message, 'red');
+      } finally {
+        this.loadingDB = false;
+      }
+    },
+
+    /* ── Session Start ── */
+    startSession() {
+      if (!this.canStart) return;
+      this.stopSpeak();
+      this.justCompletedLevel = '';
+
+      let pool = [];
+      let levelLabel = '';
+      let pendingKey = '';
+
+      if (this.homeMode === 'salah') {
+        // Pool from wrongData array, sorted per mode
+        pool = this.sortedWrongItems.map(item => {
+          return this.allQuestions.find(q => String(q.no) === String(item.no));
+        }).filter(Boolean);
+        levelLabel = 'Soal Salah';
+      } else if (this.homeMode === 'belajar') {
+        pool = [...this.filteredPool]; // preserve order
+        const count = this.jumlahSoal === 'Semua' ? pool.length : this.jumlahSoal;
+        pool = pool.slice(0, Math.min(count, pool.length));
+        // Shuffle only after slicing
+        pool = this.shuffle(pool);
+      } else {
+        // Kuis
+        if (this.kuisType === 'level') {
+          const start = (this.selectedLevel - 1) * this.levelSize;
+          pool = this.filteredPool.slice(start, start + this.levelSize);
+          levelLabel = `Level ${this.selectedLevel}`;
+          pendingKey = this.levelKey(this.selectedLevel);
+        } else if (this.kuisType === 'kumulatif') {
+          pool = this.filteredPool.slice(0, this.selectedLevel * this.levelSize);
+          levelLabel = `Kumulatif s/d Level ${this.selectedLevel}`;
+          pendingKey = this.levelKey(this.selectedLevel);
+        } else {
+          // custom — shuffle whole pool
+          pool = [...this.filteredPool];
+          const count = this.jumlahSoal === 'Semua' ? pool.length : this.jumlahSoal;
+          pool = this.shuffle(pool).slice(0, Math.min(count, pool.length));
+        }
+        // For level/kumulatif: shuffle only selected pool
+        if (this.kuisType !== 'custom') {
+          pool = this.shuffle(pool);
+        }
+      }
+
+      if (!pool.length) { showToast('Tidak ada soal tersedia', 'blue'); return; }
+
+      this.sessionQuestions = pool;
+      this.sessionTotal     = pool.length;
+      this.sessionLevelLabel = levelLabel;
+      this.pendingLevelKey   = pendingKey;
+
+      if (this.homeMode === 'belajar') {
+        this.bIdx = 0; this.screen = 'belajar';
+        this.$nextTick(() => { if (!this.muteSound) this.bSpeakCurrent(); });
+        return;
+      }
+
+      this.queue        = [...pool];
+      this.correctCount = 0;
+      this.wrongCount   = 0;
+      this.doneCount    = 0;
+      this.answered     = false;
+      this.selectedIdx  = null;
+      this.isRetry      = false;
+      this.showSoundPanel = false;
+      this.screen       = 'quiz';
+      this._nextQ();
+    },
+
+    /* ── Quiz ── */
+    _markLevelDone() {
+      if (this.pendingLevelKey && !this.completedLevels.includes(this.pendingLevelKey)) {
+        this.completedLevels.push(this.pendingLevelKey);
+        this._saveDone();
+        this.justCompletedLevel = this.sessionLevelLabel;
+      }
+    },
+
+    _nextQ() {
+      this.stopSpeak();
+      if (!this.queue.length) {
+        this._markLevelDone();
+        this.screen = 'result';
+        return;
+      }
+      const q = this.queue.shift();
+      this.isRetry = !!(q._retry);
+      this.currentQ = q;
+      const d = this._shuffleOpts(q);
+      this.currentOptions = d.opts;
+      this.correctIdx     = d.correctIdx;
+      this.answered       = false;
+      this.selectedIdx    = null;
+      this.attemptKey++;
+      // Auto-read question
+      if (!this.muteSound) {
+        this.$nextTick(() => {
+          const opts = d.opts.map((o,i)=>`${['A','B','C','D'][i]}: ${o}`).join('. ');
+          this.speakText(`${q.soal}. Pilihan: ${opts}`);
         });
       }
     },
 
-    analyzeWeaknesses() {
-      // Simple weakness analysis based on wrong answers
-      const wrongTopics = this.wrongQuestions.reduce((topics, question) => {
-        const topic = question.sumber || 'Umum';
-        if (!topics[topic]) topics[topic] = 0;
-        topics[topic]++;
-        return topics;
-      }, {});
-
-      const weakTopics = Object.entries(wrongTopics)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([topic]) => topic);
-
-      this.weaknessAnalysis.weakTopics = weakTopics;
-      this.weaknessAnalysis.suggestion = weakTopics.length > 0 
-        ? `Fokus pada: ${weakTopics.join(', ')}`
-        : "Pertahankan performa bagus!";
+    _shuffleOpts(q) {
+      const raw = [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim());
+      const idx = this.shuffle(raw.map((_,i)=>i));
+      return { opts: idx.map(i=>raw[i]), correctIdx: idx.indexOf(0) };
     },
 
-    checkDailyBonus() {
-      const today = new Date().toDateString();
-      const lastLogin = this.loginStreak.lastLogin;
-
-      if (lastLogin === today) return; // Already claimed today
-
-      if (!lastLogin || this.isYesterday(lastLogin)) {
-        // Continue streak
-        this.loginStreak.current++;
-      } else if (lastLogin !== today) {
-        // Reset streak
-        this.loginStreak.current = 1;
-      }
-
-      this.loginStreak.lastLogin = today;
-      this.dailyBonusAmount = this.loginStreak.rewards[this.loginStreak.current - 1] || 50;
-      this.showDailyBonus = true;
-    },
-
-    claimDailyBonus() {
-      this.userStats.points += this.dailyBonusAmount;
-      this.userStats.totalPoints += this.dailyBonusAmount;
-      this.showDailyBonus = false;
-      this.saveUserData();
-
-      this.showAchievement({
-        title: 'Bonus Harian Diklaim!',
-        message: `+${this.dailyBonusAmount} poin`,
-        points: this.dailyBonusAmount,
-        emoji: '🎁',
-        type: 'Bonus'
-      });
-    },
-
-    isYesterday(dateString) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return dateString === yesterday.toDateString();
-    },
-
-    // ==================== GAMIFICATION ENHANCEMENTS ====================
-    updateStatsAfterAnswer(isCorrect, answerTime = 0) {
-      const now = Date.now();
-      
-      this.sessionStats.questionsAnswered++;
-      this.answersThisSession++;
-      this.answerTimes.push(answerTime);
-      
-      if (isCorrect) {
-        this.sessionStats.correctAnswers++;
-        this.userStats.currentStreak++;
-        this.correctStreakThisSession++;
-        
-        // Show streak fire animation for every 3 correct answers
-        if (this.userStats.currentStreak % 3 === 0) {
-          this.showStreakAnimation();
-        }
+    selectAnswer(idx) {
+      if (this.answered) return;
+      this.selectedIdx = idx; this.answered = true;
+      const no = String(this.currentQ.no);
+      if (idx === this.correctIdx) {
+        this.lastCorrect = true; this.correctCount++; this.doneCount++;
+        if (!this.muteSound) this.speakText(`Benar. ${this.currentQ.kunci}`);
       } else {
-        this.userStats.currentStreak = 0;
-        this.correctStreakThisSession = 0;
-      }
-
-      // Calculate points with bonuses
-      const basePoints = isCorrect ? 10 : 2;
-      const streakBonus = Math.floor(this.userStats.currentStreak / 3) * 5;
-      const speedBonus = answerTime < 10 ? 5 : 0;
-      const pointsEarned = basePoints + streakBonus + speedBonus;
-      
-      this.userStats.points += pointsEarned;
-      this.userStats.totalPoints += pointsEarned;
-      this.sessionStats.pointsEarned += pointsEarned;
-
-      // Track fast answers for achievement
-      if (answerTime < 5) {
-        this.userStats.fastAnswers++;
-      }
-
-      this.updateLevelAndProgress();
-      this.checkAchievements();
-      this.updateDailyChallenge();
-      this.updateActiveBadges();
-      this.updateRank();
-      this.analyzeWeaknesses();
-      this.saveUserData();
-    },
-
-    showStreakAnimation() {
-      this.showStreakFire = true;
-      setTimeout(() => {
-        this.showStreakFire = false;
-      }, 1500);
-    },
-
-    updateLevelAndProgress() {
-      const pointsForNextLevel = this.userStats.level * 100;
-      if (this.userStats.points >= pointsForNextLevel) {
-        this.userStats.level++;
-        this.userStats.points = this.userStats.points - pointsForNextLevel;
-        this.showLevelUpNotification = true;
-        setTimeout(() => {
-          this.showLevelUpNotification = false;
-        }, 3000);
-      }
-      this.userStats.progress = (this.userStats.points % 100);
-    },
-
-    updateRank() {
-      const ranks = {
-        0: 'Pemula',
-        500: 'Pelajar',
-        1000: 'Ahli',
-        2000: 'Master',
-        5000: 'Legenda'
-      };
-      
-      const points = this.userStats.totalPoints;
-      let userRank = 'Pemula';
-      
-      for (const [threshold, rank] of Object.entries(ranks)) {
-        if (points >= parseInt(threshold)) {
-          userRank = rank;
-        }
-      }
-      
-      this.userStats.rank = userRank;
-    },
-
-    updateDailyChallenge() {
-      if (!this.dailyChallenge) {
-        this.initializeDailyChallenge();
-        return;
-      }
-      
-      // Update progress based on challenge type
-      switch(this.dailyChallenge.id) {
-        case 'answer_10':
-          this.dailyChallenge.progress = this.answersThisSession;
-          break;
-        case 'perfect_5':
-          this.dailyChallenge.progress = Math.max(this.dailyChallenge.progress, this.correctStreakThisSession);
-          break;
-        case 'streak_3_days':
-          this.dailyChallenge.progress = this.userStats.streak;
-          break;
-      }
-      
-      // Check if challenge completed
-      if (this.dailyChallenge.progress >= this.dailyChallenge.requirement) {
-        this.completeDailyChallenge();
-      }
-    },
-
-    initializeDailyChallenge() {
-      const challenges = Object.values(DAILY_CHALLENGES);
-      const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
-      this.dailyChallenge = {
-        ...randomChallenge,
-        progress: 0
-      };
-    },
-
-    completeDailyChallenge() {
-      this.userStats.points += this.dailyChallenge.reward;
-      this.userStats.totalPoints += this.dailyChallenge.reward;
-      
-      this.showAchievement({
-        title: 'Tantangan Selesai!',
-        message: this.dailyChallenge.description,
-        points: this.dailyChallenge.reward,
-        emoji: '🏆',
-        type: 'Tantangan Harian'
-      });
-      
-      this.dailyChallenge = null;
-      setTimeout(() => {
-        this.initializeDailyChallenge();
-      }, 5000);
-    },
-
-    // Enhanced achievement notification
-    showAchievement(notification) {
-      this.achievementNotification = notification;
-      this.showAchievementNotification = true;
-      
-      // Play sound if available
-      this.playSound('achievement');
-      
-      setTimeout(() => {
-        this.showAchievementNotification = false;
-      }, 4000);
-    },
-
-    playSound(soundType) {
-      // Simple sound implementation using Web Audio API
-      try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        switch(soundType) {
-          case 'achievement':
-            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-            break;
-          case 'correct':
-            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-            break;
-          case 'wrong':
-            oscillator.frequency.setValueAtTime(349.23, audioContext.currentTime); // F4
-            break;
-        }
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-      } catch (e) {
-        console.log('Audio not supported');
-      }
-    },
-
-    // ==================== EXISTING METHODS ====================
-    scrollToTop() {
-      if (window.innerWidth < 768) {
-        const targetElement = this.$refs.soalContainer;
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    },
-
-    scrollToBottom() {
-      if (window.innerWidth < 768) {
-        const targetElement = this.$refs.controlsAside;
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-      }
-    },
-
-    rebuildBatches() {
-      if (!this.dataAwal || this.dataAwal.length === 0) {
-        this.batches = [];
-        this.currentBatchIndex = null;
-        this.currentQuestions = [];
-        return;
-      }
-      const chunkSize = this.jumlahSoal || 15;
-      this.batches = [];
-      for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
-        this.batches.push(this.dataAwal.slice(i, i + chunkSize));
-      }
-      this.currentBatchIndex = 0;
-      this.currentQuestions = this.batches[0] || [];
-    },
-
-    openSettings() {
-      if (!this.originalQuestions || this.originalQuestions.length === 0) {
-        this.originalQuestions = (this.dataAwal || []).slice();
-      }
-      this.rebuildBatchesFromDraft();
-      this.showSettings = true;
-    },
-
-    rebuildBatchesFromDraft() {
-      this.batches = [];
-      const chunkSize = (this.jumlahSoalDraft && this.jumlahSoalDraft > 0) ? Math.floor(this.jumlahSoalDraft) : 15;
-      if (!Array.isArray(this.dataAwal) || this.dataAwal.length === 0) return;
-      for (let i = 0; i < this.dataAwal.length; i += chunkSize) {
-        this.batches.push(this.dataAwal.slice(i, i + chunkSize));
-      }
-    },
-
-    canApplyJumlahSoal() {
-      return Number.isInteger(this.jumlahSoalDraft) && this.jumlahSoalDraft > 0;
-    },
-
-    applySettings(autoSelectFirst = false) {
-      if (!this.canApplyJumlahSoal()) {
-        alert('Masukkan jumlah soal valid (>=1).');
-        return;
-      }
-      this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
-      this.rebuildBatches();
-      if (autoSelectFirst) {
-        if (this.batches && this.batches.length) {
-          this.pilihBatch(0);
+        this.lastCorrect = false; this.wrongCount++; this.doneCount++;
+        // Update wrongData array — no duplicates
+        const existing = this.wrongData.find(w => String(w.no) === no);
+        if (existing) {
+          existing.count++;
+          existing.lastWrong = Date.now();
         } else {
-          this.showSettings = true;
+          this.wrongData.push({
+            no,
+            soal:      this.currentQ.soal,
+            kunci:     this.currentQ.kunci,
+            sumber:    this.currentQ.sumber || '',
+            count:     1,
+            lastWrong: Date.now()
+          });
         }
-      } else {
-        this.showSettings = false;
-      }
-    },
-
-    applyAndSelectNextBatch() {
-      if (!this.canApplyJumlahSoal()) {
-        alert('Masukkan jumlah soal valid (>=1).');
-        return;
-      }
-      this.jumlahSoal = Math.floor(this.jumlahSoalDraft);
-      this.rebuildBatches();
-      if (this.currentBatchIndex == null) {
-        if (this.batches && this.batches.length) this.pilihBatch(0);
-      } else if (this.currentBatchIndex < (this.batches.length - 1)) {
-        this.pilihBatch(this.currentBatchIndex + 1);
-      } else {
-        alert('Tidak ada batch berikutnya.');
-        this.showSettings = true;
-      }
-    },
-
-    pilihBatch(index) {
-      if (!this.batches || !this.batches[index]) return;
-      this.currentBatchIndex = index;
-      this.currentQuestions = this.batches[index].slice();
-      this.tampilIndex = 0;
-      this.currentIndex = 0;
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
-      this.submittedSoal = null;
-      this.stopCountdown();
-      this.showSettings = false;
-    },
-
-    closeSettings() {
-      this.showSettings = false;
-    },
-
-    _sleep(ms = 500) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    },
-
-    _now() {
-      const d = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const ts = Date.now();
-      const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-      return { ts, date, time };
-    },
-
-    _getCurrentSoal() {
-      if (this.submittedSoal) return this.submittedSoal;
-      if (Array.isArray(this.currentQuestions) && this.currentQuestions.length) {
-        return this.currentQuestions[this.tampilIndex] || {};
-      }
-      return (this.dataAwal && this.dataAwal[this.tampilIndex]) || {};
-    },
-
-    getAnswerTextByKey(soal, key) {
-      if (!soal || !soal.shuffledOptions) return '';
-      const s = soal.shuffledOptions;
-      let opts = [];
-      if (Array.isArray(s) && s.length > 0 && typeof s[0] === 'object') {
-        opts = s;
-      } else if (s && typeof s === 'object' && !Array.isArray(s)) {
-        opts = Object.keys(s).map(k => ({ key: k, text: s[k] }));
-      } else if (Array.isArray(s) && typeof s[0] === 'string') {
-        opts = s.map((t, i) => ({ key: String.fromCharCode(97 + i), text: t }));
-      }
-      const found = opts.find(o => String((o.key ?? '')).toLowerCase() === String(key ?? '').toLowerCase());
-      return found ? (found.text ?? '') : '';
-    },
-
-    async _doInsert(payload = {}) {
-      if (!this.insertUrlBase) throw new Error('insertUrlBase belum diset.');
-      const url = this.insertUrlBase + '&table=request&data=' + encodeURIComponent(JSON.stringify(payload));
-      console.log('Insert URL:', url);
-      const res = await fetch(url, { method: 'GET' });
-      const text = await res.text();
-      try { this.raw = JSON.parse(text); } catch(e) { this.raw = text; }
-      if (!res.ok) throw new Error('Insert gagal HTTP ' + res.status);
-    },
-
-    async insertThenFetch() {
-  if (!this.selectedDataset) {
-    alert('Pilih dataset terlebih dahulu.');
-    return;
-  }
-  this.loading = true;
-
-  localStorage.setItem('kitab_selectedDataset', this.selectedDataset);
-
-  const now = this._now();
-  const payload = {
-    no: now.ts,
-    tanggal: now.date,
-    waktu: now.time,
-    noHalaman: this.selectedDataset
-  };
-
-  try {
-    try {
-      await this._doInsert(payload);
-    } catch (e) {
-      console.warn('Insert gagal, lanjut ke loadPage:', e);
-    }
-
-    await this._sleep(900);
-    await this.loadPage();
-
-    // ✅ Simpan soal yang sudah berhasil dimuat ke Local Storage
-    localStorage.setItem(SOAL_STORAGE_KEY, JSON.stringify({
-      timestamp: Date.now(),
-      dataset: this.selectedDataset,
-      soal: this.displaySoal,
-      pool: this.poolSoal || [], // jika kamu pakai kumpulan soal
-      index: this.tampilIndex || 0
-    }));
-    console.log('✅ Soal berhasil disimpan di localStorage:', SOAL_STORAGE_KEY);
-
-  } finally {
-    this.loading = false;
-  }
-},
-
-    async loadPage() {
-  this.loading = true;
-  this.dataAwal = [];
-  this.submittedSoal = null;
-
-  try {
-    const url = `${this.GAS_BASE}?action=read&table=queryPMK&hal=${Number(this.noHalaman || 1)}`;
-    const res = await fetch(url);
-    const txt = await res.text();
-    let parsed = null;
-
-    try { 
-      parsed = JSON.parse(txt); 
-    } catch(e){ 
-      parsed = null; 
-    }
-
-    let rows = [];
-    if (parsed && Array.isArray(parsed.data)) rows = parsed.data;
-    else if (Array.isArray(parsed)) rows = parsed;
-
-    if (!rows || rows.length === 0) {
-      // fallback demo data
-      rows = [
-        { id: 1, no:1, soal: 'Ibu kota Indonesia?', hal: this.noHalaman, row:1, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-        { id: 2, no:2, soal: '2 + 2 = ?', hal: this.noHalaman, row:2, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-        { id: 3, no:3, soal: 'Pulau terbesar di Indonesia?', hal: this.noHalaman, row:3, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-      ];
-    }
-
-    // 🔹 Simpan data mentah API ke localStorage
-    localStorage.setItem('pmk_quiz_rawData', JSON.stringify({
-      timestamp: Date.now(),
-      dataset: this.selectedDataset,
-      rawRows: rows
-    }));
-    console.log('💾 Data mentah API disimpan ke localStorage: pmk_quiz_rawData');
-
-    // proses normal seperti sebelumnya
-    const normalized = rows.map(r => {
-      const allOptions = [
-        { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-        { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-      ].filter(o => o.text !== '');
-      const shuffled = shuffleArray(allOptions);
-      const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-      const k = allOptions.find(o=>o.isCorrect);
-      return {
-        id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
-        no: r.no ?? null,
-        soal: r.soal ?? r.question ?? '',
-        penjelasan: r.penjelasan ?? r.keterangan ?? '',
-        kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-        shuffledOptions,
-        sumber: r.sumber ?? '',
-        hal: Number(r.hal ?? r.page ?? 0) || 0,
-        row: Number(r.row ?? 0) || 0
-      };
-    }).filter(r => r.soal);
-
-    normalized.sort((a,b) => (a.row || 0) - (b.row || 0));
-    const pageNum = Number(this.noHalaman || 1);
-    const filtered = normalized.filter(r => !r.hal || r.hal === pageNum);
-    this.dataAwal = shuffleArray(filtered.length ? filtered : normalized);
-
-    this.currentIndex = 0;
-    this.tampilIndex = 0;
-    this.jawabanTerpilih = null;
-    this.jawabanSudahDikirim = false;
-    this.submittedSoal = null;
-    this.stopCountdown();
-
-    this.rebuildBatches();
-
-  } catch (err) {
-    console.error('loadPage error:', err);
-    this.resetToDemo();
-  } finally {
-    this.loading = false;
-  }
-},
-
-    resetToDemo() {
-      this.wrongQuestions = [];
-      this.riwayatJawaban = [];
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
-      this.submittedSoal = null;
-      const rows = [
-        { id: 1, no:1, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Ibu kota Indonesia?`, kunci:'Jakarta', a:'Jakarta', b:'Bandung', c:'Surabaya', d:'Medan' },
-        { id: 2, no:2, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — 2 + 2 = ?`, kunci:'4', a:'3', b:'4', c:'5', d:'22' },
-        { id: 3, no:3, soal: `Demo soal dari ${this.selectedDataset || 'DEMO'} — Pulau terbesar di Indonesia?`, kunci:'Kalimantan', a:'Jawa', b:'Sumatera', c:'Kalimantan', d:'Sulawesi' }
-      ];
-      const normalized = rows.map(r => {
-        const allOptions = [
-          { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-        ].filter(o => o.text !== '');
-        const shuffled = shuffleArray(allOptions);
-        const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-        const k = allOptions.find(o=>o.isCorrect);
-        return {
-          id: r.id,
-          no: r.no,
-          soal: r.soal,
-          kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-          shuffledOptions,
-          sumber: r.sumber ?? '',
-          hal: r.hal ?? 0,
-          row: r.row ?? 0
-        };
-      });
-      this.dataAwal = shuffleArray(normalized.slice());
-      this.currentIndex = 0;
-      this.tampilIndex = 0;
-      this.stopCountdown();
-      this.rebuildBatches();
-    },
-
-    selectAnswer(key, shouldSubmit = false) {
-      if (this.jawabanSudahDikirim) return;
-      this.jawabanTerpilih = key;
-      if (shouldSubmit) {
-        this.$nextTick(() => this.submitAnswer());
-      }
-    },
-
-    submitAnswer() {
-      if (this.jawabanSudahDikirim || this.jawabanTerpilih == null) return;
-
-      const startTime = this.sessionStartTime ? Date.now() - this.sessionStartTime : 0;
-      const soal = this.currentQuestions[this.currentIndex];
-      if (!soal) return;
-
-      const isCorrect = String(this.jawabanTerpilih).toLowerCase() === String(soal.kunciKey).toLowerCase();
-
-      // Update gamification stats
-      this.updateStatsAfterAnswer(isCorrect, startTime);
-
-      this.riwayatJawaban.push({
-        id: soal.id,
-        no: soal.no,
-        soal: soal.soal,
-        pilihan: this.jawabanTerpilih,
-        kunciKey: soal.kunciKey,
-        benar: isCorrect,
-        waktu: Date.now()
-      });
-
-      if (isCorrect) {
-        this.currentQuestions.splice(this.currentIndex, 1);
-      } else {
-        const kunciText = this.getAnswerTextByKey(soal, soal.kunciKey); 
-        const isDuplicate = this.wrongQuestions.some(q => q.id === soal.id);
-        if (!isDuplicate) {
-            this.wrongQuestions.push({ id: soal.id, no: soal.no, soal: soal.soal, kunciKey: soal.kunciKey, kunciText: kunciText });
-        }
-        this.currentQuestions = shuffleArray(this.currentQuestions);
-        this.currentIndex = 0;
-        this.tampilIndex = 0; 
-      }
-
-      this.submittedSoal = soal;
-      this.jawabanSudahDikirim = true;
-
-      this.startCountdown(10, () => {
-        this.nextQuestion();
-      });
-
-      this.$nextTick(() => {
-          this.scrollToBottom();
-      });
-    },
-
-    startCountdown(seconds, callback) {
-      this.stopCountdown();
-      this.isPaused = false;
-      this.countdown = seconds;
-      this.countdownActive = true;
-
-      this._countdownTimer = setInterval(() => {
-        this.countdown--;
-        if (this.countdown <= 0) {
-          this.stopCountdown();
-          if (typeof callback === 'function') callback();
-        }
-      }, 1000);
-    },
-
-    stopCountdown() {
-      this.countdownActive = false;
-      if (this._countdownTimer) {
-        clearInterval(this._countdownTimer);
-        this._countdownTimer = null;
-      }
-    },
-
-    toggleCountdown() {
-      if (this.isPaused) {
-        this.isPaused = false;
-        this.startCountdown(this.countdown, () => this.nextQuestion());
-      } else {
-        this.isPaused = true;
-        this.stopCountdown();
+        this._saveWrong();
+        const pos = Math.floor(Math.random() * (this.queue.length + 1));
+        this.queue.splice(pos, 0, { ...this.currentQ, _retry: true });
+        if (!this.muteSound) this.speakText(`Salah. Jawaban yang benar adalah: ${this.currentQ.kunci}`);
       }
     },
 
     nextQuestion() {
-      if (this.currentQuestions.length > 0) {
-        this.jawabanTerpilih = null;
-        this.jawabanSudahDikirim = false;
-        this.submittedSoal = null;
-        this.stopCountdown();
-        this.sessionStartTime = Date.now();
-
-        this.$nextTick(() => {
-          this.scrollToTop();
-        });
-        return;
+      if (!this.queue.length && this.lastCorrect) {
+        this._markLevelDone();
+        this.screen = 'result'; return;
       }
-
-      const nextBatchIndex = (this.currentBatchIndex == null ? -1 : this.currentBatchIndex) + 1;
-      if (this.batches && nextBatchIndex < this.batches.length) {
-        this.pilihBatch(nextBatchIndex);
-        return;
-      }
-
-      // Check for perfect session achievement
-      if (this.sessionStats.correctAnswers === this.sessionStats.questionsAnswered && this.sessionStats.questionsAnswered > 0) {
-        this.userStats.perfectSessions++;
-      }
-
-      alert('Batch terakhir selesai! Semua soal yang tersisa sudah dijawab benar. Silakan mulai sesi/batch baru.');
-      this.stopCountdown();
-      this.showSettings = true;
+      this._nextQ();
     },
 
-    manualNext() {
-      if (!this.jawabanSudahDikirim) return;
-      this.stopCountdown();
-      this.nextQuestion();
+    getOptionClass(idx) {
+      if (!this.answered) return '';
+      if (idx === this.correctIdx) return 'correct';
+      if (idx === this.selectedIdx) return 'wrong';
+      return '';
+    },
+    getLetterStyle(idx) {
+      if (!this.answered) return '';
+      if (idx === this.correctIdx) return 'background:rgba(34,197,94,0.22);color:#22c55e';
+      if (idx === this.selectedIdx) return 'background:rgba(239,68,68,0.22);color:#ef4444';
+      return '';
+    },
+    exitQuiz() {
+      this.stopSpeak();
+      if (this.autoPlayTimer) { clearTimeout(this.autoPlayTimer); this.autoPlayTimer = null; }
+      this.autoPlay = false;
+      this.showSoundPanel = false;
+      this.screen = 'home';
     },
 
-    goNext() {
-      this.nextQuestion();
+    /* ── Belajar ── */
+    getBelajarOptions(idx) {
+      const q = this.sessionQuestions[idx];
+      return q ? [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim()) : [];
     },
-
-    forceShufflePool() {
-      if (!this.dataAwal || this.dataAwal.length === 0) return;
-      this.dataAwal = shuffleArray(this.dataAwal);
-
-      if (this.currentBatchIndex != null && this.batches && this.batches.length > 0) {
-        this.rebuildBatches();
-        if (this.batches[this.currentBatchIndex]) {
-          this.currentQuestions = this.batches[this.currentBatchIndex].slice();
-          this.tampilIndex = 0;
-        } else {
-          this.currentQuestions = [];
-          this.currentBatchIndex = null;
-          this.tampilIndex = 0;
-        }
-      } else {
-        this.currentIndex = Math.floor(Math.random() * this.dataAwal.length);
-        this.tampilIndex = this.currentIndex;
+    bNext() {
+      if (this.bIdx < this.sessionQuestions.length - 1) {
+        this.bIdx++; this.stopSpeak();
+        if (this.autoPlay && !this.muteSound) this.$nextTick(() => this.bSpeakCurrent(true));
       }
-
-      this.jawabanTerpilih = null;
-      this.jawabanSudahDikirim = false;
-      this.submittedSoal = null;
-      this.stopCountdown();
     },
-
-    getOptionClasses(key) {
-      const classes = [];
-      const soal = this._getCurrentSoal();
-      if (!soal) return 'bg-white border-gray-200 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
-      if (this.jawabanSudahDikirim) {
-        const isCorrect = String(key).toLowerCase() === String(soal.kunciKey).toLowerCase();
-        const isSelected = String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase();
-        if (isCorrect) classes.push('bg-green-200 border-green-600 text-green-900 font-bold dark:bg-green-800 dark:border-green-400 dark:text-green-100');
-        else if (isSelected && !isCorrect) classes.push('bg-red-200 border-red-600 text-red-900 font-bold dark:bg-red-800 dark:border-red-400 dark:text-red-100');
-        else classes.push('bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-400');
-      } else {
-        if (String(key).toLowerCase() === String(this.jawabanTerpilih).toLowerCase()) classes.push('bg-indigo-100 border-indigo-500 text-indigo-800 font-medium shadow-md dark:bg-indigo-800 dark:border-indigo-400 dark:text-indigo-100');
-        else classes.push('bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600');
-      }
-      return classes.join(' ');
-    },
-
-    openWrongModal() { this.showWrongModal = true; },
-    closeWrongModal() { this.showWrongModal = false; },
-
-    openAchievementsModal() { this.showAchievementsModal = true; },
-    closeAchievementsModal() { this.showAchievementsModal = false; },
-
-    // ==================== ACHIEVEMENT SYSTEM ====================
-    checkAchievements() {
-      const stats = {
-        totalAnswered: this.userStats.totalAnswered,
-        currentStreak: this.userStats.currentStreak,
-        perfectSessions: this.userStats.perfectSessions,
-        nightSessions: this.userStats.nightSessions,
-        earlySessions: this.userStats.earlySessions,
-        sessionQuestions: this.sessionStats.questionsAnswered,
-        totalPoints: this.userStats.totalPoints,
-        streak: this.userStats.streak,
-        fastAnswers: this.userStats.fastAnswers
-      };
-
-      Object.values(ACHIEVEMENTS).forEach(achievement => {
-        if (!this.unlockedAchievements.includes(achievement.id) && achievement.check(stats)) {
-          this.unlockAchievement(achievement);
+    bPrev() { if (this.bIdx > 0) { this.bIdx--; this.stopSpeak(); } },
+    bSpeakCurrent(auto=false) {
+      if (this.muteSound) return;
+      const q = this.sessionQuestions[this.bIdx];
+      if (!q) return;
+      const txt = `Soal nomor ${q.no}. ${q.soal}. Jawaban yang benar adalah: ${q.kunci}.${q.penjelasan?' Penjelasan: '+q.penjelasan:''}`;
+      this.speakText(txt, () => {
+        if (this.autoPlay && this.bIdx < this.sessionQuestions.length-1) {
+          this.autoPlayTimer = setTimeout(() => this.bNext(), 1200);
         }
       });
     },
-
-    unlockAchievement(achievement) {
-      this.unlockedAchievements.push(achievement.id);
-      this.userStats.points += achievement.points;
-      this.userStats.totalPoints += achievement.points;
-      
-      this.showAchievement({
-        title: achievement.name,
-        message: achievement.description,
-        points: achievement.points,
-        emoji: achievement.emoji,
-        type: achievement.type
-      });
-
-      this.updateActiveBadges();
-      this.saveUserData();
+    toggleAutoPlay() {
+      this.autoPlay = !this.autoPlay;
+      if (this.autoPlay) { if (!this.muteSound) this.bSpeakCurrent(true); }
+      else { this.stopSpeak(); clearTimeout(this.autoPlayTimer); this.autoPlayTimer=null; }
     },
 
-    updateActiveBadges() {
-      this.activeBadges = this.unlockedAchievements
-        .map(id => Object.values(ACHIEVEMENTS).find(a => a.id === id))
-        .filter(Boolean)
-        .slice(0, 3);
-    },
-
-    getAchievementProgress(achievement) {
-      const stats = {
-        totalAnswered: this.userStats.totalAnswered,
-        currentStreak: this.userStats.currentStreak,
-        perfectSessions: this.userStats.perfectSessions,
-        nightSessions: this.userStats.nightSessions,
-        earlySessions: this.userStats.earlySessions,
-        sessionQuestions: this.sessionStats.questionsAnswered,
-        totalPoints: this.userStats.totalPoints,
-        streak: this.userStats.streak,
-        fastAnswers: this.userStats.fastAnswers
-      };
-
-      switch(achievement.id) {
-        case 'first_question': return Math.min(stats.totalAnswered, 1);
-        case 'streak_3': return Math.min(stats.currentStreak, 3);
-        case 'streak_10': return Math.min(stats.currentStreak, 10);
-        case 'marathon': return Math.min(stats.sessionQuestions, 50);
-        case 'master': return Math.min(stats.totalPoints, 1000);
-        case 'consistent': return Math.min(stats.streak, 7);
-        case 'speed_demon': return stats.fastAnswers >= 1 ? 1 : 0;
-        default: return achievement.check(stats) ? achievement.requirement : 0;
+    /* ── Result ── */
+    nextLevel() {
+      // Auto advance to next level if per-level
+      if (this.kuisType === 'level' && this.selectedLevel < this.totalLevels) {
+        this.selectedLevel++;
       }
+      this.screen = 'home';
     },
+    retryWrong() { this.homeMode='salah'; this.screen='home'; this.$nextTick(() => this.startSession()); },
+    goHome()     { this.screen = 'home'; },
 
-    // ==================== AUTO-SAVE SYSTEM ====================
-    initializeAutoSave() {
-      // Load saved data
-      this.loadUserData();
-      
-      // Setup auto-save every 30 seconds
-      this.autoSaveInterval = setInterval(() => {
-        this.saveUserData();
-      }, 30000);
-
-      // Also save when user leaves the page
-      window.addEventListener('beforeunload', this.saveUserData);
-
-      // Check for daily bonus
-      this.checkDailyBonus();
-
-      // Check for time-based achievements
-      this.checkTimeBasedAchievements();
+    /* ── TTS ── */
+    speakText(text, onEnd) {
+      if (this.muteSound || !this.speechSynth) return;
+      this.stopSpeak();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'id-ID'; u.rate = this.speechRate; u.pitch = 1;
+      const vv = this.speechSynth.getVoices();
+      const v  = vv.find(x=>x.lang.startsWith('id')) || vv.find(x=>x.lang.startsWith('en'));
+      if (v) u.voice = v;
+      u.onstart = () => { this.isSpeaking = true; };
+      u.onend   = () => { this.isSpeaking = false; if (onEnd) onEnd(); };
+      u.onerror = () => { this.isSpeaking = false; };
+      this.speechSynth.speak(u);
     },
+    stopSpeak() { if (this.speechSynth) this.speechSynth.cancel(); this.isSpeaking = false; },
 
-    checkTimeBasedAchievements() {
-      const currentHour = new Date().getHours();
-      if (currentHour >= 22 || currentHour <= 4) {
-        this.userStats.nightSessions++;
+    /* ── Shuffle ── */
+    shuffle(arr) {
+      const a = [...arr];
+      for (let i=a.length-1;i>0;i--) {
+        const j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
       }
-      if (currentHour >= 5 && currentHour <= 7) {
-        this.userStats.earlySessions++;
-      }
+      return a;
     },
-
-saveUserData() {
-  // 🔹 Gabungkan semua data penting, termasuk soal yang sedang tampil
-  const saveData = {
-    // Data user & progres
-    userStats: this.userStats,
-    unlockedAchievements: this.unlockedAchievements,
-    sessionStats: this.sessionStats,
-    wrongQuestions: this.wrongQuestions,
-    powerUps: this.powerUps,
-    loginStreak: this.loginStreak,
-    darkMode: this.darkMode,
-    selectedTheme: this.selectedTheme,
-    lastSaved: Date.now(),
-
-    // 🔹 Tambahkan bagian soal yang aktif
-    selectedDataset: this.selectedDataset,
-    displaySoal: this.displaySoal,
-    poolSoal: this.poolSoal,
-    tampilIndex: this.tampilIndex
-  };
-
-  try {
-    // 💾 Simpan semuanya di localStorage
-    localStorage.setItem('pmk_quiz_user_data', JSON.stringify(saveData));
-    this.lastSavedTime = new Date().toLocaleTimeString();
-    console.log('✅ Progress & Soal tersimpan:', this.lastSavedTime);
-  } catch (error) {
-    console.error('❌ Gagal menyimpan data:', error);
-  }
-},
-
-
-    loadUserData() {
-      try {
-        const saved = localStorage.getItem('pmk_quiz_user_data');
-        if (saved) {
-          const data = JSON.parse(saved);
-          
-          // Check if data is from today for streak calculation
-          const today = new Date().toDateString();
-          const lastActive = data.userStats.lastActiveDate;
-          
-          if (lastActive === today) {
-            this.userStats = { ...this.userStats, ...data.userStats };
-          } else if (lastActive && this.isYesterday(lastActive)) {
-            // Continue streak if last active was yesterday
-            this.userStats.streak = data.userStats.streak + 1;
-          } else {
-            // Reset streak if broken
-            this.userStats.streak = 1;
-          }
-          
-          this.unlockedAchievements = data.unlockedAchievements || [];
-          this.wrongQuestions = data.wrongQuestions || [];
-          this.powerUps = data.powerUps || this.powerUps;
-          this.loginStreak = data.loginStreak || this.loginStreak;
-          this.darkMode = data.darkMode || false;
-          this.selectedTheme = data.selectedTheme || 'default';
-          this.changeTheme();
-          
-          this.updateActiveBadges();
-          this.analyzeWeaknesses();
-          
-          this.userStats.lastActiveDate = today;
-          console.log('Data pengguna dimuat');
-        }
-      } catch (error) {
-        console.error('Gagal memuat data:', error);
-      }
-    },
-
-    exportWrongAsCSV() {
-      if (!this.wrongQuestions || this.wrongQuestions.length === 0) {
-        alert('Belum ada soal salah untuk diekspor.');
-        return;
-      }
-      const rows = [['No','Soal','Kunci']];
-      this.wrongQuestions.forEach((w,i)=> {
-        rows.push([i+1, (w.soal||'').replace(/<[^>]*>?/gm,''), (w.kunciText || '').toString()]);
-      });
-      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'soal_salah.csv'; a.click();
-      URL.revokeObjectURL(url);
-    }
   },
-mounted() {
-   // Tangkap spasi untuk jeda/lanjutkan
-  window.addEventListener('keydown', this.handleSpaceKey);
-  // 🕒 1️⃣ Inisialisasi auto-save (menyimpan progress setiap beberapa detik)
-  this.initializeAutoSave();
-
-  // 📦 2️⃣ Pulihkan dataset terakhir yang dipilih
-  const savedDataset = localStorage.getItem('kitab_selectedDataset');
-  if (savedDataset) {
-    this.selectedDataset = savedDataset;
-  }
-
-  // 🧭 3️⃣ Catat waktu mulai sesi
-  this.sessionStartTime = Date.now();
-
-  // 🎯 4️⃣ Inisialisasi tantangan harian
-  this.initializeDailyChallenge();
-
-  // 💾 5️⃣ Coba pulihkan data mentah dari localStorage
-  const savedRaw = localStorage.getItem('pmk_quiz_rawData');
-  if (savedRaw) {
-    try {
-      const parsed = JSON.parse(savedRaw);
-      this.selectedDataset = parsed.dataset || this.selectedDataset;
-      const rows = parsed.rawRows || [];
-
-      // 🔹 Gunakan data mentah untuk membentuk dataAwal
-      this.dataAwal = rows.map(r => {
-        const allOptions = [
-          { key:'a', text: String(r.a ?? r.kunci ?? '').trim(), isCorrect: (String(r.a ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'b', text: String(r.b ?? '').trim(), isCorrect: (String(r.b ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'c', text: String(r.c ?? '').trim(), isCorrect: (String(r.c ?? '').trim() === String(r.kunci ?? '').trim()) },
-          { key:'d', text: String(r.d ?? '').trim(), isCorrect: (String(r.d ?? '').trim() === String(r.kunci ?? '').trim()) }
-        ].filter(o => o.text !== '');
-        const shuffled = shuffleArray(allOptions);
-        const shuffledOptions = shuffled.map(o => ({ key:o.key, text:o.text, isCorrect:o.isCorrect }));
-        const k = allOptions.find(o=>o.isCorrect);
-        return {
-          id: r.id ?? r.no ?? (Math.random().toString(36).slice(2)),
-          no: r.no ?? null,
-          soal: r.soal ?? r.question ?? '',
-          penjelasan: r.penjelasan ?? r.keterangan ?? '',
-          kunciKey: k ? k.key : (allOptions[0] ? allOptions[0].key : null),
-          shuffledOptions,
-          sumber: r.sumber ?? '',
-          hal: Number(r.hal ?? r.page ?? 0) || 0,
-          row: Number(r.row ?? 0) || 0
-        };
-      }).filter(r => r.soal);
-
-      this.rebuildBatches();
-      console.log('♻️ Data mentah dari localStorage digunakan.');
-
-      // 🔹 Sinkronisasi tampilan
-      this.loading = false;
-      this.jawabanSudahDikirim = false;
-      this.jawabanTerpilih = null;
-
-      // ✅ Tambahkan listener untuk simpan otomatis saat halaman ditutup
-      window.addEventListener('beforeunload', this.saveUserData);
-
-      // 👉 Hentikan eksekusi (jangan loadPage lagi)
-      return;
-    } catch (e) {
-      console.warn('⚠️ Gagal membaca data mentah dari localStorage:', e);
-      localStorage.removeItem('pmk_quiz_rawData');
-    }
-  }
-
-  // 🚀 6️⃣ Jika tidak ada data di localStorage, fetch dari API
-  this.loadPage();
-
-  // ✅ 7️⃣ Pastikan data selalu disimpan sebelum halaman ditutup
-  window.addEventListener('beforeunload', this.saveUserData);
-}
-,
-beforeDestroy() {
-   window.removeEventListener('keydown', this.handleSpaceKey);
-  // 1️⃣ Hentikan semua interval agar tidak jalan di background
-  this.stopCountdown();
-  if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
-
-  // 2️⃣ Hapus listener "beforeunload"
-  window.removeEventListener('beforeunload', this.saveUserData);
-
-  // 3️⃣ Simpan data terakhir *hanya kalau tidak kosong*
-  if (this.displaySoal && Object.keys(this.displaySoal).length > 0) {
-    this.saveUserData();
-    console.log('💾 Data disimpan sebelum destroy.');
-  } else {
-    console.log('⚠️ Tidak menyimpan karena data kosong.');
-  }
-}
-
 });
 </script>
-
 </body>
 </html>
