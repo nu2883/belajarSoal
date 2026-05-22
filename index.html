@@ -268,25 +268,35 @@
 
       <!-- LOAD DB -->
       <div class="mb-4">
-        <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">LOAD SOAL DARI DATABASE</label>
+        <label class="block text-xs font-bold mb-2 tracking-widests" style="color:var(--muted)">LOAD SOAL DARI DATABASE</label>
         <div class="flex gap-2">
-          <input type="text" v-model="filterSumber" @keyup.enter="doLoadDB"
-                 placeholder="Ketik sumber/topik... (kosong = semua)" style="flex:1;min-width:0" />
+          <input type="text" v-model="dbKeyword" @keyup.enter="doLoadDB"
+                 placeholder="Nama sumber/topik... (kosong = semua)" style="flex:1;min-width:0" />
           <button @click="doLoadDB" class="btn-solid" :disabled="loadingDB"
                   style="min-width:110px;display:flex;align-items:center;justify-content:center;gap:6px">
             <span v-if="loadingDB" class="spinner"></span>
             <span>{{ loadingDB ? 'Memuat...' : '⚡ Load DB' }}</span>
           </button>
         </div>
+        <div v-if="lastLoadedKeyword" class="mt-2 text-xs" style="color:var(--muted)">
+          ✅ Dimuat:
+          <span class="font-bold" style="color:var(--neon)">{{lastLoadedKeyword || 'semua sumber'}}</span>
+          &nbsp;·&nbsp; {{allQuestions.length}} soal
+        </div>
       </div>
 
-      <!-- Sumber chips -->
-      <div v-if="uniqueSumbers.length > 0" class="mb-4">
-        <div class="text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">FILTER CEPAT</div>
+      <!-- Filter soal yang sudah dimuat -->
+      <div v-if="uniqueSumbers.length > 1" class="mb-4">
+        <div class="text-xs font-bold mb-1 tracking-widest" style="color:var(--muted)">FILTER SUMBER</div>
+        <div class="text-xs mb-2" style="color:var(--muted);opacity:0.7">Filter soal dari data yang sudah dimuat</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <div class="sumber-chip" :class="{active: filterSumber===''}"
+               @click="filterSumber=''">Semua ({{allQuestions.length}})</div>
           <div v-for="s in uniqueSumbers" :key="s"
                class="sumber-chip" :class="{active: filterSumber===s}"
-               @click="filterSumber = filterSumber===s ? '' : s">{{s}}</div>
+               @click="filterSumber = filterSumber===s ? '' : s">
+            {{s}} ({{countBySumber(s)}})
+          </div>
         </div>
       </div>
 
@@ -727,11 +737,12 @@
 
 <script>
 const DB_URL   = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
-const LS_Q     = 'qm_questions';
-const LS_WRONG = 'qm_wrong';
-const LS_THEME = 'qm_theme';
-const LS_DONE  = 'qm_completed';
-const LS_SETTINGS = 'qm_settings';
+const LS_Q          = 'qm_questions';
+const LS_WRONG      = 'qm_wrong';
+const LS_THEME      = 'qm_theme';
+const LS_DONE       = 'qm_completed';
+const LS_SETTINGS   = 'qm_settings';
+const LS_LOADED_KW  = 'qm_loaded_kw';
 
 /* ─── Theme bootstrap ─── */
 (function() {
@@ -770,6 +781,8 @@ new Vue({
     speechRate: 1.0,
 
     filterSumber: '',
+    dbKeyword: '',
+    lastLoadedKeyword: null,   // null = belum pernah load, '' = semua, 'xyz' = keyword
     allQuestions: [],
     loadingDB: false,
 
@@ -880,6 +893,10 @@ new Vue({
     _loadLS() {
       try { const q = localStorage.getItem(LS_Q); if (q) this.allQuestions = JSON.parse(q); } catch(e) {}
       try {
+        const kw = localStorage.getItem(LS_LOADED_KW);
+        if (kw !== null) this.lastLoadedKeyword = kw;
+      } catch(e) {}
+      try {
         const w = localStorage.getItem(LS_WRONG);
         if (w) {
           const parsed = JSON.parse(w);
@@ -917,7 +934,9 @@ new Vue({
       return `${d.getDate()}/${d.getMonth()+1} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     },
 
-    /* ── Level key — unique per (type, filter, size, level) ── */
+    countBySumber(s) {
+      return this.allQuestions.filter(q => q.sumber === s).length;
+    },
     levelKey(lv) {
       const prefix = this.filterSumber.trim() || 'all';
       const type   = this.kuisType === 'kumulatif' ? 'kumul' : 'level';
@@ -935,7 +954,7 @@ new Vue({
     async doLoadDB() {
       this.loadingDB = true;
       const now = this._now();
-      const payload = { no: now.ts, tanggal: now.date, waktu: now.time, noHalaman: this.filterSumber.trim() };
+      const payload = { no: now.ts, tanggal: now.date, waktu: now.time, noHalaman: this.dbKeyword.trim() };
       const enc = encodeURIComponent(JSON.stringify(payload));
       try {
         const r1 = await fetch(`${DB_URL}?action=insert&table=request&data=${enc}`);
@@ -980,10 +999,13 @@ new Vue({
 
         // Reset progress when loading new DB
         this.allQuestions    = questions;
-        this.wrongData       = [];
+        // this.wrongData       = [];
         this.completedLevels = [];
+        this.filterSumber    = '';
+        this.lastLoadedKeyword = this.dbKeyword.trim();
         localStorage.setItem(LS_Q, JSON.stringify(questions));
-        this._saveWrong();
+        localStorage.setItem(LS_LOADED_KW, this.lastLoadedKeyword);
+        // this._saveWrong();
         this._saveDone();
         showToast(`✅ ${questions.length} soal dimuat. Progress direset.`, 'green');
       } catch(e) {
@@ -1014,7 +1036,7 @@ new Vue({
         const count = this.jumlahSoal === 'Semua' ? pool.length : this.jumlahSoal;
         pool = pool.slice(0, Math.min(count, pool.length));
         // Shuffle only after slicing
-        pool = this.shuffle(pool);
+        // pool = this.shuffle(pool);
       } else {
         // Kuis
         if (this.kuisType === 'level') {
