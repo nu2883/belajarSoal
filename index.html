@@ -304,6 +304,59 @@
   }
   .qtype-tab.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); }
   .qtype-tab:not(.active):hover { color: var(--text); }
+
+  /* ── LOGIN MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    animation: fadeIn .3s ease both;
+  }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; width: 100%; max-width: 420px;
+    padding: 32px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(0,245,212,.1);
+    animation: slideUp .35s cubic-bezier(.4,0,.2,1) both;
+  }
+  .modal-box input[type=text], .modal-box select {
+    background: var(--card2); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 12px 14px; font-family: 'Sora',sans-serif;
+    width: 100%; outline: none; transition: border .2s; font-size: .95rem;
+  }
+  .modal-box input[type=text]:focus, .modal-box select:focus {
+    border-color: var(--neon); box-shadow: 0 0 0 3px rgba(0,245,212,.1);
+  }
+  /* ── USER BADGE (top-left) ── */
+  .user-badge {
+    position: fixed; top: 18px; left: 18px; z-index: 200;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 999px; padding: 6px 14px 6px 8px;
+    font-size: .8rem; font-weight: 600; cursor: pointer;
+    transition: all .2s; box-shadow: 0 2px 8px var(--shadow);
+    max-width: 200px;
+  }
+  .user-badge:hover { border-color: var(--neon); }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--neon), #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 800; color: #080c14;
+  }
+  .user-badge-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--text);
+  }
+  /* ── ACTIVITY SEND STATUS ── */
+  .activity-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot-sending { background: var(--neon2); animation: pulse 1s infinite; }
+  .dot-sent    { background: #22c55e; }
+  .dot-error   { background: #ef4444; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -319,12 +372,89 @@
 
 <div id="app" class="page-wrap">
 
+<!-- USER BADGE -->
+<div class="user-badge" v-if="userProfile" @click="openEditProfile" title="Edit profil">
+  <div class="user-avatar">{{userProfile.nama.charAt(0).toUpperCase()}}</div>
+  <div class="user-badge-name">{{userProfile.nama}}</div>
+  <div v-if="activityStatus==='sending'" class="activity-dot dot-sending" title="Mengirim data..."></div>
+  <div v-if="activityStatus==='sent'"    class="activity-dot dot-sent"    title="Data terkirim"></div>
+  <div v-if="activityStatus==='error'"   class="activity-dot dot-error"   title="Gagal kirim"></div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" v-if="showLoginModal" @click.self="null">
+  <div class="modal-box">
+    <div class="text-center mb-6">
+      <div style="font-size:2.5rem;margin-bottom:8px">👋</div>
+      <h2 class="text-2xl font-extrabold mb-1" style="color:var(--neon)">Selamat Datang!</h2>
+      <p class="text-sm" style="color:var(--muted)">Masukkan nama dan kantor kamu untuk mulai belajar</p>
+    </div>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA LENGKAP</label>
+        <input type="text" v-model="loginForm.nama" placeholder="Contoh: Nurdin"
+               @keyup.enter="submitLogin" maxlength="60" />
+        <p v-if="loginError.nama" class="text-xs mt-1" style="color:#ef4444">{{loginError.nama}}</p>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">KANTOR / UNIT KERJA</label>
+        <select v-model="loginForm.kantor">
+          <option value="" disabled>-- Pilih Kantor --</option>
+          <option v-for="k in kantorList" :key="k" :value="k">{{k}}</option>
+        </select>
+        <p v-if="loginError.kantor" class="text-xs mt-1" style="color:#ef4444">{{loginError.kantor}}</p>
+      </div>
+      <button @click="submitLogin" class="btn-solid w-full py-4 text-base mt-2"
+              style="border-radius:12px">
+        🚀 Masuk & Mulai Belajar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="modal-overlay" v-if="showEditProfile" @click.self="showEditProfile=false">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-extrabold text-lg" style="color:var(--neon)">👤 Edit Profil</h2>
+      <button @click="showEditProfile=false" class="btn-muted py-1 px-3">✕</button>
+    </div>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA</label>
+        <input type="text" v-model="editForm.nama" placeholder="Nama lengkap" maxlength="60" />
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-2 tracking-widests" style="color:var(--muted)">KANTOR</label>
+        <select v-model="editForm.kantor">
+          <option value="" disabled>-- Pilih Kantor --</option>
+          <option v-for="k in kantorList" :key="k" :value="k">{{k}}</option>
+        </select>
+      </div>
+      <div class="rounded-xl p-3 text-xs" style="background:var(--card2);border:1px solid var(--border);color:var(--muted)">
+        Login sejak: <span style="color:var(--text)">{{formatTime(userProfile && userProfile.loginAt)}}</span>
+      </div>
+      <div class="flex gap-3">
+        <button @click="saveEditProfile" class="btn-solid flex-1 py-3">💾 Simpan</button>
+        <button @click="logoutProfile"   class="btn-danger flex-1 py-3" style="padding:12px">🚪 Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <!-- ══════════ HOME ══════════ -->
   <div v-if="screen==='home'" class="page-center">
     <div class="text-center mb-6 slide-up">
       <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
       <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Belajar Soal</h1>
       <p style="color:var(--muted)">Belajar Cerdas · Belajar Tuntas</p>
+      <div v-if="userProfile" class="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2" style="background:rgba(0,245,212,0.07);border:1px solid rgba(0,245,212,0.2);font-size:.82rem">
+        <span style="color:var(--neon)">👤</span>
+        <span class="font-semibold" style="color:var(--text)">{{userProfile.nama}}</span>
+        <span style="color:var(--muted)">·</span>
+        <span style="color:var(--muted)">{{userProfile.kantor}}</span>
+      </div>
     </div>
 
     <div class="card w-full slide-up" style="max-width:560px;padding:28px;animation-delay:0.08s">
@@ -808,6 +938,7 @@
 <script>
 const DB_URL   = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
 const LS_Q          = 'qm_questions';
+const LS_USER       = 'qm_user_profile';
 const LS_WRONG      = 'qm_wrong';
 const LS_THEME      = 'qm_theme';
 const LS_DONE       = 'qm_completed';
@@ -888,6 +1019,41 @@ new Vue({
 
     isSpeaking: false,
     speechSynth: null,
+
+    /* ── Login / Profile ── */
+    showLoginModal: false,
+    showEditProfile: false,
+    userProfile: null,   // { nama, kantor, loginAt }
+    loginForm:  { nama: '', kantor: '' },
+    editForm:   { nama: '', kantor: '' },
+    loginError: { nama: '', kantor: '' },
+    kantorList: [
+      'KPPN Surabaya I',
+      'KPPN Surabaya II',
+      'KPPN Sidoarjo',
+      'KPPN Malang',
+      'KPPN Madiun',
+      'KPPN Kediri',
+      'KPPN Jember',
+      'KPPN Banyuwangi',
+      'KPPN Pamekasan',
+      'KPPN Bojonegoro',
+      'KPPN Tuban',
+      'KPPN Mojokerto',
+      'KPPN Pasuruan',
+      'KPPN Probolinggo',
+      'KPPN Blitar',
+      'KPPN Tulungagung',
+      'Kanwil DJPb Jatim',
+      'Lainnya',
+    ],
+
+    /* ── Activity tracking ── */
+    activityStatus: '',  // '' | 'sending' | 'sent' | 'error'
+    sessionStartTime: null,
+    sessionBenarNos: [],   // no soal yang dijawab benar (tidak retry)
+    sessionSalahNos: [],   // no soal yang dijawab salah
+    sessionRetryCount: 0,
   },
 
   computed: {
@@ -956,12 +1122,14 @@ new Vue({
     this.speechSynth = window.speechSynthesis;
     if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => {};
     this._loadLS();
+    this._checkLogin();
   },
 
   methods: {
     /* ── LS ── */
     _loadLS() {
       try { const q = localStorage.getItem(LS_Q); if (q) this.allQuestions = JSON.parse(q); } catch(e) {}
+      try { const u = localStorage.getItem('qm_user_profile'); if (u) this.userProfile = JSON.parse(u); } catch(e) {}
       try {
         const kw = localStorage.getItem(LS_LOADED_KW);
         if (kw !== null) this.lastLoadedKeyword = kw;
@@ -1090,6 +1258,11 @@ new Vue({
       if (!this.canStart) return;
       this.stopSpeak();
       this.justCompletedLevel = '';
+      /* Activity tracking reset */
+      this.sessionStartTime  = Date.now();
+      this.sessionBenarNos   = [];
+      this.sessionSalahNos   = [];
+      this.sessionRetryCount = 0;
 
       let pool = [];
       let levelLabel = '';
@@ -1162,6 +1335,8 @@ new Vue({
         this._saveDone();
         this.justCompletedLevel = this.sessionLevelLabel;
       }
+      /* Always send activity at end of any session */
+      this.sendActivity();
     },
 
     _nextQ() {
@@ -1201,9 +1376,16 @@ new Vue({
       const no = String(this.currentQ.no);
       if (idx === this.correctIdx) {
         this.lastCorrect = true; this.correctCount++; this.doneCount++;
+        /* Track benar */
+        if (!this.isRetry && !this.sessionBenarNos.includes(no)) {
+          this.sessionBenarNos.push(no);
+        }
         if (!this.muteSound) this.speakText(`Benar. ${this.currentQ.kunci}`);
       } else {
         this.lastCorrect = false; this.wrongCount++; this.doneCount++;
+        /* Track salah */
+        if (!this.sessionSalahNos.includes(no)) this.sessionSalahNos.push(no);
+        this.sessionRetryCount++;
         // Update wrongData array — no duplicates
         const existing = this.wrongData.find(w => String(w.no) === no);
         if (existing) {
@@ -1317,6 +1499,118 @@ new Vue({
       this.speechSynth.speak(u);
     },
     stopSpeak() { if (this.speechSynth) this.speechSynth.cancel(); this.isSpeaking = false; },
+
+    /* ── Login / Profile ── */
+    _checkLogin() {
+      if (!this.userProfile) {
+        this.showLoginModal = true;
+      }
+    },
+    submitLogin() {
+      this.loginError = { nama: '', kantor: '' };
+      let ok = true;
+      if (!this.loginForm.nama.trim()) {
+        this.loginError.nama = 'Nama wajib diisi'; ok = false;
+      }
+      if (!this.loginForm.kantor) {
+        this.loginError.kantor = 'Pilih kantor dulu'; ok = false;
+      }
+      if (!ok) return;
+      const profile = {
+        nama:    this.loginForm.nama.trim(),
+        kantor:  this.loginForm.kantor,
+        loginAt: Date.now(),
+      };
+      this.userProfile = profile;
+      localStorage.setItem('qm_user_profile', JSON.stringify(profile));
+      this.showLoginModal = false;
+      showToast(`Selamat datang, ${profile.nama}! 🎉`, 'green');
+    },
+    saveEditProfile() {
+      if (!this.editForm.nama.trim() || !this.editForm.kantor) {
+        showToast('Nama dan kantor wajib diisi', 'red'); return;
+      }
+      const updated = {
+        nama:    this.editForm.nama.trim(),
+        kantor:  this.editForm.kantor,
+        loginAt: this.userProfile.loginAt,
+      };
+      this.userProfile = updated;
+      localStorage.setItem('qm_user_profile', JSON.stringify(updated));
+      this.showEditProfile = false;
+      showToast('Profil diperbarui ✓', 'green');
+    },
+    logoutProfile() {
+      if (!confirm('Yakin logout? Data soal lokal tetap tersimpan.')) return;
+      this.userProfile = null;
+      localStorage.removeItem('qm_user_profile');
+      this.showEditProfile = false;
+      this.loginForm = { nama: '', kantor: '' };
+      this.showLoginModal = true;
+    },
+    openEditProfile() {
+      if (!this.userProfile) return;
+      this.editForm = { nama: this.userProfile.nama, kantor: this.userProfile.kantor };
+      this.showEditProfile = true;
+    },
+
+    /* ── Send Activity ── */
+    async sendActivity() {
+      const profile = this.userProfile;
+      if (!profile) return;
+
+      const now = this._now();
+      const durationSec = this.sessionStartTime
+        ? Math.round((Date.now() - this.sessionStartTime) / 1000)
+        : 0;
+
+      // Gather nomor soal in session (unique, preserve order)
+      const nomorSoal = this.sessionQuestions.map(q => String(q.no));
+
+      // Sumber: take first non-empty sumber in session
+      const sumberArr = [...new Set(this.sessionQuestions.map(q => q.sumber).filter(Boolean))];
+      const sumber = sumberArr.join(', ') || this.lastLoadedKeyword || '';
+
+      const payload = {
+        timestamp:    now.ts,
+        tanggal:      now.date,
+        waktu:        now.time,
+        nama:         profile.nama,
+        kantor:       profile.kantor,
+        mode:         this.homeMode === 'salah' ? 'soal_salah'
+                      : this.kuisType === 'kumulatif' ? 'kumulatif'
+                      : this.kuisType === 'custom'    ? 'custom'
+                      : 'level',
+        level:        this.homeMode === 'salah' ? 0 : this.selectedLevel || 0,
+        levelLabel:   this.sessionLevelLabel || 'Soal Salah',
+        jumlahSoal:   this.sessionTotal,
+        nomorSoal:    nomorSoal,
+        benar:        this.sessionBenarNos,
+        salah:        this.sessionSalahNos,
+        jumlahBenar:  this.correctCount,
+        jumlahSalah:  this.wrongCount,
+        score:        this.scorePercent,
+        durasiDetik:  durationSec,
+        sumber:       sumber,
+        retryCount:   this.sessionRetryCount,
+        device:       /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        browser:      navigator.userAgent.substring(0, 120),
+      };
+
+      this.activityStatus = 'sending';
+      const enc = encodeURIComponent(JSON.stringify(payload));
+      try {
+        const r = await fetch(`${DB_URL}?action=insert&table=aktivitasUser&data=${enc}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        this.activityStatus = 'sent';
+        setTimeout(() => { this.activityStatus = ''; }, 4000);
+        console.log('Activity saved ✓', payload);
+      } catch(e) {
+        this.activityStatus = 'error';
+        setTimeout(() => { this.activityStatus = ''; }, 6000);
+        console.error('Gagal kirim activity:', e);
+      }
+    },
 
     /* ── Shuffle ── */
     shuffle(arr) {
