@@ -456,7 +456,9 @@
         <span style="color:var(--muted)">{{userProfile.kantor}}</span>
       </div>
     </div>
-
+<!-- {{sessionBenarNos}}
+<br><br>
+{{sessionSalahNos}} -->
     <div class="card w-full slide-up" style="max-width:560px;padding:28px;animation-delay:0.08s">
 
       <!-- Mode Tabs -->
@@ -1555,60 +1557,79 @@ new Vue({
     },
 
     /* ── Send Activity ── */
-    async sendActivity() {
+/* ── Send Activity ── */
+ async sendActivity() {
       const profile = this.userProfile;
       if (!profile) return;
-
+ 
       const now = this._now();
       const durationSec = this.sessionStartTime
-        ? Math.round((Date.now() - this.sessionStartTime) / 1000)
-        : 0;
-
-      // Gather nomor soal in session (unique, preserve order)
-      const nomorSoal = this.sessionQuestions.map(q => String(q.no));
-
-      // Sumber: take first non-empty sumber in session
-      const sumberArr = [...new Set(this.sessionQuestions.map(q => q.sumber).filter(Boolean))];
-      const sumber = sumberArr.join(', ') || this.lastLoadedKeyword || '';
-
-      const payload = {
-        timestamp:    now.ts,
-        tanggal:      now.date,
-        waktu:        now.time,
-        nama:         profile.nama,
-        kantor:       profile.kantor,
-        mode:         this.homeMode === 'salah' ? 'soal_salah'
-                      : this.kuisType === 'kumulatif' ? 'kumulatif'
-                      : this.kuisType === 'custom'    ? 'custom'
-                      : 'level',
-        level:        this.homeMode === 'salah' ? 0 : this.selectedLevel || 0,
-        levelLabel:   this.sessionLevelLabel || 'Soal Salah',
-        jumlahSoal:   this.sessionTotal,
-        nomorSoal:    nomorSoal,
-        benar:        this.sessionBenarNos,
-        salah:        this.sessionSalahNos,
-        jumlahBenar:  this.correctCount,
-        jumlahSalah:  this.wrongCount,
-        score:        this.scorePercent,
-        durasiDetik:  durationSec,
-        sumber:       sumber,
-        retryCount:   this.sessionRetryCount,
-        device:       /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        browser:      navigator.userAgent.substring(0, 120),
+        ? Math.round((Date.now() - this.sessionStartTime) / 1000) : 0;
+ 
+      // Helper: array of nos → string. Jika kosong → '-' agar truthy di Apps Script
+      const nosToStr = (arr) => {
+        if (!arr || arr.length === 0) return '-';
+        return arr.map(String).join(',');
       };
-
+      // Helper: angka → string (agar nilai 0 tidak diblokir validasi !data.x di Apps Script)
+      const numStr = (n) => String(n);
+ 
+      const nomorSoalStr = nosToStr(this.sessionQuestions.map(q => q.no));
+      const benarStr     = nosToStr(this.sessionBenarNos);
+      const salahStr     = nosToStr(this.sessionSalahNos);
+ 
+      const sumberArr = [...new Set(this.sessionQuestions.map(q => q.sumber).filter(Boolean))];
+      const sumber    = sumberArr.join(', ') || this.lastLoadedKeyword || '-';
+ 
+      const payload = {
+        timestamp:   now.ts,
+        tanggal:     now.date,
+        waktu:       now.time,
+        nama:        profile.nama,
+        kantor:      profile.kantor,
+        mode:        this.homeMode === 'salah'          ? 'soal_salah'
+                   : this.kuisType === 'kumulatif'      ? 'kumulatif'
+                   : this.kuisType === 'custom'         ? 'custom'
+                   :                                      'level',
+        level:       numStr(this.homeMode === 'salah' ? 0 : this.selectedLevel || 0),
+        levelLabel:  this.sessionLevelLabel || 'Soal Salah',
+        jumlahSoal:  numStr(this.sessionTotal),
+        nomorSoal:   nomorSoalStr,     // "4,3,1,2,5"   — string
+        benar:       benarStr,         // "4,3,1,2,5"   — string, atau "-"
+        salah:       salahStr,         // "2,4"         — string, atau "-"
+        jumlahBenar: numStr(this.correctCount),
+        jumlahSalah: numStr(this.wrongCount),
+        score:       numStr(this.scorePercent),
+        durasiDetik: numStr(durationSec),
+        sumber:      sumber,
+        retryCount:  numStr(this.sessionRetryCount),
+        device:      /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        browser:     navigator.userAgent.substring(0, 120),
+      };
+ 
       this.activityStatus = 'sending';
       const enc = encodeURIComponent(JSON.stringify(payload));
+      const url = `${DB_URL}?action=insert&table=aktivitasUser&data=${enc}`;
+ 
+      /* mode:'no-cors' agar lolos saat dibuka dari file://
+         response tidak bisa dibaca JS tapi request tetap sampai ke Apps Script */
       try {
-        const r = await fetch(`${DB_URL}?action=insert&table=aktivitasUser&data=${enc}`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        await fetch(url, { method: 'GET', mode: 'no-cors' });
         this.activityStatus = 'sent';
         setTimeout(() => { this.activityStatus = ''; }, 4000);
         console.log('Activity saved ✓', payload);
       } catch(e) {
-        this.activityStatus = 'error';
-        setTimeout(() => { this.activityStatus = ''; }, 6000);
-        console.error('Gagal kirim activity:', e);
+        /* fallback: Image beacon — fire-and-forget, selalu lolos CORS */
+        try {
+          new Image().src = url;
+          this.activityStatus = 'sent';
+          setTimeout(() => { this.activityStatus = ''; }, 4000);
+          console.log('Activity via beacon ✓', payload);
+        } catch(e2) {
+          this.activityStatus = 'error';
+          setTimeout(() => { this.activityStatus = ''; }, 6000);
+          console.error('Gagal kirim activity:', e2);
+        }
       }
     },
 
