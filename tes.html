@@ -46,6 +46,22 @@
       linear-gradient(90deg, var(--grid) 1px, transparent 1px);
     background-size: 40px 40px; pointer-events: none; z-index: 0;
   }
+  /* Anti-copas: nonaktifkan seleksi teks & drag di seluruh halaman, KECUALI di
+     dalam input/textarea (supaya peserta tetap bisa mengetik & mengedit jawaban
+     esainya sendiri secara normal). */
+  body.no-copy, body.no-copy * {
+    user-select: none; -webkit-user-select: none; -ms-user-select: none;
+    -webkit-touch-callout: none; /* cegah menu "salin/simpan gambar" saat long-press di HP */
+  }
+  body.no-copy input, body.no-copy textarea {
+    user-select: text; -webkit-user-select: text; -ms-user-select: text;
+  }
+  body.no-copy img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+  .cheat-overlay {
+    position: fixed; inset: 0; z-index: 99999; background: rgba(8,12,20,0.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; color: #fff; backdrop-filter: blur(6px);
+  }
   .glow { text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon); }
   .card {
     background: var(--card); border: 1px solid var(--border);
@@ -202,12 +218,26 @@
 
 <div id="app" class="page-wrap">
 
+  <!-- Overlay muncul kalau peserta pindah tab / keluar fullscreen saat test berjalan.
+       Ini TIDAK mencegah screenshot (itu terjadi di level OS, di luar jangkauan halaman
+       web), tapi mempersulit & tercatat sebagai indikasi kecurangan untuk admin. -->
+  <div v-if="screen==='testRunning' && showCheatOverlay" class="cheat-overlay">
+    <div style="font-size:3rem;margin-bottom:12px">⚠️</div>
+    <h2 class="font-bold text-xl mb-2">Kembali ke Test</h2>
+    <p style="color:#94a3b8;max-width:360px;margin-bottom:20px">
+      Kamu terdeteksi meninggalkan halaman test / keluar dari mode layar penuh.
+      Aktivitas ini tercatat.
+    </p>
+    <button @click="_resumeFromCheatOverlay" class="btn-solid py-3 px-6">Kembali ke Soal</button>
+  </div>
+
+
   <!-- ══════════ START — INPUT NAMA ══════════ -->
   <div v-if="screen==='testHome'" class="page-center">
     <div class="text-center mb-6 slide-up">
-      <!-- <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div> -->
-      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Tes Kanwil Jatim</h1>
-      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda</p>
+      <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
+      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Belajar Soal</h1>
+      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda · Sekali jalan</p>
     </div>
     <div class="card w-full slide-up" style="max-width:460px;padding:28px;animation-delay:0.08s">
       <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA PESERTA</label>
@@ -436,6 +466,13 @@ new Vue({
     preloadedQuestions: [],
     dbLoaded: false,
     dbError: '',
+
+    // Anti-kecurangan: kita TIDAK bisa mencegah screenshot secara teknis (itu
+    // terjadi di level OS, di luar kendali halaman web) — tapi kita bisa
+    // mempersulit copy-paste/klik-kanan dan MENCATAT indikasi kecurangan
+    // (pindah tab, keluar fullscreen, coba buka devtools, dst) untuk admin.
+    showCheatOverlay: false,
+    cheatFlags: { rightClick: 0, copy: 0, shortcut: 0, devtools: 0, printscreen: 0, tabSwitch: 0, exitFullscreen: 0 },
   },
 
   computed: {
@@ -458,10 +495,85 @@ new Vue({
   mounted() {
     const resumed = this._tryResumeTest();
     if (!resumed) this._preloadQuestions(); // load soal dari DB otomatis begitu app dibuka
+
+    // Timer browser bisa DITAHAN/DITUNDA saat tab di-background atau layar terkunci,
+    // sehingga setInterval 1 detik tidak selalu presisi tepat di detik ke-0.
+    // Sebagai jaring pengaman, setiap kali tab kembali aktif/fokus, cek ulang
+    // deadline secara langsung berdasarkan jam asli (Date.now()) — bukan cuma
+    // mengandalkan hitungan interval — supaya auto-submit tetap terjadi walau
+    // interval-nya sempat telat/berhenti saat tab tidak aktif.
+    document.addEventListener('visibilitychange', this._checkDeadlineNow);
+    window.addEventListener('focus', this._checkDeadlineNow);
+    window.addEventListener('pageshow', this._checkDeadlineNow);
+
     window.addEventListener('beforeunload', (e) => {
       if (this.screen === 'testRunning' && !this.testLocked) {
         e.preventDefault();
         e.returnValue = '';
+      }
+    });
+
+    // ── Anti-copas & deteksi indikasi kecurangan (hanya aktif saat test berjalan) ──
+    document.body.classList.add('no-copy');
+
+    document.addEventListener('contextmenu', (e) => {
+      if (this.screen !== 'testRunning') return;
+      e.preventDefault();
+      this._flagAttempt('rightClick');
+      showToast('🚫 Klik kanan dinonaktifkan selama test', 'red', 1800);
+    });
+
+    document.addEventListener('copy', (e) => {
+      if (this.screen !== 'testRunning') return;
+      e.preventDefault();
+      this._flagAttempt('copy');
+      showToast('🚫 Menyalin teks dinonaktifkan selama test', 'red', 1800);
+    });
+    document.addEventListener('cut', (e) => { if (this.screen === 'testRunning') e.preventDefault(); });
+
+    document.addEventListener('selectstart', (e) => {
+      if (this.screen !== 'testRunning') return;
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') e.preventDefault();
+    });
+    document.addEventListener('dragstart', (e) => { if (this.screen === 'testRunning') e.preventDefault(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (this.screen !== 'testRunning') return;
+      const k = e.key.toLowerCase();
+      const isDevtools = e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i','j','c'].includes(k));
+      const isBlockedCombo = (e.ctrlKey || e.metaKey) && ['c','u','s','p'].includes(k);
+      if (isDevtools || isBlockedCombo) {
+        e.preventDefault();
+        this._flagAttempt(isDevtools ? 'devtools' : 'shortcut');
+        showToast('🚫 Shortcut ini dinonaktifkan selama test', 'red', 1800);
+      }
+    });
+
+    // PrintScreen: TIDAK BISA benar-benar dicegah (screenshot sudah terjadi di level
+    // OS sebelum event ini sempat kita tangkap). Ini cuma mencatat & memberi tahu
+    // peserta bahwa aksinya tercatat — bukan pemblokiran teknis sungguhan.
+    document.addEventListener('keyup', (e) => {
+      if (this.screen !== 'testRunning') return;
+      if (e.key === 'PrintScreen') {
+        this._flagAttempt('printscreen');
+        showToast('⚠️ Screenshot terdeteksi & tercatat', 'red', 2500);
+      }
+    });
+
+    // Pindah tab / minimize / kunci layar saat test berjalan → catat & tampilkan overlay
+    document.addEventListener('visibilitychange', () => {
+      if (this.screen === 'testRunning' && document.hidden) {
+        this._flagAttempt('tabSwitch');
+        this.showCheatOverlay = true;
+      }
+    });
+
+    // Keluar dari mode fullscreen saat test berjalan → catat & tampilkan overlay
+    document.addEventListener('fullscreenchange', () => {
+      if (this.screen === 'testRunning' && !document.fullscreenElement) {
+        this._flagAttempt('exitFullscreen');
+        this.showCheatOverlay = true;
       }
     });
   },
@@ -482,10 +594,42 @@ new Vue({
           resultData: this.testSubmitted ? this.testResultData : null,
           sentOk:     this.testSentOk,
           sendFailed: this.testSendFailed,
+          cheatFlags: this.cheatFlags,
         }));
       } catch(e) {}
     },
     _clearTestLS() { try { localStorage.removeItem(LS_TEST); } catch(e) {} },
+
+    // Mencatat 1 indikasi kecurangan (bukan pemblokiran teknis sempurna — lihat
+    // catatan jujur di jawaban chat). Disimpan ke LS supaya ikut terkirim ke admin
+    // lewat _buildHasilRow(), dan tetap ada walau halaman di-refresh.
+    _flagAttempt(type) {
+      if (this.cheatFlags[type] === undefined) return;
+      this.cheatFlags[type]++;
+      console.warn(`⚠️ Indikasi kecurangan tercatat: ${type} (total: ${this.cheatFlags[type]})`);
+      this._saveTestLS();
+    },
+
+    _resumeFromCheatOverlay() {
+      this.showCheatOverlay = false;
+      // Coba minta fullscreen lagi (butuh gesture pengguna — tombol klik ini
+      // memenuhi syarat itu di kebanyakan browser).
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    },
+
+    // Dipanggil saat tab kembali aktif/fokus (lihat pendaftaran event di mounted()).
+    // Cek langsung berdasarkan jam asli — jaring pengaman kalau setInterval sempat
+    // tertunda/berhenti karena tab di-background.
+    _checkDeadlineNow() {
+      if (this.screen === 'testRunning' && !this.testLocked && this.testDeadlineTs && Date.now() >= this.testDeadlineTs) {
+        console.log('⏰ [Jaring pengaman] Waktu sudah lewat batas terdeteksi saat tab aktif kembali — memicu submit otomatis.');
+        this.testTimeLeft = 0;
+        this.testLocked = true;
+        this._saveTestLS();
+        this.submitTest(true);
+      }
+    },
 
     // Dipanggil saat app mount, untuk memulihkan sesi yang belum selesai
     // (antisipasi refresh / koneksi terputus di tengah test).
@@ -505,6 +649,7 @@ new Vue({
       this.testDeadlineTs = s.deadlineTs;
       this.testDurationMin = s.durationMin || 90;
       this.testCurrentIdx = Math.min(s.currentIdx || 0, s.questions.length - 1);
+      this.cheatFlags = s.cheatFlags || this.cheatFlags;
 
       if (s.submitted) {
         this.testSubmitted  = true;
@@ -513,6 +658,13 @@ new Vue({
         this.testSentOk     = !!s.sentOk;
         this.testSendFailed = !!s.sendFailed;
         this.screen = 'testResult';
+        if (!this.testSentOk) {
+          // Percobaan kirim sebelumnya belum terkonfirmasi berhasil (misal tab
+          // ditutup/refresh tepat di tengah proses kirim setelah waktu habis) —
+          // coba kirim ulang otomatis begitu peserta membuka lagi halaman ini,
+          // tanpa perlu mereka sadar & klik tombol apa pun.
+          this.$nextTick(() => this._sendResultToServer());
+        }
         return true;
       }
 
@@ -520,6 +672,7 @@ new Vue({
         this.testLocked  = true;
         this.testTimeLeft = Math.max(0, Math.round(((s.deadlineTs||0) - Date.now()) / 1000));
         this.screen = 'testRunning';
+        console.log('⏰ [Resume] Waktu sudah habis saat halaman dimuat ulang — memicu submit otomatis.');
         this.$nextTick(() => this.submitTest(true));
         return true;
       }
@@ -594,6 +747,11 @@ new Vue({
         showToast('Gagal memuat soal: ' + (this.dbError || 'tidak diketahui'), 'red');
         return;
       }
+      // Amankan durasi test dari input tidak valid/kosong (mis. dikosongkan saat uji
+      // coba) — kalau tidak dijaga, timer bisa jadi NaN dan tidak pernah habis.
+      const durasiValid = Number(this.testDurationMin);
+      if (!durasiValid || durasiValid <= 0) this.testDurationMin = 90;
+
       this.testQuestions   = this.preloadedQuestions;
       this.testAnswers     = {};
       this.testCurrentIdx  = 0;
@@ -604,9 +762,15 @@ new Vue({
       this.testSending     = false;
       this.testSentOk      = false;
       this.testSendFailed  = false;
+      this.cheatFlags      = { rightClick: 0, copy: 0, shortcut: 0, devtools: 0, printscreen: 0, tabSwitch: 0, exitFullscreen: 0 };
       this._saveTestLS();
       this.screen = 'testRunning';
       this._startTestTimer();
+
+      // Minta fullscreen — tombol "Mulai Test" ini user gesture jadi biasanya diizinkan
+      // browser. Kalau ditolak/tidak didukung, ya sudah, tidak menghentikan test.
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
     },
 
     _startTestTimer() {
@@ -615,6 +779,7 @@ new Vue({
         const left = Math.max(0, Math.round((this.testDeadlineTs - Date.now()) / 1000));
         this.testTimeLeft = left;
         if (left <= 0) {
+          console.log('⏰ [Timer] Waktu habis terdeteksi oleh hitungan mundur — memicu submitTest(true).');
           clearInterval(this.testTimerHandle);
           this.testTimerHandle = null;
           this.testLocked = true;
@@ -649,6 +814,7 @@ new Vue({
 
     async submitTest(auto=false) {
       if (this.testSubmitting || this.testSubmitted) return;
+      console.log(auto ? '📥 submitTest(true) dipanggil — jalur OTOMATIS (waktu habis).' : '📥 submitTest(false) dipanggil — jalur manual (klik Submit).');
       this.testSubmitting   = true;
       if (this.testTimerHandle) { clearInterval(this.testTimerHandle); this.testTimerHandle = null; }
       this.testLocked = true;
@@ -690,6 +856,7 @@ new Vue({
       this.screen = 'testResult';
       showToast(auto ? '⏰ Waktu habis — test selesai' : '✅ Test selesai', auto ? 'blue' : 'green');
       this.testSubmitting = false;
+      console.log('✅ Layar hasil ditampilkan. Sekarang mengirim ke server...');
 
       this._sendResultToServer();
     },
@@ -738,6 +905,10 @@ new Vue({
         // Jawaban pilihan ganda digabung jadi 1 kolom teks JSON, karena semua ini
         // 1 baris untuk 1 sheet "hasill" (bukan tabel terpisah).
         detailPG:       JSON.stringify(detailPG),
+        // Indikasi kecurangan (bukan bukti pasti — cuma sinyal untuk admin cek
+        // manual): berapa kali klik kanan, copy, shortcut/devtools, kemungkinan
+        // screenshot, pindah tab, dan keluar dari mode fullscreen selama test.
+        indikasiKecurangan: JSON.stringify(this.cheatFlags),
       };
     },
 
@@ -754,7 +925,11 @@ new Vue({
     // isi response-nya. Selama request tidak melempar exception (artinya benar-benar
     // terkirim ke server), kita anggap SUKSES. Exception hanya muncul kalau memang
     // ada masalah koneksi nyata (offline / DNS gagal / server tidak terjangkau).
-    async _sendResultToServer() {
+    //
+    // Kalau memang gagal karena koneksi nyata (misalnya tepat di detik waktu habis
+    // jaringan sempat putus), kita coba lagi OTOMATIS beberapa kali dengan jeda makin
+    // lama — supaya peserta tidak perlu sadar & klik "Kirim Ulang" secara manual.
+    async _sendResultToServer(attempt = 1) {
       if (this.testSending) return;
       this.testSending     = true;
       this.testSendFailed  = false;
@@ -762,24 +937,36 @@ new Vue({
       const rowData = this._buildHasilRow();
       const urlKirim = DB_URL + '?action=insert&table=' + HASIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(rowData));
 
-      console.log('%c=== MENGIRIM HASIL KE SHEET "hasill" ===', 'font-weight:bold;color:#00a896');
+      console.log(`%c=== MENGIRIM HASIL KE SHEET "hasill" (percobaan ke-${attempt}) ===`, 'font-weight:bold;color:#00a896');
       console.log('📤 PAYLOAD dikirim:', JSON.stringify(rowData, null, 2));
       console.log(urlKirim);
 
       try {
-        await fetch(urlKirim, { method: 'GET', mode: 'no-cors' });
+        await fetch(urlKirim, { method: 'GET', mode: 'no-cors', keepalive: true });
         // Response opaque (tidak bisa dibaca) — itu wajar & tidak berarti gagal.
         this.testSentOk     = true;
         this.testSendFailed = false;
+        this.testSending    = false;
+        this._saveTestLS();
         console.log('✅ Request terkirim ke server (response tidak bisa dibaca karena CORS, tapi insert sudah tereksekusi di server).');
       } catch(e) {
-        // Ini baru kegagalan yang sebenarnya (offline / server tidak terjangkau).
-        this.testSentOk     = false;
-        this.testSendFailed = true;
-        console.error('❌ Gagal mengirim ke server (masalah koneksi nyata):', e.message);
-      } finally {
         this.testSending = false;
-        this._saveTestLS();
+        console.error(`❌ Percobaan ke-${attempt} gagal (masalah koneksi nyata):`, e.message);
+        if (attempt < 5) {
+          // Retry otomatis dengan jeda makin lama (6s, 12s, 18s, 24s) — tanpa perlu
+          // interaksi peserta sama sekali.
+          const delay = attempt * 6000;
+          this._saveTestLS();
+          console.log(`⏳ Mencoba lagi otomatis dalam ${delay/1000} detik...`);
+          setTimeout(() => this._sendResultToServer(attempt + 1), delay);
+        } else {
+          // Sudah 5x dicoba otomatis dan tetap gagal — baru di sini tampilkan
+          // opsi kirim ulang manual ke peserta/admin.
+          this.testSentOk     = false;
+          this.testSendFailed = true;
+          this._saveTestLS();
+          console.error('❌ Semua percobaan otomatis gagal. Perlu dikirim ulang manual.');
+        }
       }
     },
 
