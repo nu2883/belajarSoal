@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Hasil Test</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --neon:   #00f5d4;
+    --neon2:  #f5a623;
+    --bg:     #080c14;
+    --card:   #0f1729;
+    --card2:  #131d35;
+    --border: #1e2d4a;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.4);
+    --grid:   rgba(0,245,212,0.03);
+    --orb-op: 0.06;
+  }
+  [data-theme="light"] {
+    --neon:   #00a896;
+    --neon2:  #d97706;
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --card2:  #f1f5f9;
+    --border: #cbd5e1;
+    --text:   #1e293b;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.07);
+    --grid:   rgba(0,168,150,0.05);
+    --orb-op: 0.1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); font-family: 'Sora', sans-serif;
+    color: var(--text); min-height: 100vh; overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .glow { text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; transition: all 0.3s;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .btn-neon {
+    background: transparent; border: 1.5px solid var(--neon);
+    color: var(--neon); padding: 9px 16px; border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-neon:hover:not(:disabled) { background: rgba(0,245,212,0.08); box-shadow: 0 0 16px rgba(0,245,212,0.25); }
+  .btn-neon:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-solid {
+    background: var(--neon); color: #080c14; border: none;
+    padding: 10px 18px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-solid:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,245,212,0.35); }
+  .theme-toggle{
+    position:fixed; top:18px; right:18px; z-index:999;
+    width:52px; height:52px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; cursor:pointer; user-select:none; color:#fff;
+    background: linear-gradient(135deg, rgba(0,245,212,0.95), rgba(99,102,241,0.95));
+    border:2px solid rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 4px rgba(0,245,212,0.12), 0 10px 30px rgba(0,245,212,0.28), 0 4px 12px rgba(0,0,0,0.35);
+    transition: transform .25s ease;
+  }
+  .theme-toggle:hover{ transform:scale(1.1) rotate(15deg); }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .tag-neon   { background: rgba(0,245,212,0.1);  color: var(--neon);  border: 1px solid rgba(0,245,212,0.3); }
+  .tag-orange { background: rgba(245,166,35,0.1); color: var(--neon2); border: 1px solid rgba(245,166,35,0.3); }
+  .tag-red    { background: rgba(239,68,68,0.1);  color: #ef4444;      border: 1px solid rgba(239,68,68,0.3); }
+  .tag-green  { background: rgba(34,197,94,0.1);  color: #22c55e;      border: 1px solid rgba(34,197,94,0.3); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  input[type=text] {
+    background: var(--card2); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 10px 14px; font-family: 'Sora', sans-serif;
+    outline: none; transition: border 0.2s; font-size: 0.9rem;
+  }
+  input[type=text]:focus { border-color: var(--neon); box-shadow: 0 0 0 3px rgba(0,245,212,0.1); }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(0,245,212,0.25); border-top-color: var(--neon);
+    animation: spin 0.7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .slide-up { animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .floating-orb { position: fixed; pointer-events: none; border-radius: 50%; filter: blur(90px); opacity: var(--orb-op); z-index: 0; }
+  .page-wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 90px 20px 40px; }
+  ::-webkit-scrollbar { width: 5px; height:5px; }
+  ::-webkit-scrollbar-track { background: var(--card); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .stat-box { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat-box .num { font-size: 1.5rem; font-weight: 800; color: var(--neon); }
+  .stat-box .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  table.hasil-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table.hasil-table th {
+    text-align: left; padding: 10px 12px; color: var(--muted); font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1.5px solid var(--border);
+    position: sticky; top: 0; background: var(--card);
+  }
+  table.hasil-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.hasil-table tbody tr { cursor: pointer; transition: background 0.15s; }
+  table.hasil-table tbody tr:hover { background: var(--card2); }
+  .skor-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 0.8rem;
+  }
+  .skor-high { background: rgba(34,197,94,0.14); color: #22c55e; }
+  .skor-mid  { background: rgba(245,166,35,0.14); color: var(--neon2); }
+  .skor-low  { background: rgba(239,68,68,0.14);  color: #ef4444; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000;
+    display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px;
+    overflow-y: auto; backdrop-filter: blur(3px);
+  }
+  .modal-box { max-width: 720px; width: 100%; margin-bottom: 40px; }
+
+  .jawab-row { display:flex; gap:10px; padding:12px 14px; border-radius:10px; margin-bottom:8px; border:1.5px solid var(--border); background:var(--card2); }
+  .jawab-row.benar { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+  .jawab-row.salah { border-color: rgba(239,68,68,0.4);  background: rgba(239,68,68,0.06); }
+  .jawab-row.kosong { opacity: 0.75; }
+</style>
+</head>
+<body>
+
+<div class="floating-orb" style="width:500px;height:500px;background:#00f5d4;top:-120px;right:-120px;"></div>
+<div class="floating-orb" style="width:400px;height:400px;background:#7c3aed;bottom:-100px;left:-120px;"></div>
+
+<button class="theme-toggle" id="themeBtn" title="Ganti tema"><i data-lucide="moon"></i></button>
+
+<div id="app" class="page-wrap">
+
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <div>
+      <div class="tag tag-neon mb-2">🔒 ADMIN</div>
+      <h1 class="text-3xl font-extrabold" style="color:var(--neon)">Hasil Test</h1>
+      <p class="text-sm mt-1" style="color:var(--muted)">
+        {{ rows.length }} peserta ·
+        <span v-if="loading"><span class="spinner" style="vertical-align:-2px"></span> memuat...</span>
+        <span v-else>diperbarui {{ lastUpdatedText }} · auto-refresh dalam {{ countdownText }}</span>
+      </p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <input type="text" v-model="searchQuery" placeholder="🔍 Cari nama..." style="width:200px" />
+      <button @click="loadData" class="btn-neon" :disabled="loading">
+        {{ loading ? '⏳' : '🔄' }} Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistik ringkas -->
+  <div class="grid gap-3 mb-6" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+    <div class="stat-box"><div class="num">{{ rows.length }}</div><div class="label">Total Peserta</div></div>
+    <div class="stat-box"><div class="num">{{ stats.avgSkor }}%</div><div class="label">Rata-rata Skor</div></div>
+    <div class="stat-box"><div class="num" style="color:#22c55e">{{ stats.lulus }}</div><div class="label">Skor ≥ 60%</div></div>
+    <div class="stat-box"><div class="num" style="color:#ef4444">{{ stats.rendah }}</div><div class="label">Skor &lt; 60%</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--neon2)">{{ stats.autoSubmitCount }}</div><div class="label">Auto-submit (waktu habis)</div></div>
+  </div>
+
+  <div v-if="error" class="card p-4 mb-4" style="border-color:#ef4444;color:#ef4444">
+    ⚠️ Gagal memuat data: {{ error }}
+  </div>
+
+  <div v-if="!loading && !error && rows.length===0" class="card p-8 text-center" style="color:var(--muted)">
+    Belum ada data hasil test yang masuk.
+  </div>
+
+  <div v-if="filteredRows.length" class="card slide-up" style="overflow-x:auto">
+    <table class="hasil-table">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Selesai</th>
+          <th>Dijawab</th>
+          <th>Benar</th>
+          <th>Salah</th>
+          <th>Skor</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in filteredRows" :key="row.id" @click="openDetail(row)">
+          <td class="font-semibold">{{ row.nama || '—' }}</td>
+          <td class="mono" style="color:var(--muted);font-size:0.8rem">{{ row.selesai || '—' }}</td>
+          <td>{{ row.dijawab }}/{{ row.totalSoal }}</td>
+          <td style="color:#22c55e">{{ row.benar }}</td>
+          <td style="color:#ef4444">{{ row.salah }}</td>
+          <td><span class="skor-pill" :class="skorClass(row.skor)">{{ row.skor }}%</span></td>
+          <td>
+            <span v-if="row.autoSubmit==='Ya'" class="tag tag-orange">⏰ Auto</span>
+            <span v-else class="tag tag-green">✅ Manual</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══════════ MODAL DETAIL ══════════ -->
+  <div v-if="selectedRow" class="modal-backdrop" @click.self="closeDetail">
+    <div class="modal-box card p-6 slide-up">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h2 class="text-xl font-extrabold" style="color:var(--neon)">{{ selectedRow.nama }}</h2>
+          <p class="text-xs mt-1" style="color:var(--muted)">
+            Mulai: {{ selectedRow.mulai }} &nbsp;·&nbsp; Selesai: {{ selectedRow.selesai }} &nbsp;·&nbsp; Durasi: {{ selectedRow.durasiMenit }} menit
+          </p>
+        </div>
+        <button @click="closeDetail" class="btn-neon" style="padding:6px 12px">✕</button>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 mb-5">
+        <div class="stat-box text-center"><div class="num" style="font-size:1.2rem">{{ selectedRow.dijawab }}/{{ selectedRow.totalSoal }}</div><div class="label">Dijawab</div></div>
+        <div class="stat-box text-center"><div class="num" style="font-size:1.2rem;color:#22c55e">{{ selectedRow.benar }}</div><div class="label">Benar</div></div>
+        <div class="stat-box text-center"><div class="num" style="font-size:1.2rem;color:#ef4444">{{ selectedRow.salah }}</div><div class="label">Salah</div></div>
+        <div class="stat-box text-center"><div class="num" style="font-size:1.2rem">{{ selectedRow.skor }}%</div><div class="label">Skor</div></div>
+      </div>
+
+      <div v-if="selectedRow.autoSubmit==='Ya'" class="tag tag-orange mb-4">⏰ Waktu habis — submit otomatis</div>
+
+      <div v-if="selectedRow.detailPGParsed.length">
+        <h3 class="text-sm font-bold mb-3 tracking-wide" style="color:var(--muted)">DETAIL JAWABAN PILIHAN GANDA</h3>
+        <div v-for="(j,i) in selectedRow.detailPGParsed" :key="i"
+             class="jawab-row" :class="!j.jawabanUser ? 'kosong' : (j.benar ? 'benar' : 'salah')">
+          <div style="flex-shrink:0;font-weight:700;color:var(--muted)">{{ i+1 }}.</div>
+          <div style="flex:1">
+            <div class="mb-1" style="font-size:0.88rem">{{ j.soal }}</div>
+            <div class="text-xs" style="color:var(--muted)">
+              Jawaban peserta:
+              <b :style="!j.jawabanUser ? 'color:var(--muted)' : (j.benar ? 'color:#22c55e' : 'color:#ef4444')">
+                {{ j.jawabanUser || 'Tidak dijawab' }}
+              </b><br>
+              <span v-if="j.jawabanUser && !j.benar"> · Kunci: <b style="color:#22c55e">{{ j.kunci }}</b></span>
+            </div>
+          </div>
+          <div style="flex-shrink:0;font-size:1.1rem">
+            {{ !j.jawabanUser ? '⬜' : (j.benar ? '✅' : '❌') }}
+          </div>
+        </div>
+      </div>
+
+      <div v-if="selectedRow.soalEssay" class="mt-5">
+        <h3 class="text-sm font-bold mb-3 tracking-wide" style="color:var(--muted)">SOAL ESSAY</h3>
+        <div class="jawab-row" style="flex-direction:column;align-items:stretch">
+          <div class="mb-2 font-semibold" style="font-size:0.9rem">{{ selectedRow.soalEssay }}</div>
+          <div class="text-sm" style="white-space:pre-wrap;line-height:1.6;color:var(--text)">
+            {{ selectedRow.jawabanEssay || '(tidak dijawab)' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DB_URL = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
+const HASIL_TABLE = 'hasill';
+const LS_THEME = 'qm_theme';
+const REFRESH_MS = 5 * 60 * 1000; // auto-load setiap 5 menit
+
+(function() {
+  const t = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(LS_THEME, next);
+});
+
+new Vue({
+  el: '#app',
+  data: {
+    rows: [],
+    loading: false,
+    error: '',
+    lastUpdated: null,
+    searchQuery: '',
+    selectedRow: null,
+    refreshHandle: null,
+    tickHandle: null,
+    msUntilRefresh: REFRESH_MS,
+  },
+  computed: {
+    filteredRows() {
+      const q = this.searchQuery.trim().toLowerCase();
+      if (!q) return this.rows;
+      return this.rows.filter(r => (r.nama || '').toLowerCase().includes(q));
+    },
+    lastUpdatedText() {
+      if (!this.lastUpdated) return '-';
+      return this.lastUpdated.toLocaleTimeString('id-ID');
+    },
+    countdownText() {
+      const s = Math.max(0, Math.round(this.msUntilRefresh / 1000));
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    },
+    stats() {
+      const n = this.rows.length;
+      const avgSkor = n ? Math.round(this.rows.reduce((a,r) => a + (Number(r.skor)||0), 0) / n) : 0;
+      const lulus = this.rows.filter(r => Number(r.skor) >= 60).length;
+      const rendah = n - lulus;
+      const autoSubmitCount = this.rows.filter(r => r.autoSubmit === 'Ya').length;
+      return { avgSkor, lulus, rendah, autoSubmitCount };
+    },
+  },
+  mounted() {
+    this.loadData();
+    this.refreshHandle = setInterval(this.loadData, REFRESH_MS);
+    this.tickHandle = setInterval(() => {
+      this.msUntilRefresh = Math.max(0, this.msUntilRefresh - 1000);
+    }, 1000);
+  },
+  beforeDestroy() {
+    clearInterval(this.refreshHandle);
+    clearInterval(this.tickHandle);
+  },
+  methods: {
+    skorClass(skor) {
+      const s = Number(skor) || 0;
+      if (s >= 75) return 'skor-high';
+      if (s >= 50) return 'skor-mid';
+      return 'skor-low';
+    },
+
+    async loadData() {
+      this.loading = true;
+      this.error = '';
+      try {
+        const res = await fetch(`${DB_URL}?action=read&table=${HASIL_TABLE}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { throw new Error('Response bukan JSON'); }
+        const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : null;
+        if (!arr) throw new Error('Format data tidak dikenali');
+
+        const strip = v => (v === null || v === undefined) ? '' : String(v).replace(/^'/, '').trim();
+        const get = (row, ...keys) => {
+          for (const k of keys) {
+            if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
+          }
+          return '';
+        };
+
+        this.rows = arr.map((row, i) => {
+          let detailPGParsed = [];
+          try { detailPGParsed = JSON.parse(get(row,'detailPG','detailpg') || '[]'); } catch(e) { detailPGParsed = []; }
+
+          return {
+            id:             get(row,'id') || String(i),
+            nama:           strip(get(row,'nama','Nama')),
+            mulai:          strip(get(row,'mulai','Mulai')),
+            selesai:        strip(get(row,'selesai','Selesai')),
+            durasiMenit:    get(row,'durasiMenit','durasimenit') || 0,
+            totalSoal:      Number(get(row,'totalSoal','totalsoal')) || 0,
+            totalSoalPG:    Number(get(row,'totalSoalPG','totalsoalpg')) || 0,
+            totalSoalEssay: Number(get(row,'totalSoalEssay','totalsoalessay')) || 0,
+            dijawab:        Number(get(row,'dijawab')) || 0,
+            benar:          Number(get(row,'benar')) || 0,
+            salah:          Number(get(row,'salah')) || 0,
+            belum:          Number(get(row,'belum')) || 0,
+            skor:           Number(get(row,'skor')) || 0,
+            autoSubmit:     strip(get(row,'autoSubmit','autosubmit')) || 'Tidak',
+            soalEssay:      strip(get(row,'soalEssay','soalessay')),
+            jawabanEssay:   strip(get(row,'jawabanEssay','jawabanessay')),
+            detailPGParsed,
+          };
+        }).sort((a,b) => (b.mulai || '').localeCompare(a.mulai || ''));
+
+        this.lastUpdated = new Date();
+        this.msUntilRefresh = REFRESH_MS;
+
+        // Kalau modal detail sedang terbuka, segarkan datanya juga (kalau masih ada).
+        if (this.selectedRow) {
+          const fresh = this.rows.find(r => r.id === this.selectedRow.id);
+          if (fresh) this.selectedRow = fresh;
+        }
+      } catch(e) {
+        this.error = e.message;
+        console.error('❌ Gagal memuat data hasill:', e);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    openDetail(row)  { this.selectedRow = row; },
+    closeDetail()    { this.selectedRow = null; },
+  },
+});
+</script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
