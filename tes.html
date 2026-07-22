@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Belajar Soal — Test</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --neon:   #00f5d4;
+    --neon2:  #f5a623;
+    --bg:     #080c14;
+    --card:   #0f1729;
+    --card2:  #131d35;
+    --border: #1e2d4a;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.4);
+    --grid:   rgba(0,245,212,0.03);
+    --orb-op: 0.06;
+  }
+  [data-theme="light"] {
+    --neon:   #00a896;
+    --neon2:  #d97706;
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --card2:  #f1f5f9;
+    --border: #cbd5e1;
+    --text:   #1e293b;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.07);
+    --grid:   rgba(0,168,150,0.05);
+    --orb-op: 0.1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); font-family: 'Sora', sans-serif;
+    color: var(--text); min-height: 100vh; overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .glow { text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; transition: all 0.3s;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .btn-neon {
+    background: transparent; border: 1.5px solid var(--neon);
+    color: var(--neon); padding: 10px 18px; border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-neon:hover:not(:disabled) { background: rgba(0,245,212,0.08); box-shadow: 0 0 16px rgba(0,245,212,0.25); }
+  .btn-neon:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-solid {
+    background: var(--neon); color: #080c14; border: none;
+    padding: 12px 22px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-solid:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,245,212,0.35); }
+  .btn-solid:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-orange {
+    background: var(--neon2); color: #fff; border: none;
+    padding: 12px 22px; border-radius: 8px; font-family: 'Sora', sans-serif;
+    font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-orange:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,166,35,0.35); }
+  .btn-orange:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .theme-toggle{
+    position:fixed; top:18px; right:18px; z-index:999;
+    width:58px; height:58px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; font-weight:bold; cursor:pointer; user-select:none; color:#fff;
+    background: linear-gradient(135deg, rgba(0,245,212,0.95), rgba(99,102,241,0.95));
+    border:2px solid rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 4px rgba(0,245,212,0.12), 0 10px 30px rgba(0,245,212,0.28), 0 4px 12px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  .theme-toggle:hover{ transform:scale(1.12) rotate(18deg); border-color:rgba(255,255,255,0.45); }
+  .theme-toggle:active{ transform:scale(.95); }
+  .option-btn {
+    width: 100%; text-align: left; background: var(--card2);
+    border: 1.5px solid var(--border); color: var(--text);
+    padding: 14px 16px; border-radius: 12px; font-family: 'Sora', sans-serif;
+    font-size: 0.92rem; cursor: pointer; transition: all 0.22s;
+    display: flex; align-items: flex-start; gap: 12px; line-height: 1.55;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--neon); background: rgba(0,245,212,0.05); transform: translateX(3px); }
+  .option-btn.correct { border-color: var(--neon); background: rgba(0,245,212,0.09); }
+  .option-btn:disabled { cursor: default; }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .tag-neon   { background: rgba(0,245,212,0.1);  color: var(--neon);  border: 1px solid rgba(0,245,212,0.3); }
+  .tag-orange { background: rgba(245,166,35,0.1); color: var(--neon2); border: 1px solid rgba(245,166,35,0.3); }
+  .tag-red    { background: rgba(239,68,68,0.1);  color: #ef4444;      border: 1px solid rgba(239,68,68,0.3); }
+  .tag-green  { background: rgba(34,197,94,0.1);  color: #22c55e;      border: 1px solid rgba(34,197,94,0.3); }
+  input[type=text], input[type=number] {
+    background: var(--card2); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 10px 14px; font-family: 'Sora', sans-serif;
+    width: 100%; outline: none; transition: border 0.2s;
+  }
+  input[type=text]:focus, input[type=number]:focus { border-color: var(--neon); box-shadow: 0 0 0 3px rgba(0,245,212,0.1); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .badge-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(0,245,212,0.14); color: var(--neon); font-size: 0.75rem; font-weight: 700;
+  }
+  .slide-up { animation: slideUp 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.3s ease both; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .floating-orb {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    filter: blur(90px); opacity: var(--orb-op); z-index: 0;
+  }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(8,12,20,0.3); border-top-color: #080c14;
+    animation: spin 0.7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 0.88rem;
+    z-index: 9999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s ease both;
+  }
+  @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  .toast-green { background: rgba(34,197,94,0.92); color: #fff; }
+  .toast-red   { background: rgba(239,68,68,0.92);  color: #fff; }
+  .toast-blue  { background: rgba(99,102,241,0.92); color: #fff; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--card); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .page-wrap { position: relative; z-index: 1; }
+  .page-center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; }
+  .quiz-wrap { max-width: 700px; margin: 0 auto; padding: 16px 16px 24px; min-height: 100vh; display: flex; flex-direction: column; }
+  /* Pure Test mode */
+  .test-timer {
+    position: fixed; top: 18px; left: 18px; z-index: 998;
+    background: var(--card); border: 2px solid var(--neon); color: var(--neon);
+    border-radius: 999px; padding: 10px 20px; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 1.05rem; box-shadow: 0 4px 20px var(--shadow);
+    display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
+  }
+  .test-timer.warn   { border-color: #f59e0b; color: #f59e0b; animation: timerPulse 1s ease-in-out infinite; }
+  .test-timer.danger { border-color: #ef4444; color: #ef4444; animation: timerPulse 0.6s ease-in-out infinite; }
+  @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .test-layout { display: flex; gap: 20px; align-items: flex-start; }
+  .test-nav-col { width: 232px; flex-shrink: 0; }
+  .test-question-col { flex: 1; min-width: 0; }
+  @media (max-width: 760px) {
+    .test-layout { flex-direction: column; }
+    .test-nav-col { width: 100%; }
+  }
+  /* Navigator soal — bentuk lingkaran */
+  .qnav-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  }
+  .qnav-circle {
+    aspect-ratio: 1/1; width: 100%; max-width: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--border); background: var(--card2); color: var(--muted);
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.62rem;
+    cursor: pointer; transition: all 0.2s; padding: 0;
+  }
+  .qnav-circle:hover:not(:disabled) { border-color: var(--neon); color: var(--neon); }
+  .qnav-circle.answered {
+    border-color: #22c55e; background: rgba(34,197,94,0.16); color: #22c55e;
+  }
+  .qnav-circle.current {
+    border-color: var(--neon); background: rgba(0,245,212,0.2); color: var(--neon);
+    box-shadow: 0 0 0 3px rgba(0,245,212,0.25); transform: scale(1.1);
+  }
+  .qnav-circle:disabled { cursor: default; }
+  .qnav-legend { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+  .qnav-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+</style>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="floating-orb" style="width:500px;height:500px;background:#00f5d4;top:-120px;right:-120px;"></div>
+<div class="floating-orb" style="width:400px;height:400px;background:#7c3aed;bottom:-100px;left:-120px;"></div>
+
+<button class="theme-toggle" id="themeBtn" title="Ganti tema">
+  <i data-lucide="moon"></i>
+</button>
+<div id="toastEl" style="display:none" class="toast toast-green"></div>
+
+<div id="app" class="page-wrap">
+
+  <!-- ══════════ START — INPUT NAMA ══════════ -->
+  <div v-if="screen==='testHome'" class="page-center">
+    <div class="text-center mb-6 slide-up">
+      <!-- <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div> -->
+      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Tes Kanwil Jatim</h1>
+      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda</p>
+    </div>
+    <div class="card w-full slide-up" style="max-width:460px;padding:28px;animation-delay:0.08s">
+      <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA PESERTA</label>
+      <input type="text" v-model="testNama" placeholder="Tulis nama lengkap..."
+             @keyup.enter="beginTest" :disabled="testLoading" />
+
+      <label class="block text-xs font-bold mb-2 mt-4 tracking-widest" style="color:var(--muted)">
+        DURASI TEST (MENIT) <span class="tag tag-orange" style="font-size:0.6rem;vertical-align:middle">⚠️ UJI COBA — HAPUS DI REAL CASE</span>
+      </label>
+      <input type="number" min="1" v-model.number="testDurationMin" placeholder="90" :disabled="testLoading" />
+
+      <div class="mt-4 rounded-xl p-4 text-sm" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);line-height:1.7">
+        ⏱️ Waktu: <b style="color:var(--text)">{{testDurationMin}} menit</b>, mundur otomatis sejak test dimulai<br>
+        💾 Jawaban tersimpan otomatis di perangkat ini setiap kali kamu memilih<br>
+        🚫 Waktu habis → jawaban terkirim otomatis, tidak bisa diubah lagi
+      </div>
+      <button @click="beginTest" class="btn-solid w-full py-4 text-base mt-5"
+              :disabled="!testNama.trim() || testLoading"
+              style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <span v-if="testLoading" class="spinner"></span>
+        <span>{{ testLoading ? 'Memuat soal dari server...' : '🚀 Mulai Test' }}</span>
+      </button>
+      <p class="text-xs text-center mt-3" style="color:var(--muted)">
+        <span v-if="dbLoaded">✅ {{preloadedQuestions.length}} soal siap dari server</span>
+        <span v-else-if="dbError" style="color:#ef4444">⚠️ {{dbError}}</span>
+        <span v-else>⏳ Memuat soal dari server di latar belakang...</span>
+      </p>
+      <button v-if="!dbLoaded && !testLoading" @click="_preloadQuestions"
+              class="btn-neon w-full py-2 mt-2" style="font-size:0.78rem">
+        🔄 Coba Muat Ulang Soal
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ SEDANG BERJALAN ══════════ -->
+  <div v-if="screen==='testRunning'" style="max-width:980px;margin:0 auto;padding:16px 16px 32px;position:relative;z-index:1">
+    <div class="test-timer" :class="{warn: testTimeLeft<=300 && testTimeLeft>60, danger: testTimeLeft<=60}">
+      ⏱️ {{ testTimeFormatted }}
+    </div>
+
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2" style="padding-top:66px">
+      <div>
+        <div class="font-bold">{{testNama}}</div>
+        <div class="text-xs" style="color:var(--muted)">{{testAnsweredCount}}/{{testQuestions.length}} soal dijawab</div>
+      </div>
+      <div class="flex gap-2">
+        <button @click="confirmSubmitTest" class="btn-orange" :disabled="testLocked || testSubmitting">
+          {{ testSubmitting ? 'Mengirim...' : '📤 Submit Jawaban' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="test-layout">
+      <!-- Navigator soal — lingkaran -->
+      <div class="test-nav-col card p-4">
+        <div class="text-xs font-bold mb-3 tracking-widest" style="color:var(--muted)">DAFTAR SOAL</div>
+        <div style="max-height:520px;overflow-y:auto;padding-right:2px">
+          <div class="qnav-grid">
+            <button v-for="(q,i) in testQuestions" :key="q.no" class="qnav-circle"
+                    :class="{answered: !!testAnswers[q.no], current: i===testCurrentIdx}"
+                    :disabled="testLocked" @click="testCurrentIdx=i" :title="'Soal '+(i+1)">
+              {{i+1}}
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2 mt-4" style="border-top:1px solid var(--border);padding-top:12px">
+          <div class="qnav-legend"><span class="qnav-dot" style="background:rgba(34,197,94,0.5);border:1.5px solid #22c55e"></span> Sudah dijawab</div>
+          <div class="qnav-legend"><span class="qnav-dot" style="background:rgba(0,245,212,0.35);border:1.5px solid var(--neon)"></span> Soal aktif</div>
+          <div class="qnav-legend"><span class="qnav-dot" style="background:var(--card2);border:1.5px solid var(--border)"></span> Belum dijawab</div>
+        </div>
+      </div>
+
+      <!-- Soal aktif -->
+      <div class="test-question-col">
+        <div v-if="testCurrentQ" class="card p-6 mb-4 slide-up" :key="'t'+testCurrentIdx">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px">
+            <span class="tag tag-neon mono">Soal {{testCurrentIdx+1}}/{{testQuestions.length}}</span>
+            <span v-if="testCurrentQ.sumber" class="tag tag-orange">{{testCurrentQ.sumber}}</span>
+          </div>
+          <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{testCurrentQ.soal}}</p>
+
+          <!-- Pilihan Ganda -->
+          <div v-if="testCurrentQ.tipe!=='essay'" class="flex flex-col gap-3">
+            <button v-for="(opt,idx) in testCurrentOptions" :key="idx"
+                    class="option-btn" :class="{correct: testAnswers[testCurrentQ.no]===opt}"
+                    :disabled="testLocked" @click="selectTestAnswer(opt)">
+              <span class="badge-count" :style="testAnswers[testCurrentQ.no]===opt?'background:rgba(0,245,212,0.2);color:var(--neon)':''">
+                {{['A','B','C','D'][idx]}}
+              </span>
+              <span style="flex:1">{{opt}}</span>
+              <span v-if="testAnswers[testCurrentQ.no]===opt">✅</span>
+            </button>
+          </div>
+
+          <!-- Essay -->
+          <div v-else>
+            <span class="tag tag-orange mb-3" style="display:inline-block">✍️ Soal Essay</span>
+            <textarea :value="testAnswers[testCurrentQ.no] || ''" @input="selectEssayAnswer($event.target.value)"
+                      :disabled="testLocked" rows="7" placeholder="Tulis jawaban esai kamu di sini..."
+                      style="width:100%;background:var(--card2);border:1.5px solid var(--border);color:var(--text);
+                             border-radius:12px;padding:14px 16px;font-family:'Sora',sans-serif;font-size:0.92rem;
+                             line-height:1.6;outline:none;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pb-4">
+          <button @click="testCurrentIdx=Math.max(0,testCurrentIdx-1)"
+                  :disabled="testCurrentIdx===0 || testLocked" class="btn-neon flex-1 py-3">← Sebelumnya</button>
+          <button @click="testCurrentIdx=Math.min(testQuestions.length-1,testCurrentIdx+1)"
+                  :disabled="testCurrentIdx>=testQuestions.length-1 || testLocked" class="btn-solid flex-1 py-3">Berikutnya →</button>
+        </div>
+
+        <div v-if="testLocked && !testSubmitted" class="card p-4 text-center mb-4" style="border-color:var(--neon2)">
+          <p class="font-bold" style="color:var(--neon2)">⏳ Menyelesaikan test...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ HASIL ══════════ -->
+  <div v-if="screen==='testResult'" class="page-center">
+    <div class="card w-full text-center slide-up" style="max-width:480px;padding:32px">
+      <div style="font-size:4rem;margin-bottom:12px">✅</div>
+      <h2 class="text-2xl font-extrabold mb-1" style="color:var(--neon)">Test Selesai</h2>
+      <p class="text-sm mb-5" style="color:var(--muted)">Terima kasih, {{testNama}}. Jawaban tidak bisa diubah lagi.</p>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="rounded-xl p-4" style="background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.22)">
+          <div class="text-2xl font-bold" style="color:var(--neon)">{{testResultData.dijawab}}/{{testResultData.totalSoal}}</div>
+          <div class="text-sm" style="color:var(--muted)">Soal Dijawab</div>
+        </div>
+        <div class="rounded-xl p-4" style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.22)">
+          <div class="text-2xl font-bold" style="color:var(--neon2)">{{testResultData.skor}}%</div>
+          <div class="text-sm" style="color:var(--muted)">Skor</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="rounded-xl p-4" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.22)">
+          <div class="text-2xl font-bold" style="color:#22c55e">{{testResultData.benar}}</div>
+          <div class="text-sm" style="color:var(--muted)">Jawaban Benar</div>
+        </div>
+        <div class="rounded-xl p-4" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22)">
+          <div class="text-2xl font-bold" style="color:#ef4444">{{testResultData.salah}}</div>
+          <div class="text-sm" style="color:var(--muted)">Jawaban Salah</div>
+        </div>
+      </div>
+      <p v-if="testResultData.belum>0" class="text-xs mb-3" style="color:var(--muted)">
+        {{testResultData.belum}} soal tidak dijawab
+      </p>
+      <p v-if="testResultData.autoSubmit" class="text-xs mb-4" style="color:var(--neon2)">⏰ Terkirim otomatis karena waktu habis</p>
+
+      <!-- Status kirim ke server -->
+      <div class="rounded-xl p-3 mb-4 text-sm" :style="testSendFailed
+             ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25)'
+             : (testSentOk ? 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)'
+                           : 'background:var(--card2);border:1px solid var(--border)')">
+        <span v-if="testSending">📤 Mengirim ke server...</span>
+        <span v-else-if="testSentOk" style="color:#22c55e">✅ Tersimpan ke server</span>
+        <span v-else-if="testSendFailed" style="color:#ef4444">⚠️ Belum berhasil terkirim ke server — jawaban tetap aman di perangkat ini</span>
+        <span v-else style="color:var(--muted)">⏳ Menunggu pengiriman ke server...</span>
+        <button v-if="testSendFailed && !testSending" @click="confirmResend" class="btn-orange w-full py-2 mt-3" style="font-size:0.82rem">
+          🔁 Kirim Ulang ke Server
+        </button>
+      </div>
+
+      <p class="text-xs mb-4" style="color:var(--muted)">📄 Buka <b>hasil.html</b> di perangkat ini untuk melihat rincian jawaban per soal.</p>
+      <button @click="exitTest" class="btn-neon w-full py-3">🔄 Test Baru</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DB_URL   = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
+const LS_THEME = 'qm_theme';
+const LS_TEST  = 'qm_test_state';
+const HASIL_TABLE = 'hasill'; // nama sheet tujuan hasil ujian
+
+/* ─── Theme bootstrap ─── */
+(function() {
+  const t = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(LS_THEME, next);
+});
+
+let _toastT;
+function showToast(msg, type='green', dur=3200) {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.className = 'toast toast-' + type;
+  el.style.display = '';
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => { el.style.display = 'none'; }, dur);
+}
+
+new Vue({
+  el: '#app',
+  data: {
+    screen: 'testHome',
+
+    testNama: '',
+    testLoading: false,
+    testQuestions: [],
+    testAnswers: {},         // { [no]: jawaban terpilih (teks) }
+    testCurrentIdx: 0,
+    testStartTs: null,
+    testDeadlineTs: null,
+    testDurationMin: 90,
+    testTimeLeft: 0,
+    testTimerHandle: null,
+    testLocked: false,
+    testSubmitting: false,
+    testSubmitted: false,
+    testResultData: {},
+
+    // Status pengiriman hasil ke server (terpisah dari status "test selesai" di atas —
+    // hasil selalu tampil ke peserta walau pengiriman ke server gagal/masih tertunda)
+    testSending: false,
+    testSentOk: false,
+    testSendFailed: false,
+
+    // Preload soal otomatis saat app dibuka
+    preloadedQuestions: [],
+    dbLoaded: false,
+    dbError: '',
+  },
+
+  computed: {
+    testCurrentQ()       { return this.testQuestions[this.testCurrentIdx] || null; },
+    testCurrentOptions()  { return this.testCurrentQ ? this.testCurrentQ.opts : []; },
+    testAnsweredCount()   { return Object.values(this.testAnswers).filter(v => v && String(v).trim()).length; },
+    testTimeFormatted() {
+      const s = Math.max(0, this.testTimeLeft);
+      const m = Math.floor(s/60), sec = s%60;
+      return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    },
+  },
+
+  watch: {
+    testCurrentIdx() {
+      if (this.screen === 'testRunning' && this.testQuestions.length) this._saveTestLS();
+    },
+  },
+
+  mounted() {
+    const resumed = this._tryResumeTest();
+    if (!resumed) this._preloadQuestions(); // load soal dari DB otomatis begitu app dibuka
+    window.addEventListener('beforeunload', (e) => {
+      if (this.screen === 'testRunning' && !this.testLocked) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  },
+
+  methods: {
+    _saveTestLS() {
+      try {
+        localStorage.setItem(LS_TEST, JSON.stringify({
+          nama:       this.testNama,
+          questions:  this.testQuestions,
+          answers:    this.testAnswers,
+          startTs:    this.testStartTs,
+          deadlineTs: this.testDeadlineTs,
+          durationMin: this.testDurationMin,
+          currentIdx: this.testCurrentIdx,
+          locked:     this.testLocked,
+          submitted:  this.testSubmitted,
+          resultData: this.testSubmitted ? this.testResultData : null,
+          sentOk:     this.testSentOk,
+          sendFailed: this.testSendFailed,
+        }));
+      } catch(e) {}
+    },
+    _clearTestLS() { try { localStorage.removeItem(LS_TEST); } catch(e) {} },
+
+    // Dipanggil saat app mount, untuk memulihkan sesi yang belum selesai
+    // (antisipasi refresh / koneksi terputus di tengah test).
+    _tryResumeTest() {
+      let s;
+      try {
+        const raw = localStorage.getItem(LS_TEST);
+        if (!raw) return false;
+        s = JSON.parse(raw);
+      } catch(e) { return false; }
+      if (!s || !s.questions || !s.questions.length) return false;
+
+      this.testNama       = s.nama || '';
+      this.testQuestions  = s.questions;
+      this.testAnswers    = s.answers || {};
+      this.testStartTs    = s.startTs;
+      this.testDeadlineTs = s.deadlineTs;
+      this.testDurationMin = s.durationMin || 90;
+      this.testCurrentIdx = Math.min(s.currentIdx || 0, s.questions.length - 1);
+
+      if (s.submitted) {
+        this.testSubmitted  = true;
+        this.testLocked     = true;
+        this.testResultData = s.resultData || {};
+        this.testSentOk     = !!s.sentOk;
+        this.testSendFailed = !!s.sendFailed;
+        this.screen = 'testResult';
+        return true;
+      }
+
+      if (s.locked || (s.deadlineTs && Date.now() >= s.deadlineTs)) {
+        this.testLocked  = true;
+        this.testTimeLeft = Math.max(0, Math.round(((s.deadlineTs||0) - Date.now()) / 1000));
+        this.screen = 'testRunning';
+        this.$nextTick(() => this.submitTest(true));
+        return true;
+      }
+
+      this.testLocked    = false;
+      this.testSubmitted = false;
+      this.screen = 'testRunning';
+      this._startTestTimer();
+      return true;
+    },
+
+    // Dipanggil otomatis saat app dibuka (kalau tidak sedang resume test lama),
+    // supaya soal sudah siap di memori sebelum peserta selesai isi nama.
+    async _preloadQuestions() {
+      if (this.testLoading) return;
+      this.testLoading = true;
+      this.dbError = '';
+      try {
+        const res = await fetch(`${DB_URL}?action=read&table=tess`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { throw new Error('Response bukan JSON'); }
+        const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : null;
+        if (!arr || !arr.length) { this.dbError = 'Data soal kosong dari server'; return; }
+
+        const get = (row, ...keys) => {
+          for (const k of keys) {
+            const v = row[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+          }
+          return '';
+        };
+        const questions = arr.map((row, i) => {
+          const q = {
+            no:     get(row,'no','No','NO','id','ID','nomor') || String(i+1),
+            soal:   get(row,'soal','Soal','SOAL','pertanyaan','question'),
+            kunci:  get(row,'kunci','Kunci','KUNCI','a','A','jawaban_a','opsiA'),
+            b:      get(row,'b','B','jawaban_b','opsiB'),
+            c:      get(row,'c','C','jawaban_c','opsiC'),
+            d:      get(row,'d','D','jawaban_d','opsiD'),
+            sumber: get(row,'sumber','Sumber','SUMBER','kategori','topik'),
+            // Soal terakhir dari sheet otomatis dijadikan pertanyaan ESSAY (bebas teks),
+            // sisanya tetap pilihan ganda.
+            tipe:   (i === arr.length - 1) ? 'essay' : 'pg',
+          };
+          const raw = [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim());
+          q.opts = this.shuffle(raw); // diacak sekali saat dimuat, tetap konsisten selama test
+          return q;
+        }).filter(q => q.soal && (q.kunci || q.tipe === 'essay'));
+
+        if (!questions.length) { this.dbError = 'Tidak ada soal valid — periksa nama kolom DB'; return; }
+        this.preloadedQuestions = questions;
+        this.dbLoaded = true;
+        console.log(`✅ ${questions.length} soal berhasil dimuat dari sheet 'tess'`);
+      } catch(e) {
+        this.dbError = e.message;
+        console.error('❌ Gagal memuat soal dari DB:', e);
+        console.error('Kemungkinan penyebab: (1) sheet/table "tess" tidak ditemukan, (2) deployment Apps Script belum "Anyone" access, (3) app dibuka langsung dari file (file://) — coba host lewat server/GitHub Pages, (4) URL Apps Script sudah tidak valid.');
+      } finally {
+        this.testLoading = false;
+      }
+    },
+
+    async beginTest() {
+      if (!this.testNama.trim() || this.testLoading) return;
+      // Kalau preload otomatis belum selesai/gagal, coba sekali lagi sekarang.
+      if (!this.preloadedQuestions.length) {
+        await this._preloadQuestions();
+      }
+      if (!this.preloadedQuestions.length) {
+        showToast('Gagal memuat soal: ' + (this.dbError || 'tidak diketahui'), 'red');
+        return;
+      }
+      this.testQuestions   = this.preloadedQuestions;
+      this.testAnswers     = {};
+      this.testCurrentIdx  = 0;
+      this.testStartTs     = Date.now();
+      this.testDeadlineTs  = this.testStartTs + this.testDurationMin * 60 * 1000;
+      this.testLocked      = false;
+      this.testSubmitted   = false;
+      this.testSending     = false;
+      this.testSentOk      = false;
+      this.testSendFailed  = false;
+      this._saveTestLS();
+      this.screen = 'testRunning';
+      this._startTestTimer();
+    },
+
+    _startTestTimer() {
+      clearInterval(this.testTimerHandle);
+      const tick = () => {
+        const left = Math.max(0, Math.round((this.testDeadlineTs - Date.now()) / 1000));
+        this.testTimeLeft = left;
+        if (left <= 0) {
+          clearInterval(this.testTimerHandle);
+          this.testTimerHandle = null;
+          this.testLocked = true;
+          this._saveTestLS();
+          this.submitTest(true);
+        }
+      };
+      tick();
+      this.testTimerHandle = setInterval(tick, 1000);
+    },
+
+    selectTestAnswer(opt) {
+      if (this.testLocked || !this.testCurrentQ) return;
+      this.$set(this.testAnswers, this.testCurrentQ.no, opt);
+      this._saveTestLS();
+    },
+
+    selectEssayAnswer(text) {
+      if (this.testLocked || !this.testCurrentQ) return;
+      this.$set(this.testAnswers, this.testCurrentQ.no, text);
+      this._saveTestLS();
+    },
+
+    confirmSubmitTest() {
+      if (this.testLocked || this.testSubmitting) return;
+      const sisa = this.testQuestions.length - this.testAnsweredCount;
+      const msg = sisa > 0
+        ? `Masih ada ${sisa} soal belum dijawab. Yakin ingin submit sekarang?`
+        : 'Kirim jawaban final sekarang?';
+      if (confirm(msg)) this.submitTest(false);
+    },
+
+    async submitTest(auto=false) {
+      if (this.testSubmitting || this.testSubmitted) return;
+      this.testSubmitting   = true;
+      if (this.testTimerHandle) { clearInterval(this.testTimerHandle); this.testTimerHandle = null; }
+      this.testLocked = true;
+      this._saveTestLS();
+
+      const jawaban = this.testQuestions.map(q => {
+        const userAns = this.testAnswers[q.no] || '';
+        const isEssay = q.tipe === 'essay';
+        return {
+          no: q.no, soal: q.soal, tipe: q.tipe, opsi: q.opts, jawabanUser: userAns, kunci: q.kunci,
+          dijawab: !!userAns.trim(),
+          benar: isEssay ? null : (!!userAns && userAns === q.kunci), // essay dinilai manual oleh admin
+        };
+      });
+      const pgJawaban   = jawaban.filter(j => j.tipe !== 'essay');
+      const essayJawaban = jawaban.filter(j => j.tipe === 'essay');
+      const dijawab = jawaban.filter(j => j.dijawab).length;
+      const benar   = pgJawaban.filter(j => j.benar).length;
+      const salah   = pgJawaban.filter(j => j.dijawab && !j.benar).length;
+      const belum   = this.testQuestions.length - dijawab;
+      const payload = {
+        nama:        this.testNama,
+        mulai:       this.testStartTs,
+        selesai:     Date.now(),
+        durasiMenit: this.testDurationMin,
+        totalSoal:   this.testQuestions.length,
+        totalSoalPG: pgJawaban.length,
+        totalSoalEssay: essayJawaban.length,
+        dijawab, benar, salah, belum,
+        skor:        pgJawaban.length ? Math.round((benar / pgJawaban.length) * 100) : 0,
+        autoSubmit:  auto,
+      };
+
+      // Hasil SELALU ditampilkan ke peserta dulu — tidak menunggu / tidak digagalkan
+      // oleh status jaringan. Pengiriman ke server berjalan terpisah di latar belakang.
+      this.testResultData = payload;
+      this.testSubmitted   = true;
+      this._saveTestLS();
+      this.screen = 'testResult';
+      showToast(auto ? '⏰ Waktu habis — test selesai' : '✅ Test selesai', auto ? 'blue' : 'green');
+      this.testSubmitting = false;
+
+      this._sendResultToServer();
+    },
+
+    // Helper: paksa angka 0 menjadi string "0" agar tetap lolos validasi truthy
+    // di backend GAS (pola sama seperti pada fitur pengajuan permohonan gaji).
+    _parseAngka(val) {
+      if (val === 0 || val === '0') return "0";
+      let hasil = Number(val);
+      if (isNaN(hasil) || hasil === 0) return "0";
+      return hasil;
+    },
+
+    // Membangun 1 baris data untuk sheet "hasill" — dipanggil ulang dari sumber
+    // (testQuestions + testAnswers + testResultData) sehingga aman dipakai lagi
+    // untuk retry kapan pun, termasuk setelah refresh halaman.
+    _buildHasilRow() {
+      const r = this.testResultData;
+      const essayItem = this.testQuestions.find(q => q.tipe === 'essay');
+      const jawabanEssay = essayItem ? (this.testAnswers[essayItem.no] || '') : '';
+      const detailPG = this.testQuestions.filter(q => q.tipe !== 'essay').map(q => {
+        const ans = this.testAnswers[q.no] || '';
+        return { no: q.no, soal: q.soal, jawabanUser: ans, kunci: q.kunci, benar: !!ans && ans === q.kunci };
+      });
+      const fmt = ts => ts ? new Date(ts).toLocaleString('id-ID') : '';
+      return {
+        id:             r.mulai || Date.now(),   // timestamp mulai test dipakai sebagai ID unik baris
+        nama:           r.nama,
+        // Prefix ' memaksa Google Sheets menyimpan sebagai teks, bukan auto-convert ke Date.
+        mulai:          "'" + fmt(r.mulai),
+        selesai:        "'" + fmt(r.selesai),
+        durasiMenit:    this._parseAngka(r.durasiMenit),
+        totalSoal:      this._parseAngka(r.totalSoal),
+        totalSoalPG:    this._parseAngka(r.totalSoalPG),
+        totalSoalEssay: this._parseAngka(r.totalSoalEssay),
+        dijawab:        this._parseAngka(r.dijawab),
+        benar:          this._parseAngka(r.benar),
+        salah:          this._parseAngka(r.salah),
+        belum:          this._parseAngka(r.belum),
+        skor:           this._parseAngka(r.skor),
+        autoSubmit:     r.autoSubmit ? 'Ya' : 'Tidak',
+        soalEssay:      essayItem ? essayItem.soal : '',
+        // Teks apa adanya — JSON.stringify + encodeURIComponent di bawah otomatis
+        // meng-escape tanda kutip, enter, emoji, dan simbol apa pun dengan aman.
+        jawabanEssay:   jawabanEssay,
+        // Jawaban pilihan ganda digabung jadi 1 kolom teks JSON, karena semua ini
+        // 1 baris untuk 1 sheet "hasill" (bukan tabel terpisah).
+        detailPG:       JSON.stringify(detailPG),
+      };
+    },
+
+    // Mengirim hasil ke sheet "hasill", mengikuti pola endpoint:
+    // ?action=insert&table=<TABLE_NAME>&data=JSON
+    //
+    // PENTING soal CORS: Google Apps Script Web App (/exec) melakukan redirect ke
+    // script.googleusercontent.com, dan redirect itu sering TIDAK membawa header CORS.
+    // Akibatnya browser gagal membaca response walau request-nya SUDAH dieksekusi
+    // dan datanya SUDAH masuk ke spreadsheet. Kalau kita anggap itu "gagal" lalu
+    // ditawari tombol kirim ulang, hasilnya data akan dobel (baris kedua ikut masuk).
+    //
+    // Makanya di sini kita pakai fetch mode:'no-cors' — kita sengaja TIDAK membaca
+    // isi response-nya. Selama request tidak melempar exception (artinya benar-benar
+    // terkirim ke server), kita anggap SUKSES. Exception hanya muncul kalau memang
+    // ada masalah koneksi nyata (offline / DNS gagal / server tidak terjangkau).
+    async _sendResultToServer() {
+      if (this.testSending) return;
+      this.testSending     = true;
+      this.testSendFailed  = false;
+
+      const rowData = this._buildHasilRow();
+      const urlKirim = DB_URL + '?action=insert&table=' + HASIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(rowData));
+
+      console.log('%c=== MENGIRIM HASIL KE SHEET "hasill" ===', 'font-weight:bold;color:#00a896');
+      console.log('📤 PAYLOAD dikirim:', JSON.stringify(rowData, null, 2));
+      console.log(urlKirim);
+
+      try {
+        await fetch(urlKirim, { method: 'GET', mode: 'no-cors' });
+        // Response opaque (tidak bisa dibaca) — itu wajar & tidak berarti gagal.
+        this.testSentOk     = true;
+        this.testSendFailed = false;
+        console.log('✅ Request terkirim ke server (response tidak bisa dibaca karena CORS, tapi insert sudah tereksekusi di server).');
+      } catch(e) {
+        // Ini baru kegagalan yang sebenarnya (offline / server tidak terjangkau).
+        this.testSentOk     = false;
+        this.testSendFailed = true;
+        console.error('❌ Gagal mengirim ke server (masalah koneksi nyata):', e.message);
+      } finally {
+        this.testSending = false;
+        this._saveTestLS();
+      }
+    },
+
+    confirmResend() {
+      const ok = confirm('Kirim ulang hasil ke server?\n\nCatatan: kalau pengiriman sebelumnya sebenarnya sudah berhasil (hanya gagal dikonfirmasi karena koneksi), mengirim ulang bisa membuat data dobel di spreadsheet. Lanjutkan hanya jika kamu yakin hasil belum masuk.');
+      if (ok) this._sendResultToServer();
+    },
+
+    exitTest() {
+      this._clearTestLS();
+      this.testQuestions   = [];
+      this.testAnswers     = {};
+      this.testNama        = '';
+      this.testResultData  = {};
+      this.testSubmitted   = false;
+      this.testLocked      = false;
+      this.testSending     = false;
+      this.testSentOk      = false;
+      this.testSendFailed  = false;
+      this.screen = 'testHome';
+    },
+
+    shuffle(arr) {
+      const a = [...arr];
+      for (let i=a.length-1;i>0;i--) {
+        const j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    },
+  },
+});
+</script>
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
