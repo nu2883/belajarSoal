@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rincian Hasil — Belajar Soal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --neon:   #00f5d4;
+    --neon2:  #f5a623;
+    --bg:     #080c14;
+    --card:   #0f1729;
+    --card2:  #131d35;
+    --border: #1e2d4a;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.4);
+    --grid:   rgba(0,245,212,0.03);
+    --orb-op: 0.06;
+  }
+  [data-theme="light"] {
+    --neon:   #00a896;
+    --neon2:  #d97706;
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --card2:  #f1f5f9;
+    --border: #cbd5e1;
+    --text:   #1e293b;
+    --muted:  #64748b;
+    --shadow: rgba(0,0,0,0.07);
+    --grid:   rgba(0,168,150,0.05);
+    --orb-op: 0.1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); font-family: 'Sora', sans-serif;
+    color: var(--text); min-height: 100vh; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .glow { text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: 0 2px 12px var(--shadow);
+  }
+  .btn-neon {
+    background: transparent; border: 1.5px solid var(--neon);
+    color: var(--neon); padding: 10px 18px; border-radius: 8px;
+    font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-neon:hover { background: rgba(0,245,212,0.08); }
+  .theme-toggle{
+    position:fixed; top:18px; right:18px; z-index:999;
+    width:52px; height:52px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; cursor:pointer; user-select:none; color:#fff;
+    background: linear-gradient(135deg, rgba(0,245,212,0.95), rgba(99,102,241,0.95));
+    border:2px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 24px rgba(0,245,212,0.28);
+  }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .tag-neon   { background: rgba(0,245,212,0.1);  color: var(--neon);  border: 1px solid rgba(0,245,212,0.3); }
+  .tag-orange { background: rgba(245,166,35,0.1); color: var(--neon2); border: 1px solid rgba(245,166,35,0.3); }
+  .tag-red    { background: rgba(239,68,68,0.1);  color: #ef4444;      border: 1px solid rgba(239,68,68,0.3); }
+  .tag-green  { background: rgba(34,197,94,0.1);  color: #22c55e;      border: 1px solid rgba(34,197,94,0.3); }
+  .tag-purple { background: rgba(124,58,237,0.1); color: #a78bfa;      border: 1px solid rgba(124,58,237,0.3); }
+  input[type=text] {
+    background: var(--card2); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; font-family: 'Sora', sans-serif;
+    outline: none;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .opt-row {
+    padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; line-height: 1.5;
+    display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--border);
+    background: var(--card2); margin-bottom: 8px;
+  }
+  .opt-correct { border-color: #22c55e; background: rgba(34,197,94,0.09); color: #22c55e; }
+  .opt-userwrong { border-color: #ef4444; background: rgba(239,68,68,0.09); color: #ef4444; }
+  .badge-letter {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(100,116,139,0.15); color: var(--muted); font-size: 0.72rem; font-weight: 700;
+  }
+  .qcard { border-left: 4px solid var(--border); }
+  .qcard.ok   { border-left-color: #22c55e; }
+  .qcard.bad  { border-left-color: #ef4444; }
+  .qcard.none { border-left-color: var(--neon2); }
+  .qcard.essay { border-left-color: #a78bfa; }
+  .page-wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 24px 16px 60px; }
+  .filter-tab {
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+    font-weight: 600; border: 1.5px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Sora', sans-serif; transition: all 0.2s;
+  }
+  .filter-tab.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--card); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeBtn" title="Ganti tema">🌙</button>
+
+<div id="app" class="page-wrap">
+
+  <!-- Tidak ada data -->
+  <div v-if="!hasData" style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div style="font-size:3rem;margin-bottom:12px">📭</div>
+    <h2 class="font-bold text-lg mb-2">Belum ada data test tersimpan</h2>
+    <p class="text-sm" style="color:var(--muted);max-width:360px">
+      Buka halaman <b>belajar-soal.html</b> dan kerjakan test terlebih dahulu di perangkat/browser ini.
+      Halaman ini membaca data dari penyimpanan lokal (localStorage) perangkat yang sama.
+    </p>
+  </div>
+
+  <div v-else>
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <div class="tag tag-neon mb-3">📄 Rincian Hasil</div>
+      <h1 class="text-3xl font-extrabold glow mb-1" style="color:var(--neon)">{{nama}}</h1>
+      <p class="text-sm" style="color:var(--muted)">{{ submitted ? 'Jawaban final tersimpan' : 'Test masih berjalan — belum disubmit' }}</p>
+    </div>
+
+    <!-- Ringkasan -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:var(--neon)">{{skor}}%</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Skor</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:#22c55e">{{jumlahBenar}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Benar</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:#ef4444">{{jumlahSalah}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Salah</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold" style="color:var(--neon2)">{{jumlahBelum}}</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">Belum Dijawab</div>
+      </div>
+    </div>
+
+    <p class="text-xs text-center mb-6" style="color:var(--muted)">
+      Skor dihitung dari {{pgItems.length}} soal pilihan ganda.
+      <span v-if="essayItems.length">{{essayItems.length}} soal essay ({{jumlahEssayDijawab}} terjawab) perlu dinilai manual — lihat di bawah.</span>
+    </p>
+
+    <!-- Filter -->
+    <div class="flex gap-2 flex-wrap mb-4">
+      <div class="filter-tab" :class="{active: filter==='semua'}" @click="filter='semua'">Semua ({{items.length}})</div>
+      <div class="filter-tab" :class="{active: filter==='benar'}" @click="filter='benar'">✅ Benar ({{jumlahBenar}})</div>
+      <div class="filter-tab" :class="{active: filter==='salah'}" @click="filter='salah'">❌ Salah ({{jumlahSalah}})</div>
+      <div class="filter-tab" :class="{active: filter==='belum'}" @click="filter='belum'">⚠️ Belum ({{jumlahBelum}})</div>
+      <input type="text" v-model="cari" placeholder="Cari soal..." style="flex:1;min-width:140px" />
+    </div>
+
+    <!-- Daftar soal -->
+    <div v-for="(item, idx) in filteredItems" :key="item.no"
+         class="card qcard p-5 mb-3"
+         :class="item.tipe==='essay' ? 'essay' : (item.dijawab ? (item.benar ? 'ok' : 'bad') : 'none')">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="tag tag-neon mono">#{{item.originalIndex+1}}</span>
+        <span v-if="item.tipe==='essay'" class="tag tag-purple">✍️ Essay — nilai manual</span>
+        <span v-else-if="item.dijawab && item.benar" class="tag tag-green">✅ Benar</span>
+        <span v-else-if="item.dijawab && !item.benar" class="tag tag-red">❌ Salah</span>
+        <span v-else class="tag tag-orange">⚠️ Tidak dijawab</span>
+      </div>
+      <p class="font-semibold mb-4" style="line-height:1.6">{{item.soal}}</p>
+
+      <!-- Pilihan Ganda -->
+      <template v-if="item.tipe!=='essay'">
+        <div v-for="(opt, oi) in item.opsi" :key="oi"
+             class="opt-row"
+             :class="{
+               'opt-correct': opt === item.kunci,
+               'opt-userwrong': item.dijawab && opt === item.jawabanUser && opt !== item.kunci
+             }">
+          <span class="badge-letter"
+                :style="opt===item.kunci ? 'background:rgba(34,197,94,0.2);color:#22c55e' : (item.dijawab && opt===item.jawabanUser ? 'background:rgba(239,68,68,0.2);color:#ef4444' : '')">
+            {{['A','B','C','D'][oi]}}
+          </span>
+          <span style="flex:1">{{opt}}</span>
+          <span v-if="opt===item.kunci">✅ Kunci</span>
+          <span v-if="item.dijawab && opt===item.jawabanUser && opt!==item.kunci">👤 Dipilih peserta</span>
+        </div>
+        <p v-if="!item.dijawab" class="text-xs mt-2" style="color:var(--neon2)">Peserta tidak memilih jawaban untuk soal ini.</p>
+      </template>
+
+      <!-- Essay -->
+      <template v-else>
+        <div v-if="item.dijawab" class="opt-row" style="display:block">
+          <div style="white-space:pre-wrap;line-height:1.6">{{item.jawabanUser}}</div>
+        </div>
+        <p v-else class="text-xs mt-2" style="color:var(--neon2)">Peserta tidak menulis jawaban untuk soal essay ini.</p>
+      </template>
+    </div>
+
+
+    <div v-if="filteredItems.length===0" class="card p-8 text-center">
+      <p style="color:var(--muted)">Tidak ada soal yang cocok dengan filter/pencarian ini.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script>
+(function() {
+  const t = localStorage.getItem('qm_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('qm_theme', next);
+  this.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+new Vue({
+  el: '#app',
+  data: {
+    hasData: false,
+    nama: '',
+    submitted: false,
+    items: [],       // [{no, soal, opsi, kunci, jawabanUser, dijawab, benar, originalIndex}]
+    filter: 'semua',
+    cari: '',
+  },
+  computed: {
+    pgItems()      { return this.items.filter(i => i.tipe !== 'essay'); },
+    essayItems()   { return this.items.filter(i => i.tipe === 'essay'); },
+    jumlahBenar()  { return this.pgItems.filter(i => i.dijawab && i.benar).length; },
+    jumlahSalah()  { return this.pgItems.filter(i => i.dijawab && !i.benar).length; },
+    jumlahBelum()  { return this.items.filter(i => !i.dijawab).length; },
+    jumlahEssayDijawab() { return this.essayItems.filter(i => i.dijawab).length; },
+    skor() {
+      return this.pgItems.length ? Math.round((this.jumlahBenar / this.pgItems.length) * 100) : 0;
+    },
+    filteredItems() {
+      let arr = this.items;
+      if (this.filter === 'benar') arr = arr.filter(i => i.tipe!=='essay' && i.dijawab && i.benar);
+      else if (this.filter === 'salah') arr = arr.filter(i => i.tipe!=='essay' && i.dijawab && !i.benar);
+      else if (this.filter === 'belum') arr = arr.filter(i => !i.dijawab);
+      const kw = this.cari.trim().toLowerCase();
+      if (kw) arr = arr.filter(i => i.soal.toLowerCase().includes(kw));
+      return arr;
+    },
+  },
+  mounted() {
+    this.loadFromLS();
+  },
+  methods: {
+    loadFromLS() {
+      let raw;
+      try { raw = localStorage.getItem('qm_test_state'); } catch(e) { raw = null; }
+      if (!raw) { this.hasData = false; return; }
+      let s;
+      try { s = JSON.parse(raw); } catch(e) { this.hasData = false; return; }
+      if (!s || !s.questions || !s.questions.length) { this.hasData = false; return; }
+
+      this.hasData   = true;
+      this.nama      = s.nama || '(tanpa nama)';
+      this.submitted = !!s.submitted;
+
+      // Jika sudah pernah disubmit dan resultData tersedia, pakai jawaban dari sana
+      // (mengunci rincian sesuai saat submit). Kalau belum submit, hitung langsung
+      // dari state jawaban terkini supaya tetap bisa dipantau saat test masih berjalan.
+      if (s.submitted && s.resultData && Array.isArray(s.resultData.jawaban)) {
+        this.items = s.resultData.jawaban.map((j, idx) => {
+          const q = s.questions.find(q => String(q.no) === String(j.no)) || {};
+          return {
+            no: j.no,
+            soal: j.soal,
+            tipe: j.tipe || q.tipe || 'pg',
+            opsi: j.opsi || q.opts || [],
+            kunci: j.kunci,
+            jawabanUser: j.jawabanUser,
+            dijawab: j.dijawab,
+            benar: j.benar,
+            originalIndex: idx,
+          };
+        });
+      } else {
+        this.items = s.questions.map((q, idx) => {
+          const userAns = (s.answers || {})[q.no] || '';
+          return {
+            no: q.no,
+            soal: q.soal,
+            tipe: q.tipe || 'pg',
+            opsi: q.opts || [],
+            kunci: q.kunci,
+            jawabanUser: userAns,
+            dijawab: !!userAns.trim(),
+            benar: q.tipe === 'essay' ? null : (!!userAns && userAns === q.kunci),
+            originalIndex: idx,
+          };
+        });
+      }
+    },
+  },
+});
+</script>
+</body>
+</html>
