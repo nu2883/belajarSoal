@@ -106,6 +106,7 @@
     padding: 14px 16px; border-radius: 12px; font-family: 'Sora', sans-serif;
     font-size: 0.92rem; cursor: pointer; transition: all 0.22s;
     display: flex; align-items: flex-start; gap: 12px; line-height: 1.55;
+    user-select: none;
   }
   .option-btn:hover:not(:disabled) { border-color: var(--neon); background: rgba(0,245,212,0.05); transform: translateX(3px); }
   .option-btn.correct { border-color: var(--neon); background: rgba(0,245,212,0.09); }
@@ -305,13 +306,14 @@
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px">
             <span class="tag tag-neon mono">Soal {{testCurrentIdx+1}}/{{testQuestions.length}}</span>
             <span v-if="testCurrentQ.sumber" class="tag tag-orange">{{testCurrentQ.sumber}}</span>
+            <span class="tag" style="background:rgba(148,163,184,0.1);color:var(--muted);border:1px solid var(--border)">💡 klik 2x untuk langsung lanjut</span>
           </div>
           <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{testCurrentQ.soal}}</p>
 
           <div v-if="testCurrentQ.tipe!=='essay'" class="flex flex-col gap-3">
             <button v-for="(opt,idx) in testCurrentOptions" :key="idx"
                     class="option-btn" :class="{correct: testAnswers[testCurrentQ.no]===opt}"
-                    @click="selectTestAnswer(opt)">
+                    @click="selectTestAnswer(opt)" @dblclick="selectAndAdvance(opt)">
               <span class="badge-count" :style="testAnswers[testCurrentQ.no]===opt?'background:rgba(0,245,212,0.2);color:var(--neon)':''">
                 {{['A','B','C','D'][idx]}}
               </span>
@@ -785,6 +787,16 @@ new Vue({
       this._saveTestLS();
     },
 
+    // Dipicu oleh double-click di salah satu opsi jawaban: pilih jawaban itu
+    // (sama seperti klik biasa), lalu langsung maju ke soal berikutnya kalau
+    // masih ada. Kalau ini soal terakhir, cukup pilih saja tanpa pindah.
+    selectAndAdvance(opt) {
+      this.selectTestAnswer(opt);
+      if (this.testCurrentIdx < this.testQuestions.length - 1) {
+        this.testCurrentIdx++;
+      }
+    },
+
     selectEssayAnswer(text) {
       if (!this.testCurrentQ) return;
       this.$set(this.testAnswers, this.testCurrentQ.no, text);
@@ -892,6 +904,10 @@ new Vue({
         // manual): berapa kali klik kanan, copy, shortcut/devtools, kemungkinan
         // screenshot, pindah tab, dan keluar dari mode fullscreen selama test.
         indikasiKecurangan: JSON.stringify(this.cheatFlags),
+        // Kolom khusus jumlah pindah tab / minimize (diambil dari cheatFlags.tabSwitch),
+        // dikirim terpisah supaya gampang dibaca & difilter di admin tanpa perlu
+        // bongkar JSON di kolom indikasiKecurangan di atas.
+        jumlahPindahTab: this._parseAngka(this.cheatFlags.tabSwitch),
       };
     },
 
