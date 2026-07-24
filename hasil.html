@@ -107,11 +107,38 @@
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--card); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .action-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+  .btn-small {
+    padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+    font-family: 'Sora', sans-serif; cursor: pointer; border: 1.5px solid var(--border);
+    background: var(--card2); color: var(--text); transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-small:hover:not(:disabled) { border-color: var(--neon); color: var(--neon); }
+  .btn-small:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-small.danger:hover:not(:disabled) { border-color: #ef4444; color: #ef4444; }
+  .status-box { border-radius: 12px; padding: 12px 14px; font-size: 0.82rem; margin-bottom: 16px; text-align: left; }
+  .progress-track { width: 100%; height: 7px; border-radius: 999px; background: var(--card2); overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.25s ease; }
+  .spinner-sm {
+    width: 13px; height: 13px; border-radius: 50%; display: inline-block;
+    border: 2px solid rgba(148,163,184,0.3); border-top-color: var(--neon);
+    animation: spinSm 0.7s linear infinite;
+  }
+  @keyframes spinSm { to { transform: rotate(360deg); } }
+
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #ffffff !important; color: #111827 !important; }
+    body::before { display: none !important; }
+    .card { box-shadow: none !important; border-color: #d1d5db !important; background: #ffffff !important; }
+    .page-wrap { max-width: 100% !important; padding: 8px !important; }
+  }
 </style>
 </head>
 <body>
 
-<button class="theme-toggle" id="themeBtn" title="Ganti tema">🌙</button>
+<button class="theme-toggle no-print" id="themeBtn" title="Ganti tema">🌙</button>
 
 <div id="app" class="page-wrap">
 
@@ -131,6 +158,44 @@
       <div class="tag tag-neon mb-3">📄 Rincian Hasil</div>
       <h1 class="text-3xl font-extrabold glow mb-1" style="color:var(--neon)">{{nama}}</h1>
       <p class="text-sm" style="color:var(--muted)">{{ submitted ? 'Jawaban final tersimpan' : 'Test masih berjalan — belum disubmit' }}</p>
+    </div>
+
+    <!-- Action bar: download PDF, kirim ulang, hapus data lokal -->
+    <div class="action-bar no-print">
+      <button class="btn-small" @click="downloadPDF">📄 Download PDF</button>
+      <button class="btn-small" @click="confirmResend" :disabled="resendStatus==='sending'">
+        <span v-if="resendStatus==='sending'" class="spinner-sm"></span>
+        <span>{{ resendStatus==='sending' ? 'Mengirim...' : '🔁 Kirim Ulang ke Server' }}</span>
+      </button>
+      <button class="btn-small danger" @click="confirmHapusData">🗑️ Hapus Data Lokal</button>
+    </div>
+
+    <!-- Status kirim ulang ringkasan -->
+    <div v-if="resendStatus!=='idle'" class="status-box no-print" :style="
+        resendStatus==='fail' ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#ef4444'
+        : (resendStatus==='success' ? 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:#22c55e'
+        : 'background:var(--card2);border:1px solid var(--border);color:var(--muted)')">
+      <span v-if="resendStatus==='sending'">📤 Mengirim ringkasan hasil ke server...</span>
+      <span v-else-if="resendStatus==='success'">✅ Ringkasan hasil terkirim ke server</span>
+      <span v-else-if="resendStatus==='fail'">⚠️ Gagal terkirim — periksa koneksi lalu coba lagi</span>
+    </div>
+
+    <!-- Progress kirim ulang detail per soal -->
+    <div v-if="resendDetailTotal>0" class="status-box no-print" :style="
+        resendDetailSending ? 'background:rgba(245,166,35,0.08);border:1.5px solid rgba(245,166,35,0.35)'
+        : 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)'">
+      <div class="flex items-center justify-between">
+        <span :style="resendDetailSending ? 'color:var(--neon2)' : 'color:#22c55e'">
+          {{ resendDetailSending ? '📤 Mengirim detail jawaban...' : '✅ Detail jawaban terkirim' }}
+        </span>
+        <span class="mono" style="color:var(--muted)">{{resendDetailSent}}/{{resendDetailTotal}}</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" :style="'width:'+resendDetailPct+'%;background:'+(resendDetailSending?'var(--neon2)':'#22c55e')"></div>
+      </div>
+      <p v-if="resendDetailSending" class="text-xs mt-2 font-semibold" style="color:#ef4444">
+        ⚠️ Jangan tutup atau refresh halaman ini dulu sampai selesai.
+      </p>
     </div>
 
     <!-- Ringkasan -->
@@ -159,7 +224,7 @@
     </p>
 
     <!-- Filter -->
-    <div class="flex gap-2 flex-wrap mb-4">
+    <div class="flex gap-2 flex-wrap mb-4 no-print">
       <div class="filter-tab" :class="{active: filter==='semua'}" @click="filter='semua'">Semua ({{items.length}})</div>
       <div class="filter-tab" :class="{active: filter==='benar'}" @click="filter='benar'">✅ Benar ({{jumlahBenar}})</div>
       <div class="filter-tab" :class="{active: filter==='salah'}" @click="filter='salah'">❌ Salah ({{jumlahSalah}})</div>
@@ -218,6 +283,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <script>
+const DB_URL = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
+const HASIL_TABLE = 'hasill';
+const DETAIL_TABLE = 'detailHasil';
+const LS_TEST = 'qm_test_state';
+
 (function() {
   const t = localStorage.getItem('qm_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', t);
@@ -239,6 +309,16 @@ new Vue({
     items: [],       // [{no, soal, opsi, kunci, jawabanUser, dijawab, benar, originalIndex}]
     filter: 'semua',
     cari: '',
+
+    // Snapshot mentah dari localStorage (qm_test_state) — dipakai untuk membangun
+    // ulang payload saat "Kirim Ulang ke Server", karena butuh field-field yang
+    // tidak ditampilkan di layar (mulai/selesai/durasi/cheatFlags, dll).
+    stateSnapshot: null,
+
+    resendStatus: 'idle', // idle | sending | success | fail
+    resendDetailSending: false,
+    resendDetailSent: 0,
+    resendDetailTotal: 0,
   },
   computed: {
     pgItems()      { return this.items.filter(i => i.tipe !== 'essay'); },
@@ -249,6 +329,10 @@ new Vue({
     jumlahEssayDijawab() { return this.essayItems.filter(i => i.dijawab).length; },
     skor() {
       return this.pgItems.length ? Math.round((this.jumlahBenar / this.pgItems.length) * 100) : 0;
+    },
+    resendDetailPct() {
+      if (!this.resendDetailTotal) return 0;
+      return Math.round((this.resendDetailSent / this.resendDetailTotal) * 100);
     },
     filteredItems() {
       let arr = this.items;
@@ -272,6 +356,7 @@ new Vue({
       try { s = JSON.parse(raw); } catch(e) { this.hasData = false; return; }
       if (!s || !s.questions || !s.questions.length) { this.hasData = false; return; }
 
+      this.stateSnapshot = s;
       this.hasData   = true;
       this.nama      = s.nama || '(tanpa nama)';
       this.submitted = !!s.submitted;
@@ -310,6 +395,141 @@ new Vue({
           };
         });
       }
+    },
+
+    // ══════════ DOWNLOAD PDF ══════════
+    // Pakai print bawaan browser (window.print) supaya tidak butuh library
+    // tambahan — user tinggal pilih "Simpan sebagai PDF" di dialog print.
+    // Filter & pencarian di-reset dulu supaya PDF berisi semua soal.
+    downloadPDF() {
+      this.filter = 'semua';
+      this.cari = '';
+      this.$nextTick(() => { window.print(); });
+    },
+
+    // ══════════ KIRIM ULANG KE SERVER ══════════
+    _parseAngka(val) {
+      if (val === 0 || val === '0') return "0";
+      let hasil = Number(val);
+      if (isNaN(hasil) || hasil === 0) return "0";
+      return hasil;
+    },
+
+    confirmResend() {
+      if (this.resendStatus === 'sending' || this.resendDetailSending) return;
+      const ok = confirm('Kirim ulang hasil ke server?\n\nData akan dikirim sebagai baris baru dengan timestamp/ID baru (bukan menimpa baris lama) — supaya data awal dan data kirim-ulang tetap kelihatan terpisah di spreadsheet. Lanjutkan?');
+      if (ok) {
+        const resendId = Date.now(); // ID baru khusus untuk percobaan kirim-ulang ini
+        this._sendResultToServer(resendId);
+        this._sendDetailToServer(resendId);
+      }
+    },
+
+    _buildHasilRowFromLS(resendId) {
+      const s = this.stateSnapshot || {};
+      const r = s.resultData || {};
+      const essayItem = this.items.find(i => i.tipe === 'essay');
+      const jawabanEssay = essayItem ? (essayItem.jawabanUser || '') : '';
+      const fmt = ts => ts ? new Date(ts).toLocaleString('id-ID') : '';
+      const mulaiTs = r.mulai || s.startTs || Date.now();
+      // "selesai" juga diisi waktu resend (bukan waktu submit asli) — supaya kolom
+      // ini ikut menunjukkan kapan percobaan kirim-ulang ini terjadi.
+      const selesaiTs = resendId || Date.now();
+      return {
+        // ID sengaja dibuat baru (resendId, timestamp saat tombol "Kirim Ulang"
+        // diklik) — bukan pakai mulaiTs yang sama dengan pengiriman pertama.
+        // Tujuannya supaya baris hasil percobaan kirim-ulang ini terlihat
+        // sebagai baris terpisah di spreadsheet, bukan menimpa/duplikat persis
+        // dengan ID yang sama seperti pengiriman awal.
+        id:             resendId || Date.now(),
+        nama:           s.nama || this.nama,
+        mulai:          "'" + fmt(mulaiTs),
+        selesai:        "'" + fmt(selesaiTs),
+        durasiMenit:    this._parseAngka(r.durasiMenit != null ? r.durasiMenit : s.durationMin),
+        totalSoal:      this._parseAngka(r.totalSoal != null ? r.totalSoal : this.items.length),
+        totalSoalPG:    this._parseAngka(r.totalSoalPG != null ? r.totalSoalPG : this.pgItems.length),
+        totalSoalEssay: this._parseAngka(r.totalSoalEssay != null ? r.totalSoalEssay : this.essayItems.length),
+        dijawab:        this._parseAngka(r.dijawab != null ? r.dijawab : this.items.filter(i=>i.dijawab).length),
+        benar:          this._parseAngka(r.benar != null ? r.benar : this.jumlahBenar),
+        salah:          this._parseAngka(r.salah != null ? r.salah : this.jumlahSalah),
+        belum:          this._parseAngka(r.belum != null ? r.belum : this.jumlahBelum),
+        skor:           this._parseAngka(r.skor != null ? r.skor : this.skor),
+        autoSubmit:     r.autoSubmit ? 'Ya' : 'Tidak',
+        soalEssay:      essayItem ? essayItem.soal : '(tidak ada soal essay)',
+        jawabanEssay:   jawabanEssay || '(tidak dijawab)',
+        detailPG:       '-',
+        indikasiKecurangan: JSON.stringify(s.cheatFlags || {}),
+        jumlahPindahTab: this._parseAngka((s.cheatFlags && s.cheatFlags.tabSwitch) || 0),
+      };
+    },
+
+    async _sendResultToServer(resendId, attempt = 1) {
+      if (this.resendStatus === 'sending' && attempt === 1) return;
+      this.resendStatus = 'sending';
+      const rowData = this._buildHasilRowFromLS(resendId);
+      const url = DB_URL + '?action=insert&table=' + HASIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(rowData));
+      console.log(`=== KIRIM ULANG RINGKASAN (ID baru: ${resendId}, percobaan ke-${attempt}) ===`, rowData);
+      try {
+        await fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true });
+        this.resendStatus = 'success';
+      } catch(e) {
+        console.error(`Percobaan ke-${attempt} gagal:`, e.message);
+        if (attempt < 3) {
+          setTimeout(() => this._sendResultToServer(resendId, attempt + 1), attempt * 4000);
+        } else {
+          this.resendStatus = 'fail';
+        }
+      }
+    },
+
+    async _sendDetailToServer(resendId) {
+      if (this.resendDetailSending) return;
+      const hasilId = resendId || Date.now();
+
+      const rows = this.items.map(item => {
+        const isEssay = item.tipe === 'essay';
+        const ans = item.jawabanUser || '';
+        return {
+          id:           hasilId,
+          no:           item.no,
+          tipe:         isEssay ? 'Essay' : 'PG',
+          soal:         item.soal,
+          jawabanUser:  ans || (isEssay ? '(tidak dijawab)' : '-'),
+          kunciJawaban: isEssay ? '-' : (item.kunci || '-'),
+          dijawab:      ans ? 'Ya' : 'Tidak',
+          benar:        isEssay ? '-' : (ans && ans === item.kunci ? 'Ya' : 'Tidak'),
+        };
+      });
+
+      this.resendDetailSending = true;
+      this.resendDetailTotal   = rows.length;
+      this.resendDetailSent    = 0;
+
+      for (const row of rows) {
+        const url = DB_URL + '?action=insert&table=' + DETAIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(row));
+        try {
+          await fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true });
+          this.resendDetailSent++;
+        } catch(e) {
+          console.error(`Gagal kirim ulang detail soal #${row.no}:`, e.message);
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      this.resendDetailSending = false;
+    },
+
+    // ══════════ HAPUS DATA LOKAL ══════════
+    confirmHapusData() {
+      const ok = confirm('Hapus data test ini dari perangkat ini?\n\nTindakan ini tidak bisa dibatalkan. Setelah dihapus, kamu bisa mengerjakan test ini lagi dari awal di perangkat ini. Data yang sudah terkirim ke server tidak akan terhapus.');
+      if (!ok) return;
+      try { localStorage.removeItem(LS_TEST); } catch(e) {}
+      this.hasData = false;
+      this.items = [];
+      this.stateSnapshot = null;
+      this.resendStatus = 'idle';
+      this.resendDetailTotal = 0;
+      this.resendDetailSent = 0;
     },
   },
 });
