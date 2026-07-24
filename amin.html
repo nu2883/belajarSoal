@@ -198,6 +198,7 @@
           <th>Salah</th>
           <th>Skor</th>
           <th>Status</th>
+          <th>Pindah Tab</th>
         </tr>
       </thead>
       <tbody>
@@ -211,6 +212,10 @@
           <td>
             <span v-if="row.autoSubmit==='Ya'" class="tag tag-orange">⏰ Auto</span>
             <span v-else class="tag tag-green">✅ Manual</span>
+          </td>
+          <td>
+            <span v-if="row.pindahTab>0" class="tag tag-red">⚠️ {{ row.pindahTab }}x</span>
+            <span v-else class="tag tag-green">0x</span>
           </td>
         </tr>
       </tbody>
@@ -238,6 +243,19 @@
       </div>
 
       <div v-if="selectedRow.autoSubmit==='Ya'" class="tag tag-orange mb-4">⏰ Waktu habis — submit otomatis</div>
+
+      <div v-if="hasCheatSignal(selectedRow.cheatFlags)" class="card p-3 mb-4" style="border-color:rgba(239,68,68,0.35)">
+        <h3 class="text-xs font-bold mb-2 tracking-wide" style="color:#ef4444">⚠️ INDIKASI KECURANGAN (BUKAN BUKTI PASTI)</h3>
+        <div class="flex flex-wrap gap-2">
+          <span v-if="selectedRow.cheatFlags.tabSwitch" class="tag tag-red">Pindah tab: {{ selectedRow.cheatFlags.tabSwitch }}x</span>
+          <span v-if="selectedRow.cheatFlags.exitFullscreen" class="tag tag-red">Keluar fullscreen: {{ selectedRow.cheatFlags.exitFullscreen }}x</span>
+          <span v-if="selectedRow.cheatFlags.rightClick" class="tag tag-orange">Klik kanan: {{ selectedRow.cheatFlags.rightClick }}x</span>
+          <span v-if="selectedRow.cheatFlags.copy" class="tag tag-orange">Copy: {{ selectedRow.cheatFlags.copy }}x</span>
+          <span v-if="selectedRow.cheatFlags.shortcut" class="tag tag-orange">Shortcut: {{ selectedRow.cheatFlags.shortcut }}x</span>
+          <span v-if="selectedRow.cheatFlags.devtools" class="tag tag-orange">Devtools: {{ selectedRow.cheatFlags.devtools }}x</span>
+          <span v-if="selectedRow.cheatFlags.printscreen" class="tag tag-orange">Screenshot: {{ selectedRow.cheatFlags.printscreen }}x</span>
+        </div>
+      </div>
 
       <!-- Loading detail -->
       <div v-if="detailLoading" class="detail-loading">
@@ -372,6 +390,11 @@ new Vue({
     clearInterval(this.tickHandle);
   },
   methods: {
+    hasCheatSignal(flags) {
+      if (!flags) return false;
+      return Object.values(flags).some(v => Number(v) > 0);
+    },
+
     skorClass(skor) {
       const s = Number(skor) || 0;
       if (s >= 75) return 'skor-high';
@@ -392,9 +415,15 @@ new Vue({
         if (!arr) throw new Error('Format data tidak dikenali');
 
         const strip = v => (v === null || v === undefined) ? '' : String(v).replace(/^'/, '').trim();
+        // Case-insensitive: cocokkan nama kolom tanpa peduli besar/kecil huruf,
+        // supaya tidak tergantung persis bagaimana header ditulis di sheet
+        // (jumlahPindahTab vs JumlahPindahTab vs jumlahpindahtab, dst).
         const get = (row, ...keys) => {
+          const rowKeysLower = {};
+          for (const rk in row) rowKeysLower[rk.toLowerCase()] = row[rk];
           for (const k of keys) {
-            if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
+            const v = rowKeysLower[k.toLowerCase()];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return v;
           }
           return '';
         };
@@ -415,6 +444,21 @@ new Vue({
             belum:          Number(get(row,'belum')) || 0,
             skor:           Number(get(row,'skor')) || 0,
             autoSubmit:     strip(get(row,'autoSubmit','autosubmit')) || 'Tidak',
+            // Kolom khusus jumlah pindah tab (dikirim eksplisit oleh test.html).
+            // Fallback ke cheatFlags.tabSwitch di dalam JSON indikasiKecurangan
+            // untuk baris lama yang belum punya kolom ini.
+            pindahTab:      (() => {
+              const direct = get(row,'jumlahPindahTab','jumlahpindahtab');
+              if (direct !== '') return Number(direct) || 0;
+              try {
+                const flags = JSON.parse(get(row,'indikasiKecurangan','indikasikecurangan') || '{}');
+                return Number(flags.tabSwitch) || 0;
+              } catch(e) { return 0; }
+            })(),
+            cheatFlags:     (() => {
+              try { return JSON.parse(get(row,'indikasiKecurangan','indikasikecurangan') || '{}'); }
+              catch(e) { return {}; }
+            })(),
           };
         }).sort((a,b) => (b.mulai || '').localeCompare(a.mulai || ''));
 
@@ -450,8 +494,11 @@ new Vue({
 
         const strip = v => (v === null || v === undefined) ? '' : String(v).replace(/^'/, '').trim();
         const get = (r, ...keys) => {
+          const rKeysLower = {};
+          for (const rk in r) rKeysLower[rk.toLowerCase()] = r[rk];
           for (const k of keys) {
-            if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') return r[k];
+            const v = rKeysLower[k.toLowerCase()];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return v;
           }
           return '';
         };
