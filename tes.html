@@ -46,12 +46,9 @@
       linear-gradient(90deg, var(--grid) 1px, transparent 1px);
     background-size: 40px 40px; pointer-events: none; z-index: 0;
   }
-  /* Anti-copas: nonaktifkan seleksi teks & drag di seluruh halaman, KECUALI di
-     dalam input/textarea (supaya peserta tetap bisa mengetik & mengedit jawaban
-     esainya sendiri secara normal). */
   body.no-copy, body.no-copy * {
     user-select: none; -webkit-user-select: none; -ms-user-select: none;
-    -webkit-touch-callout: none; /* cegah menu "salin/simpan gambar" saat long-press di HP */
+    -webkit-touch-callout: none;
   }
   body.no-copy input, body.no-copy textarea {
     user-select: text; -webkit-user-select: text; -ms-user-select: text;
@@ -163,7 +160,6 @@
   .page-wrap { position: relative; z-index: 1; }
   .page-center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; }
   .quiz-wrap { max-width: 700px; margin: 0 auto; padding: 16px 16px 24px; min-height: 100vh; display: flex; flex-direction: column; }
-  /* Pure Test mode */
   .test-timer {
     position: fixed; top: 18px; left: 18px; z-index: 998;
     background: var(--card); border: 2px solid var(--neon); color: var(--neon);
@@ -181,7 +177,6 @@
     .test-layout { flex-direction: column; }
     .test-nav-col { width: 100%; }
   }
-  /* Navigator soal — bentuk lingkaran */
   .qnav-grid {
     display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
   }
@@ -218,9 +213,6 @@
 
 <div id="app" class="page-wrap">
 
-  <!-- Overlay muncul kalau peserta pindah tab / keluar fullscreen saat test berjalan.
-       Ini TIDAK mencegah screenshot (itu terjadi di level OS, di luar jangkauan halaman
-       web), tapi mempersulit & tercatat sebagai indikasi kecurangan untuk admin. -->
   <div v-if="screen==='testRunning' && showCheatOverlay" class="cheat-overlay">
     <div style="font-size:3rem;margin-bottom:12px">⚠️</div>
     <h2 class="font-bold text-xl mb-2">Kembali ke Test</h2>
@@ -230,7 +222,6 @@
     </p>
     <button @click="_resumeFromCheatOverlay" class="btn-solid py-3 px-6">Kembali ke Soal</button>
   </div>
-
 
   <!-- ══════════ START — INPUT NAMA ══════════ -->
   <div v-if="screen==='testHome'" class="page-center">
@@ -252,7 +243,7 @@
       <div class="mt-4 rounded-xl p-4 text-sm" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);line-height:1.7">
         ⏱️ Waktu: <b style="color:var(--text)">{{testDurationMin}} menit</b>, mundur otomatis sejak test dimulai<br>
         💾 Jawaban tersimpan otomatis di perangkat ini setiap kali kamu memilih<br>
-        🚫 Waktu habis → jawaban terkirim otomatis, tidak bisa diubah lagi
+        🚫 Waktu habis → soal terkunci, tinggal klik satu tombol untuk mengirim
       </div>
       <button @click="beginTest" class="btn-solid w-full py-4 text-base mt-5"
               :disabled="!testNama.trim() || testLoading"
@@ -284,21 +275,20 @@
         <div class="text-xs" style="color:var(--muted)">{{testAnsweredCount}}/{{testQuestions.length}} soal dijawab</div>
       </div>
       <div class="flex gap-2">
-        <button @click="confirmSubmitTest" class="btn-orange" :disabled="testLocked || testSubmitting">
+        <button @click="confirmSubmitTest" class="btn-orange" :disabled="testSubmitting">
           {{ testSubmitting ? 'Mengirim...' : '📤 Submit Jawaban' }}
         </button>
       </div>
     </div>
 
     <div class="test-layout">
-      <!-- Navigator soal — lingkaran -->
       <div class="test-nav-col card p-4">
         <div class="text-xs font-bold mb-3 tracking-widest" style="color:var(--muted)">DAFTAR SOAL</div>
         <div style="max-height:520px;overflow-y:auto;padding-right:2px">
           <div class="qnav-grid">
             <button v-for="(q,i) in testQuestions" :key="q.no" class="qnav-circle"
                     :class="{answered: !!testAnswers[q.no], current: i===testCurrentIdx}"
-                    :disabled="testLocked" @click="testCurrentIdx=i" :title="'Soal '+(i+1)">
+                    @click="testCurrentIdx=i" :title="'Soal '+(i+1)">
               {{i+1}}
             </button>
           </div>
@@ -310,7 +300,6 @@
         </div>
       </div>
 
-      <!-- Soal aktif -->
       <div class="test-question-col">
         <div v-if="testCurrentQ" class="card p-6 mb-4 slide-up" :key="'t'+testCurrentIdx">
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px">
@@ -319,11 +308,10 @@
           </div>
           <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{testCurrentQ.soal}}</p>
 
-          <!-- Pilihan Ganda -->
           <div v-if="testCurrentQ.tipe!=='essay'" class="flex flex-col gap-3">
             <button v-for="(opt,idx) in testCurrentOptions" :key="idx"
                     class="option-btn" :class="{correct: testAnswers[testCurrentQ.no]===opt}"
-                    :disabled="testLocked" @click="selectTestAnswer(opt)">
+                    @click="selectTestAnswer(opt)">
               <span class="badge-count" :style="testAnswers[testCurrentQ.no]===opt?'background:rgba(0,245,212,0.2);color:var(--neon)':''">
                 {{['A','B','C','D'][idx]}}
               </span>
@@ -332,11 +320,10 @@
             </button>
           </div>
 
-          <!-- Essay -->
           <div v-else>
             <span class="tag tag-orange mb-3" style="display:inline-block">✍️ Soal Essay</span>
             <textarea :value="testAnswers[testCurrentQ.no] || ''" @input="selectEssayAnswer($event.target.value)"
-                      :disabled="testLocked" rows="7" placeholder="Tulis jawaban esai kamu di sini..."
+                      rows="7" placeholder="Tulis jawaban esai kamu di sini..."
                       style="width:100%;background:var(--card2);border:1.5px solid var(--border);color:var(--text);
                              border-radius:12px;padding:14px 16px;font-family:'Sora',sans-serif;font-size:0.92rem;
                              line-height:1.6;outline:none;resize:vertical"></textarea>
@@ -345,15 +332,39 @@
 
         <div class="flex gap-3 pb-4">
           <button @click="testCurrentIdx=Math.max(0,testCurrentIdx-1)"
-                  :disabled="testCurrentIdx===0 || testLocked" class="btn-neon flex-1 py-3">← Sebelumnya</button>
+                  :disabled="testCurrentIdx===0" class="btn-neon flex-1 py-3">← Sebelumnya</button>
           <button @click="testCurrentIdx=Math.min(testQuestions.length-1,testCurrentIdx+1)"
-                  :disabled="testCurrentIdx>=testQuestions.length-1 || testLocked" class="btn-solid flex-1 py-3">Berikutnya →</button>
-        </div>
-
-        <div v-if="testLocked && !testSubmitted" class="card p-4 text-center mb-4" style="border-color:var(--neon2)">
-          <p class="font-bold" style="color:var(--neon2)">⏳ Menyelesaikan test...</p>
+                  :disabled="testCurrentIdx>=testQuestions.length-1" class="btn-solid flex-1 py-3">Berikutnya →</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ══════════ WAKTU HABIS — HALAMAN PENUH, SUBMIT MANUAL ══════════ -->
+  <div v-if="screen==='testTimeUp'" class="page-center">
+    <div class="card w-full text-center slide-up" style="max-width:480px;padding:40px 32px">
+      <div style="font-size:4rem;margin-bottom:14px">⏰</div>
+      <h2 class="text-2xl font-extrabold mb-3" style="color:var(--neon2)">Waktu Pengerjaan Habis</h2>
+      <p class="text-sm mb-2" style="color:var(--muted);line-height:1.7">
+        Terima kasih banyak, <b style="color:var(--text)">{{testNama}}</b>, atas waktu dan usaha yang sudah kamu
+        berikan untuk mengerjakan test ini.
+      </p>
+      <p class="text-sm mb-6" style="color:var(--muted);line-height:1.7">
+        Semua soal sekarang terkunci dan jawabanmu tidak bisa diubah lagi. Silakan klik tombol di bawah
+        untuk mengirim jawabanmu ke server.
+      </p>
+
+      <div class="rounded-xl p-4 mb-6" style="background:var(--card2);border:1px solid var(--border)">
+        <div class="text-2xl font-bold" style="color:var(--neon)">{{testAnsweredCount}}/{{testQuestions.length}}</div>
+        <div class="text-sm" style="color:var(--muted)">Soal Terjawab</div>
+      </div>
+
+      <button @click="submitTest(true)" class="btn-orange w-full py-4 text-base"
+              :disabled="testSubmitting"
+              style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <span v-if="testSubmitting" class="spinner"></span>
+        <span>{{ testSubmitting ? 'Mengirim...' : '📤 Kirim Jawaban Sekarang' }}</span>
+      </button>
     </div>
   </div>
 
@@ -386,9 +397,8 @@
       <p v-if="testResultData.belum>0" class="text-xs mb-3" style="color:var(--muted)">
         {{testResultData.belum}} soal tidak dijawab
       </p>
-      <p v-if="testResultData.autoSubmit" class="text-xs mb-4" style="color:var(--neon2)">⏰ Terkirim otomatis karena waktu habis</p>
+      <p v-if="testResultData.autoSubmit" class="text-xs mb-4" style="color:var(--neon2)">⏰ Dikirim setelah waktu habis</p>
 
-      <!-- Status kirim ke server -->
       <div class="rounded-xl p-3 mb-4 text-sm" :style="testSendFailed
              ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25)'
              : (testSentOk ? 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)'
@@ -402,6 +412,13 @@
         </button>
       </div>
 
+      <p v-if="testDetailSending" class="text-xs mb-4" style="color:var(--muted)">
+        📤 Mengirim detail jawaban... ({{testDetailSentCount}}/{{testDetailTotal}})
+      </p>
+      <p v-else-if="testDetailTotal>0" class="text-xs mb-4" style="color:#22c55e">
+        ✅ Detail jawaban tersimpan ({{testDetailSentCount}}/{{testDetailTotal}} soal)
+      </p>
+
       <p class="text-xs mb-4" style="color:var(--muted)">📄 Buka <b>hasil.html</b> di perangkat ini untuk melihat rincian jawaban per soal.</p>
       <button @click="exitTest" class="btn-neon w-full py-3">🔄 Test Baru</button>
     </div>
@@ -413,9 +430,9 @@
 const DB_URL   = 'https://script.google.com/macros/s/AKfycby025S9w4zqYOhMzReoyu2EOauP-7uVJZCFbCiC_lrclg9WXNapzwxGwo7LLW7sV15G6A/exec';
 const LS_THEME = 'qm_theme';
 const LS_TEST  = 'qm_test_state';
-const HASIL_TABLE = 'hasill'; // nama sheet tujuan hasil ujian
+const HASIL_TABLE = 'hasill';
+const DETAIL_TABLE = 'detailHasil'; // sheet detail per soal, terhubung ke hasill lewat kolom id
 
-/* ─── Theme bootstrap ─── */
 (function() {
   const t = localStorage.getItem(LS_THEME) || 'dark';
   document.documentElement.setAttribute('data-theme', t);
@@ -439,38 +456,37 @@ function showToast(msg, type='green', dur=3200) {
 new Vue({
   el: '#app',
   data: {
+    // screen: testHome | testRunning | testTimeUp | testResult
     screen: 'testHome',
 
     testNama: '',
     testLoading: false,
     testQuestions: [],
-    testAnswers: {},         // { [no]: jawaban terpilih (teks) }
+    testAnswers: {},
     testCurrentIdx: 0,
     testStartTs: null,
     testDeadlineTs: null,
     testDurationMin: 90,
     testTimeLeft: 0,
     testTimerHandle: null,
-    testLocked: false,
     testSubmitting: false,
     testSubmitted: false,
     testResultData: {},
 
-    // Status pengiriman hasil ke server (terpisah dari status "test selesai" di atas —
-    // hasil selalu tampil ke peserta walau pengiriman ke server gagal/masih tertunda)
     testSending: false,
     testSentOk: false,
     testSendFailed: false,
 
-    // Preload soal otomatis saat app dibuka
+    // Status pengiriman detail per soal ke sheet "detailHasil" (terpisah dari
+    // pengiriman ringkasan di atas — berjalan sebagai proses sendiri)
+    testDetailSending: false,
+    testDetailSentCount: 0,
+    testDetailTotal: 0,
+
     preloadedQuestions: [],
     dbLoaded: false,
     dbError: '',
 
-    // Anti-kecurangan: kita TIDAK bisa mencegah screenshot secara teknis (itu
-    // terjadi di level OS, di luar kendali halaman web) — tapi kita bisa
-    // mempersulit copy-paste/klik-kanan dan MENCATAT indikasi kecurangan
-    // (pindah tab, keluar fullscreen, coba buka devtools, dst) untuk admin.
     showCheatOverlay: false,
     cheatFlags: { rightClick: 0, copy: 0, shortcut: 0, devtools: 0, printscreen: 0, tabSwitch: 0, exitFullscreen: 0 },
   },
@@ -494,26 +510,22 @@ new Vue({
 
   mounted() {
     const resumed = this._tryResumeTest();
-    if (!resumed) this._preloadQuestions(); // load soal dari DB otomatis begitu app dibuka
+    if (!resumed) this._preloadQuestions();
 
-    // Timer browser bisa DITAHAN/DITUNDA saat tab di-background atau layar terkunci,
-    // sehingga setInterval 1 detik tidak selalu presisi tepat di detik ke-0.
-    // Sebagai jaring pengaman, setiap kali tab kembali aktif/fokus, cek ulang
-    // deadline secara langsung berdasarkan jam asli (Date.now()) — bukan cuma
-    // mengandalkan hitungan interval — supaya auto-submit tetap terjadi walau
-    // interval-nya sempat telat/berhenti saat tab tidak aktif.
-    document.addEventListener('visibilitychange', this._checkDeadlineNow);
-    window.addEventListener('focus', this._checkDeadlineNow);
-    window.addEventListener('pageshow', this._checkDeadlineNow);
+    // Jaring pengaman kalau tab sempat di-background/terkunci saat deadline lewat:
+    // begitu tab aktif lagi, cek ulang berdasarkan jam asli (Date.now()), bukan
+    // cuma mengandalkan setInterval yang bisa ditahan browser saat tab tidak aktif.
+    document.addEventListener('visibilitychange', () => this._checkDeadlineNow());
+    window.addEventListener('focus', () => this._checkDeadlineNow());
+    window.addEventListener('pageshow', () => this._checkDeadlineNow());
 
     window.addEventListener('beforeunload', (e) => {
-      if (this.screen === 'testRunning' && !this.testLocked) {
+      if (this.screen === 'testRunning') {
         e.preventDefault();
         e.returnValue = '';
       }
     });
 
-    // ── Anti-copas & deteksi indikasi kecurangan (hanya aktif saat test berjalan) ──
     document.body.classList.add('no-copy');
 
     document.addEventListener('contextmenu', (e) => {
@@ -550,9 +562,6 @@ new Vue({
       }
     });
 
-    // PrintScreen: TIDAK BISA benar-benar dicegah (screenshot sudah terjadi di level
-    // OS sebelum event ini sempat kita tangkap). Ini cuma mencatat & memberi tahu
-    // peserta bahwa aksinya tercatat — bukan pemblokiran teknis sungguhan.
     document.addEventListener('keyup', (e) => {
       if (this.screen !== 'testRunning') return;
       if (e.key === 'PrintScreen') {
@@ -561,7 +570,6 @@ new Vue({
       }
     });
 
-    // Pindah tab / minimize / kunci layar saat test berjalan → catat & tampilkan overlay
     document.addEventListener('visibilitychange', () => {
       if (this.screen === 'testRunning' && document.hidden) {
         this._flagAttempt('tabSwitch');
@@ -569,7 +577,6 @@ new Vue({
       }
     });
 
-    // Keluar dari mode fullscreen saat test berjalan → catat & tampilkan overlay
     document.addEventListener('fullscreenchange', () => {
       if (this.screen === 'testRunning' && !document.fullscreenElement) {
         this._flagAttempt('exitFullscreen');
@@ -589,7 +596,7 @@ new Vue({
           deadlineTs: this.testDeadlineTs,
           durationMin: this.testDurationMin,
           currentIdx: this.testCurrentIdx,
-          locked:     this.testLocked,
+          timeUp:     this.screen === 'testTimeUp',
           submitted:  this.testSubmitted,
           resultData: this.testSubmitted ? this.testResultData : null,
           sentOk:     this.testSentOk,
@@ -600,9 +607,6 @@ new Vue({
     },
     _clearTestLS() { try { localStorage.removeItem(LS_TEST); } catch(e) {} },
 
-    // Mencatat 1 indikasi kecurangan (bukan pemblokiran teknis sempurna — lihat
-    // catatan jujur di jawaban chat). Disimpan ke LS supaya ikut terkirim ke admin
-    // lewat _buildHasilRow(), dan tetap ada walau halaman di-refresh.
     _flagAttempt(type) {
       if (this.cheatFlags[type] === undefined) return;
       this.cheatFlags[type]++;
@@ -612,27 +616,28 @@ new Vue({
 
     _resumeFromCheatOverlay() {
       this.showCheatOverlay = false;
-      // Coba minta fullscreen lagi (butuh gesture pengguna — tombol klik ini
-      // memenuhi syarat itu di kebanyakan browser).
       const el = document.documentElement;
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
     },
 
-    // Dipanggil saat tab kembali aktif/fokus (lihat pendaftaran event di mounted()).
-    // Cek langsung berdasarkan jam asli — jaring pengaman kalau setInterval sempat
-    // tertunda/berhenti karena tab di-background.
+    // Jaring pengaman kalau setInterval sempat tertunda/berhenti karena tab
+    // di-background. Cukup KUNCI + pindah ke halaman "waktu habis" — TIDAK
+    // mencoba mengirim otomatis di sini (itu sumber ketidakstabilan sebelumnya).
+    // Pengiriman sepenuhnya menunggu klik manual dari peserta.
     _checkDeadlineNow() {
-      if (this.screen === 'testRunning' && !this.testLocked && this.testDeadlineTs && Date.now() >= this.testDeadlineTs) {
-        console.log('⏰ [Jaring pengaman] Waktu sudah lewat batas terdeteksi saat tab aktif kembali — memicu submit otomatis.');
-        this.testTimeLeft = 0;
-        this.testLocked = true;
-        this._saveTestLS();
-        this.submitTest(true);
+      if (this.screen === 'testRunning' && this.testDeadlineTs && Date.now() >= this.testDeadlineTs) {
+        console.log('⏰ [Jaring pengaman] Waktu sudah lewat batas — mengunci & memindah ke halaman waktu habis.');
+        this._lockToTimeUp();
       }
     },
 
-    // Dipanggil saat app mount, untuk memulihkan sesi yang belum selesai
-    // (antisipasi refresh / koneksi terputus di tengah test).
+    _lockToTimeUp() {
+      if (this.testTimerHandle) { clearInterval(this.testTimerHandle); this.testTimerHandle = null; }
+      this.testTimeLeft = 0;
+      this.screen = 'testTimeUp';
+      this._saveTestLS();
+    },
+
     _tryResumeTest() {
       let s;
       try {
@@ -653,39 +658,31 @@ new Vue({
 
       if (s.submitted) {
         this.testSubmitted  = true;
-        this.testLocked     = true;
         this.testResultData = s.resultData || {};
         this.testSentOk     = !!s.sentOk;
         this.testSendFailed = !!s.sendFailed;
         this.screen = 'testResult';
         if (!this.testSentOk) {
-          // Percobaan kirim sebelumnya belum terkonfirmasi berhasil (misal tab
-          // ditutup/refresh tepat di tengah proses kirim setelah waktu habis) —
-          // coba kirim ulang otomatis begitu peserta membuka lagi halaman ini,
-          // tanpa perlu mereka sadar & klik tombol apa pun.
-          this.$nextTick(() => this._sendResultToServer());
+          this.$nextTick(() => { this._sendResultToServer(); this._sendDetailToServer(); });
         }
         return true;
       }
 
-      if (s.locked || (s.deadlineTs && Date.now() >= s.deadlineTs)) {
-        this.testLocked  = true;
-        this.testTimeLeft = Math.max(0, Math.round(((s.deadlineTs||0) - Date.now()) / 1000));
-        this.screen = 'testRunning';
-        console.log('⏰ [Resume] Waktu sudah habis saat halaman dimuat ulang — memicu submit otomatis.');
-        this.$nextTick(() => this.submitTest(true));
+      if (s.timeUp || (s.deadlineTs && Date.now() >= s.deadlineTs)) {
+        // Waktu sudah habis (baik sebelum ditutup, atau lewat selagi tab tidak
+        // dibuka) — tampilkan halaman "waktu habis", tunggu klik manual peserta.
+        this.testTimeLeft = 0;
+        this.screen = 'testTimeUp';
+        console.log('⏰ [Resume] Waktu sudah habis saat halaman dimuat ulang — menunggu klik submit manual.');
         return true;
       }
 
-      this.testLocked    = false;
       this.testSubmitted = false;
       this.screen = 'testRunning';
       this._startTestTimer();
       return true;
     },
 
-    // Dipanggil otomatis saat app dibuka (kalau tidak sedang resume test lama),
-    // supaya soal sudah siap di memori sebelum peserta selesai isi nama.
     async _preloadQuestions() {
       if (this.testLoading) return;
       this.testLoading = true;
@@ -715,12 +712,10 @@ new Vue({
             c:      get(row,'c','C','jawaban_c','opsiC'),
             d:      get(row,'d','D','jawaban_d','opsiD'),
             sumber: get(row,'sumber','Sumber','SUMBER','kategori','topik'),
-            // Soal terakhir dari sheet otomatis dijadikan pertanyaan ESSAY (bebas teks),
-            // sisanya tetap pilihan ganda.
             tipe:   (i === arr.length - 1) ? 'essay' : 'pg',
           };
           const raw = [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim());
-          q.opts = this.shuffle(raw); // diacak sekali saat dimuat, tetap konsisten selama test
+          q.opts = this.shuffle(raw);
           return q;
         }).filter(q => q.soal && (q.kunci || q.tipe === 'essay'));
 
@@ -731,7 +726,6 @@ new Vue({
       } catch(e) {
         this.dbError = e.message;
         console.error('❌ Gagal memuat soal dari DB:', e);
-        console.error('Kemungkinan penyebab: (1) sheet/table "tess" tidak ditemukan, (2) deployment Apps Script belum "Anyone" access, (3) app dibuka langsung dari file (file://) — coba host lewat server/GitHub Pages, (4) URL Apps Script sudah tidak valid.');
       } finally {
         this.testLoading = false;
       }
@@ -739,7 +733,6 @@ new Vue({
 
     async beginTest() {
       if (!this.testNama.trim() || this.testLoading) return;
-      // Kalau preload otomatis belum selesai/gagal, coba sekali lagi sekarang.
       if (!this.preloadedQuestions.length) {
         await this._preloadQuestions();
       }
@@ -747,8 +740,6 @@ new Vue({
         showToast('Gagal memuat soal: ' + (this.dbError || 'tidak diketahui'), 'red');
         return;
       }
-      // Amankan durasi test dari input tidak valid/kosong (mis. dikosongkan saat uji
-      // coba) — kalau tidak dijaga, timer bisa jadi NaN dan tidak pernah habis.
       const durasiValid = Number(this.testDurationMin);
       if (!durasiValid || durasiValid <= 0) this.testDurationMin = 90;
 
@@ -757,7 +748,6 @@ new Vue({
       this.testCurrentIdx  = 0;
       this.testStartTs     = Date.now();
       this.testDeadlineTs  = this.testStartTs + this.testDurationMin * 60 * 1000;
-      this.testLocked      = false;
       this.testSubmitted   = false;
       this.testSending     = false;
       this.testSentOk      = false;
@@ -767,24 +757,22 @@ new Vue({
       this.screen = 'testRunning';
       this._startTestTimer();
 
-      // Minta fullscreen — tombol "Mulai Test" ini user gesture jadi biasanya diizinkan
-      // browser. Kalau ditolak/tidak didukung, ya sudah, tidak menghentikan test.
       const el = document.documentElement;
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
     },
 
+    // Timer HANYA bertugas menghitung mundur & mengunci begitu waktu habis
+    // (pindah ke halaman testTimeUp). Tidak ada percobaan kirim otomatis di
+    // sini lagi — itu yang sebelumnya bikin proses jadi tidak stabil.
+    // Pengiriman sepenuhnya menunggu klik manual peserta di halaman testTimeUp.
     _startTestTimer() {
       clearInterval(this.testTimerHandle);
       const tick = () => {
         const left = Math.max(0, Math.round((this.testDeadlineTs - Date.now()) / 1000));
         this.testTimeLeft = left;
         if (left <= 0) {
-          console.log('⏰ [Timer] Waktu habis terdeteksi oleh hitungan mundur — memicu submitTest(true).');
-          clearInterval(this.testTimerHandle);
-          this.testTimerHandle = null;
-          this.testLocked = true;
-          this._saveTestLS();
-          this.submitTest(true);
+          console.log('⏰ [Timer] Waktu habis — mengunci soal & menampilkan halaman waktu habis.');
+          this._lockToTimeUp();
         }
       };
       tick();
@@ -792,19 +780,19 @@ new Vue({
     },
 
     selectTestAnswer(opt) {
-      if (this.testLocked || !this.testCurrentQ) return;
+      if (!this.testCurrentQ) return;
       this.$set(this.testAnswers, this.testCurrentQ.no, opt);
       this._saveTestLS();
     },
 
     selectEssayAnswer(text) {
-      if (this.testLocked || !this.testCurrentQ) return;
+      if (!this.testCurrentQ) return;
       this.$set(this.testAnswers, this.testCurrentQ.no, text);
       this._saveTestLS();
     },
 
     confirmSubmitTest() {
-      if (this.testLocked || this.testSubmitting) return;
+      if (this.testSubmitting) return;
       const sisa = this.testQuestions.length - this.testAnsweredCount;
       const msg = sisa > 0
         ? `Masih ada ${sisa} soal belum dijawab. Yakin ingin submit sekarang?`
@@ -812,13 +800,15 @@ new Vue({
       if (confirm(msg)) this.submitTest(false);
     },
 
+    // auto=true dipakai untuk menandai bahwa submit ini terjadi SETELAH waktu
+    // habis (baik diklik dari halaman testTimeUp, atau lewat resume) — bukan
+    // berarti terkirim tanpa klik peserta. Pengiriman ke server tetap selalu
+    // hasil dari aksi klik manual.
     async submitTest(auto=false) {
       if (this.testSubmitting || this.testSubmitted) return;
-      console.log(auto ? '📥 submitTest(true) dipanggil — jalur OTOMATIS (waktu habis).' : '📥 submitTest(false) dipanggil — jalur manual (klik Submit).');
-      this.testSubmitting   = true;
+      console.log(auto ? '📥 submitTest(true) — dikirim setelah waktu habis.' : '📥 submitTest(false) — submit manual sebelum waktu habis.');
+      this.testSubmitting = true;
       if (this.testTimerHandle) { clearInterval(this.testTimerHandle); this.testTimerHandle = null; }
-      this.testLocked = true;
-      this._saveTestLS();
 
       const jawaban = this.testQuestions.map(q => {
         const userAns = this.testAnswers[q.no] || '';
@@ -826,7 +816,7 @@ new Vue({
         return {
           no: q.no, soal: q.soal, tipe: q.tipe, opsi: q.opts, jawabanUser: userAns, kunci: q.kunci,
           dijawab: !!userAns.trim(),
-          benar: isEssay ? null : (!!userAns && userAns === q.kunci), // essay dinilai manual oleh admin
+          benar: isEssay ? null : (!!userAns && userAns === q.kunci),
         };
       });
       const pgJawaban   = jawaban.filter(j => j.tipe !== 'essay');
@@ -848,21 +838,18 @@ new Vue({
         autoSubmit:  auto,
       };
 
-      // Hasil SELALU ditampilkan ke peserta dulu — tidak menunggu / tidak digagalkan
-      // oleh status jaringan. Pengiriman ke server berjalan terpisah di latar belakang.
       this.testResultData = payload;
       this.testSubmitted   = true;
       this._saveTestLS();
       this.screen = 'testResult';
-      showToast(auto ? '⏰ Waktu habis — test selesai' : '✅ Test selesai', auto ? 'blue' : 'green');
+      showToast(auto ? '⏰ Test selesai — jawaban dikirim' : '✅ Test selesai', auto ? 'blue' : 'green');
       this.testSubmitting = false;
       console.log('✅ Layar hasil ditampilkan. Sekarang mengirim ke server...');
 
       this._sendResultToServer();
+      this._sendDetailToServer();
     },
 
-    // Helper: paksa angka 0 menjadi string "0" agar tetap lolos validasi truthy
-    // di backend GAS (pola sama seperti pada fitur pengajuan permohonan gaji).
     _parseAngka(val) {
       if (val === 0 || val === '0') return "0";
       let hasil = Number(val);
@@ -870,17 +857,10 @@ new Vue({
       return hasil;
     },
 
-    // Membangun 1 baris data untuk sheet "hasill" — dipanggil ulang dari sumber
-    // (testQuestions + testAnswers + testResultData) sehingga aman dipakai lagi
-    // untuk retry kapan pun, termasuk setelah refresh halaman.
     _buildHasilRow() {
       const r = this.testResultData;
       const essayItem = this.testQuestions.find(q => q.tipe === 'essay');
       const jawabanEssay = essayItem ? (this.testAnswers[essayItem.no] || '') : '';
-      const detailPG = this.testQuestions.filter(q => q.tipe !== 'essay').map(q => {
-        const ans = this.testAnswers[q.no] || '';
-        return { no: q.no, soal: q.soal, jawabanUser: ans, kunci: q.kunci, benar: !!ans && ans === q.kunci };
-      });
       const fmt = ts => ts ? new Date(ts).toLocaleString('id-ID') : '';
       return {
         id:             r.mulai || Date.now(),   // timestamp mulai test dipakai sebagai ID unik baris
@@ -898,13 +878,16 @@ new Vue({
         belum:          this._parseAngka(r.belum),
         skor:           this._parseAngka(r.skor),
         autoSubmit:     r.autoSubmit ? 'Ya' : 'Tidak',
-        soalEssay:      essayItem ? essayItem.soal : '',
-        // Teks apa adanya — JSON.stringify + encodeURIComponent di bawah otomatis
-        // meng-escape tanda kutip, enter, emoji, dan simbol apa pun dengan aman.
-        jawabanEssay:   jawabanEssay,
-        // Jawaban pilihan ganda digabung jadi 1 kolom teks JSON, karena semua ini
-        // 1 baris untuk 1 sheet "hasill" (bukan tabel terpisah).
-        detailPG:       JSON.stringify(detailPG),
+        soalEssay:      essayItem ? essayItem.soal : '(tidak ada soal essay)',
+        // Sama seperti angka 0 yang perlu dijaga (lihat _parseAngka), string kosong
+        // "" kemungkinan juga dianggap "field hilang" oleh validasi backend GAS —
+        // jadi kalau peserta tidak menjawab essay, kirim placeholder, bukan string kosong.
+        jawabanEssay:   jawabanEssay || '(tidak dijawab)',
+        // Kolom tetap dikirim (backend butuh semua kolom ada), tapi isinya
+        // sengaja dikosongkan jadi "-" — JSON detail per soal bikin URL GET
+        // kepanjangan dan sempat bikin insert gagal. Kalau nanti mau diaktifkan
+        // lagi, ganti "-" ini dengan JSON.stringify(detailPG) seperti sebelumnya.
+        detailPG:       '-',
         // Indikasi kecurangan (bukan bukti pasti — cuma sinyal untuk admin cek
         // manual): berapa kali klik kanan, copy, shortcut/devtools, kemungkinan
         // screenshot, pindah tab, dan keluar dari mode fullscreen selama test.
@@ -917,28 +900,24 @@ new Vue({
     //
     // PENTING soal CORS: Google Apps Script Web App (/exec) melakukan redirect ke
     // script.googleusercontent.com, dan redirect itu sering TIDAK membawa header CORS.
-    // Akibatnya browser gagal membaca response walau request-nya SUDAH dieksekusi
-    // dan datanya SUDAH masuk ke spreadsheet. Kalau kita anggap itu "gagal" lalu
-    // ditawari tombol kirim ulang, hasilnya data akan dobel (baris kedua ikut masuk).
-    //
-    // Makanya di sini kita pakai fetch mode:'no-cors' — kita sengaja TIDAK membaca
-    // isi response-nya. Selama request tidak melempar exception (artinya benar-benar
-    // terkirim ke server), kita anggap SUKSES. Exception hanya muncul kalau memang
-    // ada masalah koneksi nyata (offline / DNS gagal / server tidak terjangkau).
-    //
-    // Kalau memang gagal karena koneksi nyata (misalnya tepat di detik waktu habis
-    // jaringan sempat putus), kita coba lagi OTOMATIS beberapa kali dengan jeda makin
-    // lama — supaya peserta tidak perlu sadar & klik "Kirim Ulang" secara manual.
+    // Terbukti dari pengujian: fetch biasa (tanpa no-cors) gagal dibaca browser walau
+    // datanya SUDAH tersimpan di spreadsheet — jadi kita kembali pakai mode:'no-cors'.
+    // Kita sengaja TIDAK membaca isi response-nya. Selama request tidak melempar
+    // exception (artinya benar-benar terkirim ke server), kita anggap SUKSES.
+    // Exception hanya muncul kalau memang ada masalah koneksi nyata (offline / DNS
+    // gagal / server tidak terjangkau).
     async _sendResultToServer(attempt = 1) {
       if (this.testSending) return;
       this.testSending     = true;
       this.testSendFailed  = false;
 
       const rowData = this._buildHasilRow();
+      // Format resmi endpoint insert: ?action=insert&table=<TABLE_NAME>&data=JSON
       const urlKirim = DB_URL + '?action=insert&table=' + HASIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(rowData));
 
       console.log(`%c=== MENGIRIM HASIL KE SHEET "hasill" (percobaan ke-${attempt}) ===`, 'font-weight:bold;color:#00a896');
-      console.log('📤 PAYLOAD dikirim:', JSON.stringify(rowData, null, 2));
+      console.log('📤 PAYLOAD:', rowData);
+      console.log('%c📋 URL INSERT (copy-paste ke tab baru kalau mau coba manual):', 'font-weight:bold;color:#f5a623');
       console.log(urlKirim);
 
       try {
@@ -952,6 +931,8 @@ new Vue({
       } catch(e) {
         this.testSending = false;
         console.error(`❌ Percobaan ke-${attempt} gagal (masalah koneksi nyata):`, e.message);
+        console.log('%c📋 URL INSERT yang gagal — copy-paste ke tab baru untuk coba manual:', 'font-weight:bold;color:#ef4444');
+        console.log(urlKirim);
         if (attempt < 5) {
           // Retry otomatis dengan jeda makin lama (6s, 12s, 18s, 24s) — tanpa perlu
           // interaksi peserta sama sekali.
@@ -965,9 +946,58 @@ new Vue({
           this.testSentOk     = false;
           this.testSendFailed = true;
           this._saveTestLS();
-          console.error('❌ Semua percobaan otomatis gagal. Perlu dikirim ulang manual.');
+          console.error('❌ Semua percobaan otomatis gagal. Perlu dikirim ulang manual — atau copas URL di atas ke tab baru.');
         }
       }
+    },
+
+    // Mengirim detail jawaban PER SOAL ke sheet "detailHasil", 1 request kecil per
+    // baris (bukan 1 request besar berisi JSON semua soal seperti detailPG dulu) —
+    // supaya tidak kena masalah URL kepanjangan. Semua baris terhubung ke satu baris
+    // di "hasill" lewat kolom id yang sama.
+    async _sendDetailToServer() {
+      if (this.testDetailSending) return;
+      const hasilId = this.testResultData.mulai || Date.now(); // sama dengan id di _buildHasilRow
+
+      const rows = this.testQuestions.map(q => {
+        const isEssay = q.tipe === 'essay';
+        const ans = this.testAnswers[q.no] || '';
+        return {
+          id:           hasilId,
+          no:           q.no,
+          tipe:         isEssay ? 'Essay' : 'PG',
+          soal:         q.soal,
+          jawabanUser:  ans || (isEssay ? '(tidak dijawab)' : '-'),
+          kunciJawaban: isEssay ? '-' : (q.kunci || '-'),
+          dijawab:      ans ? 'Ya' : 'Tidak',
+          benar:        isEssay ? '-' : (ans && ans === q.kunci ? 'Ya' : 'Tidak'),
+        };
+      });
+
+      this.testDetailSending  = true;
+      this.testDetailTotal    = rows.length;
+      this.testDetailSentCount = 0;
+
+      console.log(`%c=== MENGIRIM ${rows.length} DETAIL SOAL KE SHEET "detailHasil" ===`, 'font-weight:bold;color:#00a896');
+
+      for (const row of rows) {
+        const url = DB_URL + '?action=insert&table=' + DETAIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(row));
+        try {
+          await fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true });
+          this.testDetailSentCount++;
+          console.log(`✅ Detail soal #${row.no} terkirim (${this.testDetailSentCount}/${rows.length})`);
+        } catch(e) {
+          console.error(`❌ Gagal kirim detail soal #${row.no}:`, e.message);
+          console.log('📋 URL yang gagal — copy-paste ke tab baru untuk coba manual:');
+          console.log(url);
+        }
+        // Jeda kecil antar request supaya tidak membanjiri Apps Script sekaligus
+        // (GAS punya batas eksekusi paralel/per-hari) dan tidak memicu rate limit.
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      this.testDetailSending = false;
+      console.log(`✅ Selesai mengirim detail: ${this.testDetailSentCount}/${rows.length} baris berhasil.`);
     },
 
     confirmResend() {
@@ -982,7 +1012,6 @@ new Vue({
       this.testNama        = '';
       this.testResultData  = {};
       this.testSubmitted   = false;
-      this.testLocked      = false;
       this.testSending     = false;
       this.testSentOk      = false;
       this.testSendFailed  = false;
