@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -304,6 +305,18 @@
   }
   .qtype-tab.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); }
   .qtype-tab:not(.active):hover { color: var(--text); }
+  /* Daftar isi suggestion chips */
+  .suggest-wrap {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  }
+  .suggest-chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 0.74rem; font-weight: 600;
+    cursor: pointer; border: 1.5px dashed var(--border); background: transparent;
+    color: var(--muted); transition: all 0.2s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .suggest-chip:hover { border-color: var(--neon2); color: var(--neon2); border-style: solid; }
+  .suggest-chip.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); border-style: solid; }
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -341,13 +354,37 @@
         <label class="block text-xs font-bold mb-2 tracking-widests" style="color:var(--muted)">LOAD SOAL DARI DATABASE</label>
         <div class="flex gap-2">
           <input type="text" v-model="dbKeyword" @keyup.enter="doLoadDB"
+                 list="daftarIsiOptions"
                  placeholder="Nama sumber/topik... (kosong = semua)" style="flex:1;min-width:0" />
+          <datalist id="daftarIsiOptions">
+            <option v-for="item in daftarIsiList" :key="item" :value="item"></option>
+          </datalist>
           <button @click="doLoadDB" class="btn-solid" :disabled="loadingDB"
                   style="min-width:110px;display:flex;align-items:center;justify-content:center;gap:6px">
             <span v-if="loadingDB" class="spinner"></span>
             <span>{{ loadingDB ? 'Memuat...' : '⚡ Load DB' }}</span>
           </button>
         </div>
+
+        <!-- Suggestion chips dari sheet daftarIsi -->
+        <div v-if="loadingDaftarIsi" class="mt-2 text-xs" style="color:var(--muted)">
+          <span class="spinner" style="border-top-color:var(--neon);border-color:rgba(0,245,212,0.25)"></span>
+          &nbsp;Memuat daftar topik...
+        </div>
+        <!-- <div v-else-if="daftarIsiList.length>0" class="suggest-wrap">
+          <div class="suggest-chip" :class="{active: dbKeyword===''}" @click="selectDaftarIsi('')">
+            📚 Semua
+          </div>
+          <div v-for="item in daftarIsiList" :key="item"
+               class="suggest-chip" :class="{active: dbKeyword===item}"
+               @click="selectDaftarIsi(item)">
+            {{item}}
+          </div>
+        </div> -->
+        <div v-else-if="daftarIsiFetchFailed" class="mt-2 text-xs" style="color:var(--muted)">
+          ⚠️ Gagal memuat sugestion topik (bisa tetap input manual)
+        </div>
+
         <div v-if="lastLoadedKeyword" class="mt-2 text-xs" style="color:var(--muted)">
           ✅ Dimuat:
           <span class="font-bold" style="color:var(--neon)">{{lastLoadedKeyword || 'semua sumber'}}</span>
@@ -856,6 +893,11 @@ new Vue({
     allQuestions: [],
     loadingDB: false,
 
+    // Daftar Isi (suggestion untuk input Load DB)
+    daftarIsiList: [],
+    loadingDaftarIsi: false,
+    daftarIsiFetchFailed: false,
+
     // completed level keys array
     completedLevels: [],
     justCompletedLevel: '',
@@ -956,6 +998,7 @@ new Vue({
     this.speechSynth = window.speechSynthesis;
     if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => {};
     this._loadLS();
+    this.fetchDaftarIsiList();
   },
 
   methods: {
@@ -988,6 +1031,44 @@ new Vue({
     _saveWrong()    { localStorage.setItem(LS_WRONG, JSON.stringify(this.wrongData)); },
     _saveDone()     { localStorage.setItem(LS_DONE,  JSON.stringify(this.completedLevels)); },
     _saveSettings() { localStorage.setItem(LS_SETTINGS, JSON.stringify({ mute: this.muteSound, rate: this.speechRate })); },
+
+    /* ── Daftar Isi (suggestion) ── */
+    async fetchDaftarIsiList() {
+      this.loadingDaftarIsi = true;
+      this.daftarIsiFetchFailed = false;
+      try {
+        const res = await fetch(`${DB_URL}?action=read&table=daftarIsi`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { throw new Error('Response bukan JSON'); }
+        const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : null;
+        if (!arr || !arr.length) { this.daftarIsiList = []; return; }
+        const get = (row, ...keys) => {
+          for (const k of keys) {
+            const v = row[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+          }
+          return '';
+        };
+        const names = arr
+          .map(row => get(row, 'noHalaman','NoHalaman','nama','Nama','topik','Topik',
+                                'judul','Judul','daftarIsi','DaftarIsi','sumber','Sumber'))
+          .filter(Boolean);
+        // unique, keep original order of first appearance
+        this.daftarIsiList = [...new Set(names)];
+      } catch(e) {
+        this.daftarIsiList = [];
+        this.daftarIsiFetchFailed = true;
+        console.error('Gagal load daftarIsi:', e.message);
+      } finally {
+        this.loadingDaftarIsi = false;
+      }
+    },
+    selectDaftarIsi(item) {
+      this.dbKeyword = item;
+      this.doLoadDB();
+    },
 
     /* ── Wrong item helpers ── */
     removeWrongItem(no) {
