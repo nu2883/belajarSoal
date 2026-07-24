@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Belajar Soal — Test</title>
+<title>test</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
@@ -228,18 +228,18 @@
   <div v-if="screen==='testHome'" class="page-center">
     <div class="text-center mb-6 slide-up">
       <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
-      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Belajar Soal</h1>
-      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda · Sekali jalan</p>
+      <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">TES</h1>
+      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda </p>
     </div>
     <div class="card w-full slide-up" style="max-width:460px;padding:28px;animation-delay:0.08s">
       <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA PESERTA</label>
       <input type="text" v-model="testNama" placeholder="Tulis nama lengkap..."
              @keyup.enter="beginTest" :disabled="testLoading" />
 
-      <label class="block text-xs font-bold mb-2 mt-4 tracking-widest" style="color:var(--muted)">
+      <!-- <label class="block text-xs font-bold mb-2 mt-4 tracking-widest" style="color:var(--muted)">
         DURASI TEST (MENIT) <span class="tag tag-orange" style="font-size:0.6rem;vertical-align:middle">⚠️ UJI COBA — HAPUS DI REAL CASE</span>
       </label>
-      <input type="number" min="1" v-model.number="testDurationMin" placeholder="90" :disabled="testLoading" />
+      <input type="number" min="1" v-model.number="testDurationMin" placeholder="90" :disabled="testLoading" /> -->
 
       <div class="mt-4 rounded-xl p-4 text-sm" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);line-height:1.7">
         ⏱️ Waktu: <b style="color:var(--text)">{{testDurationMin}} menit</b>, mundur otomatis sejak test dimulai<br>
@@ -376,25 +376,9 @@
       <div style="font-size:4rem;margin-bottom:12px">✅</div>
       <h2 class="text-2xl font-extrabold mb-1" style="color:var(--neon)">Test Selesai</h2>
       <p class="text-sm mb-5" style="color:var(--muted)">Terima kasih, {{testNama}}. Jawaban tidak bisa diubah lagi.</p>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="rounded-xl p-4" style="background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.22)">
-          <div class="text-2xl font-bold" style="color:var(--neon)">{{testResultData.dijawab}}/{{testResultData.totalSoal}}</div>
-          <div class="text-sm" style="color:var(--muted)">Soal Dijawab</div>
-        </div>
-        <div class="rounded-xl p-4" style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.22)">
-          <div class="text-2xl font-bold" style="color:var(--neon2)">{{testResultData.skor}}%</div>
-          <div class="text-sm" style="color:var(--muted)">Skor</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 mb-5">
-        <div class="rounded-xl p-4" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.22)">
-          <div class="text-2xl font-bold" style="color:#22c55e">{{testResultData.benar}}</div>
-          <div class="text-sm" style="color:var(--muted)">Jawaban Benar</div>
-        </div>
-        <div class="rounded-xl p-4" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22)">
-          <div class="text-2xl font-bold" style="color:#ef4444">{{testResultData.salah}}</div>
-          <div class="text-sm" style="color:var(--muted)">Jawaban Salah</div>
-        </div>
+      <div class="rounded-xl p-4 mb-5" style="background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.22)">
+        <div class="text-2xl font-bold" style="color:var(--neon)">{{testResultData.dijawab}}/{{testResultData.totalSoal}}</div>
+        <div class="text-sm" style="color:var(--muted)">Soal Dijawab</div>
       </div>
       <p v-if="testResultData.belum>0" class="text-xs mb-3" style="color:var(--muted)">
         {{testResultData.belum}} soal tidak dijawab
@@ -414,15 +398,27 @@
         </button>
       </div>
 
-      <p v-if="testDetailSending" class="text-xs mb-4" style="color:var(--muted)">
-        📤 Mengirim detail jawaban... ({{testDetailSentCount}}/{{testDetailTotal}})
-      </p>
-      <p v-else-if="testDetailTotal>0" class="text-xs mb-4" style="color:#22c55e">
-        ✅ Detail jawaban tersimpan ({{testDetailSentCount}}/{{testDetailTotal}} soal)
-      </p>
+      <!-- Progress pengiriman detail jawaban per soal -->
+      <div v-if="testDetailSending || testDetailTotal>0" class="rounded-xl p-4 mb-4 text-left"
+           :style="testDetailSending
+             ? 'background:rgba(245,166,35,0.08);border:1.5px solid rgba(245,166,35,0.35)'
+             : 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)'">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold" :style="testDetailSending ? 'color:var(--neon2)' : 'color:#22c55e'">
+            {{ testDetailSending ? '📤 Mengirim detail jawaban...' : '✅ Detail jawaban tersimpan' }}
+          </span>
+          <span class="text-xs mono" style="color:var(--muted)">{{ testDetailSentCount }}/{{ testDetailTotal }}</span>
+        </div>
+        <div style="width:100%;height:8px;border-radius:999px;background:var(--card2);overflow:hidden">
+          <div :style="'height:100%;border-radius:999px;transition:width 0.25s ease;width:'+testDetailProgressPct+'%;background:'+(testDetailSending?'var(--neon2)':'#22c55e')"></div>
+        </div>
+        <p v-if="testDetailSending" class="text-xs mt-3 font-semibold" style="color:#ef4444">
+          ⚠️ Jangan tutup atau refresh halaman ini dulu — pengiriman detail jawaban belum selesai dan bisa gagal / cuma terkirim sebagian.
+        </p>
+      </div>
 
-      <p class="text-xs mb-4" style="color:var(--muted)">📄 Buka <b>hasil.html</b> di perangkat ini untuk melihat rincian jawaban per soal.</p>
-      <button @click="exitTest" class="btn-neon w-full py-3">🔄 Test Baru</button>
+      <!-- <p class="text-xs mb-4" style="color:var(--muted)">📄 Buka <b>hasil.html</b> di perangkat ini untuk melihat rincian jawaban per soal.</p> -->
+      <!-- <button @click="exitTest" class="btn-neon w-full py-3" :disabled="testDetailSending">🔄 Test Baru</button> -->
     </div>
   </div>
 
@@ -436,7 +432,7 @@ const HASIL_TABLE = 'hasill';
 const DETAIL_TABLE = 'detailHasil'; // sheet detail per soal, terhubung ke hasill lewat kolom id
 
 (function() {
-  const t = localStorage.getItem(LS_THEME) || 'dark';
+  const t = localStorage.getItem(LS_THEME) || 'light';
   document.documentElement.setAttribute('data-theme', t);
 })();
 document.getElementById('themeBtn').addEventListener('click', function() {
@@ -501,6 +497,13 @@ new Vue({
       const s = Math.max(0, this.testTimeLeft);
       const m = Math.floor(s/60), sec = s%60;
       return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    },
+    // Persentase progress bar pengiriman detail jawaban (0-100).
+    // Bertambah sedikit demi sedikit tiap 1 soal berhasil terkirim, sampai 100%
+    // ketika semua soal sudah terkirim.
+    testDetailProgressPct() {
+      if (!this.testDetailTotal) return 0;
+      return Math.round((this.testDetailSentCount / this.testDetailTotal) * 100);
     },
   },
 
