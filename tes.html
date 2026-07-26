@@ -227,9 +227,9 @@
   <!-- ══════════ START — INPUT NAMA ══════════ -->
   <div v-if="screen==='testHome'" class="page-center">
     <div class="text-center mb-6 slide-up">
-      <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
+      <!-- <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div> -->
       <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">TES</h1>
-      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda </p>
+      <p style="color:var(--muted)">{{testDurationMin}} menit · Tanpa jeda</p>
     </div>
     <div class="card w-full slide-up" style="max-width:460px;padding:28px;animation-delay:0.08s">
       <label class="block text-xs font-bold mb-2 tracking-widest" style="color:var(--muted)">NAMA PESERTA</label>
@@ -308,7 +308,7 @@
             <span v-if="testCurrentQ.sumber" class="tag tag-orange">{{testCurrentQ.sumber}}</span>
             <span class="tag" style="background:rgba(148,163,184,0.1);color:var(--muted);border:1px solid var(--border)">💡 klik 2x untuk langsung lanjut</span>
           </div>
-          <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65">{{testCurrentQ.soal}}</p>
+          <p class="font-semibold mb-5" style="font-size:1rem;line-height:1.65;white-space:pre-wrap">{{testCurrentQ.soal}}</p>
 
           <div v-if="testCurrentQ.tipe!=='essay'" class="flex flex-col gap-3">
             <button v-for="(opt,idx) in testCurrentOptions" :key="idx"
@@ -317,7 +317,7 @@
               <span class="badge-count" :style="testAnswers[testCurrentQ.no]===opt?'background:rgba(0,245,212,0.2);color:var(--neon)':''">
                 {{['A','B','C','D'][idx]}}
               </span>
-              <span style="flex:1">{{opt}}</span>
+              <span style="flex:1;white-space:pre-wrap">{{opt}}</span>
               <span v-if="testAnswers[testCurrentQ.no]===opt">✅</span>
             </button>
           </div>
@@ -717,7 +717,7 @@ new Vue({
             c:      get(row,'c','C','jawaban_c','opsiC'),
             d:      get(row,'d','D','jawaban_d','opsiD'),
             sumber: get(row,'sumber','Sumber','SUMBER','kategori','topik'),
-            tipe:   (i === arr.length - 1) ? 'essay' : 'pg',
+            tipe:   (i === 0) ? 'essay' : 'pg',
           };
           const raw = [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim());
           q.opts = this.shuffle(raw);
@@ -872,6 +872,17 @@ new Vue({
       return hasil;
     },
 
+    // Memotong teks panjang untuk baris ringkasan "hasill". Jawaban essay yang
+    // panjang bikin URL GET insert jadi kepanjangan dan request-nya gagal diam-diam
+    // (mode:'no-cors' bikin error tidak kebaca). Isi LENGKAPnya tetap aman tersimpan
+    // di sheet "detailHasil" (dikirim terpisah, per soal, jadi tidak kena batas ini) —
+    // di sini cukup cuplikan pendek sebagai preview.
+    _potong(text, maxLen = 400) {
+      const s = String(text || '');
+      if (s.length <= maxLen) return s;
+      return s.slice(0, maxLen) + `... (dipotong, lihat lengkap di sheet detailHasil)`;
+    },
+
     _buildHasilRow() {
       const r = this.testResultData;
       const essayItem = this.testQuestions.find(q => q.tipe === 'essay');
@@ -893,11 +904,14 @@ new Vue({
         belum:          this._parseAngka(r.belum),
         skor:           this._parseAngka(r.skor),
         autoSubmit:     r.autoSubmit ? 'Ya' : 'Tidak',
-        soalEssay:      essayItem ? essayItem.soal : '(tidak ada soal essay)',
+        soalEssay:      essayItem ? this._potong(essayItem.soal, 200) : '(tidak ada soal essay)',
         // Sama seperti angka 0 yang perlu dijaga (lihat _parseAngka), string kosong
         // "" kemungkinan juga dianggap "field hilang" oleh validasi backend GAS —
         // jadi kalau peserta tidak menjawab essay, kirim placeholder, bukan string kosong.
-        jawabanEssay:   jawabanEssay || '(tidak dijawab)',
+        // Dipotong (lihat _potong) supaya URL insert tidak kepanjangan kalau peserta
+        // menulis jawaban essay yang sangat panjang — teks lengkapnya tetap tersimpan
+        // utuh di sheet "detailHasil".
+        jawabanEssay:   jawabanEssay ? this._potong(jawabanEssay, 400) : '(tidak dijawab)',
         // Kolom tetap dikirim (backend butuh semua kolom ada), tapi isinya
         // sengaja dikosongkan jadi "-" — JSON detail per soal bikin URL GET
         // kepanjangan dan sempat bikin insert gagal. Kalau nanti mau diaktifkan
