@@ -243,7 +243,7 @@
         <span v-else-if="item.dijawab && !item.benar" class="tag tag-red">❌ Salah</span>
         <span v-else class="tag tag-orange">⚠️ Tidak dijawab</span>
       </div>
-      <p class="font-semibold mb-4" style="line-height:1.6">{{item.soal}}</p>
+      <p class="font-semibold mb-4" style="line-height:1.6;white-space:pre-wrap">{{item.soal}}</p>
 
       <!-- Pilihan Ganda -->
       <template v-if="item.tipe!=='essay'">
@@ -257,7 +257,7 @@
                 :style="opt===item.kunci ? 'background:rgba(34,197,94,0.2);color:#22c55e' : (item.dijawab && opt===item.jawabanUser ? 'background:rgba(239,68,68,0.2);color:#ef4444' : '')">
             {{['A','B','C','D'][oi]}}
           </span>
-          <span style="flex:1">{{opt}}</span>
+          <span style="flex:1;white-space:pre-wrap">{{opt}}</span>
           <span v-if="opt===item.kunci">✅ Kunci</span>
           <span v-if="item.dijawab && opt===item.jawabanUser && opt!==item.kunci">👤 Dipilih peserta</span>
         </div>
@@ -415,6 +415,15 @@ new Vue({
       return hasil;
     },
 
+    // Sama seperti di test.html: potong teks panjang supaya URL insert ke "hasill"
+    // tidak kepanjangan (jawaban essay yang panjang bikin request gagal diam-diam).
+    // Teks lengkapnya tetap tersimpan utuh di sheet "detailHasil".
+    _potong(text, maxLen = 400) {
+      const s = String(text || '');
+      if (s.length <= maxLen) return s;
+      return s.slice(0, maxLen) + `... (dipotong, lihat lengkap di sheet detailHasil)`;
+    },
+
     confirmResend() {
       if (this.resendStatus === 'sending' || this.resendDetailSending) return;
       const ok = confirm('Kirim ulang hasil ke server?\n\nData akan dikirim sebagai baris baru dengan timestamp/ID baru (bukan menimpa baris lama) — supaya data awal dan data kirim-ulang tetap kelihatan terpisah di spreadsheet. Lanjutkan?');
@@ -455,8 +464,8 @@ new Vue({
         belum:          this._parseAngka(r.belum != null ? r.belum : this.jumlahBelum),
         skor:           this._parseAngka(r.skor != null ? r.skor : this.skor),
         autoSubmit:     r.autoSubmit ? 'Ya' : 'Tidak',
-        soalEssay:      essayItem ? essayItem.soal : '(tidak ada soal essay)',
-        jawabanEssay:   jawabanEssay || '(tidak dijawab)',
+        soalEssay:      essayItem ? this._potong(essayItem.soal, 200) : '(tidak ada soal essay)',
+        jawabanEssay:   jawabanEssay ? this._potong(jawabanEssay, 400) : '(tidak dijawab)',
         detailPG:       '-',
         indikasiKecurangan: JSON.stringify(s.cheatFlags || {}),
         jumlahPindahTab: this._parseAngka((s.cheatFlags && s.cheatFlags.tabSwitch) || 0),
