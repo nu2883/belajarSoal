@@ -717,7 +717,7 @@ new Vue({
             c:      get(row,'c','C','jawaban_c','opsiC'),
             d:      get(row,'d','D','jawaban_d','opsiD'),
             sumber: get(row,'sumber','Sumber','SUMBER','kategori','topik'),
-            tipe:   (i === 0) ? 'essay' : 'pg',
+            tipe:   (i === arr.length - 1) ? 'essay' : 'pg',
           };
           const raw = [q.kunci, q.b, q.c, q.d].filter(o => o && o.trim());
           q.opts = this.shuffle(raw);
