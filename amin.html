@@ -272,13 +272,13 @@
              class="jawab-row" :class="!j.jawabanUser ? 'kosong' : (j.benar ? 'benar' : 'salah')">
           <div style="flex-shrink:0;font-weight:700;color:var(--muted)">{{ j.no || i+1 }}.</div>
           <div style="flex:1">
-            <div class="mb-1" style="font-size:0.88rem">{{ j.soal }}</div>
+            <div class="mb-1" style="font-size:0.88rem;white-space:pre-wrap">{{ j.soal }}</div>
             <div class="text-xs" style="color:var(--muted)">
               Jawaban peserta:
-              <b :style="!j.jawabanUser ? 'color:var(--muted)' : (j.benar ? 'color:#22c55e' : 'color:#ef4444')">
+              <b :style="(!j.jawabanUser ? 'color:var(--muted)' : (j.benar ? 'color:#22c55e' : 'color:#ef4444')) + ';white-space:pre-wrap'">
                 {{ j.jawabanUser || 'Tidak dijawab' }}
               </b><br>
-              <span v-if="j.jawabanUser && !j.benar"> · Kunci: <b style="color:#22c55e">{{ j.kunciJawaban }}</b></span>
+              <span v-if="j.jawabanUser && !j.benar"> · Kunci: <b style="color:#22c55e;white-space:pre-wrap">{{ j.kunciJawaban }}</b></span>
             </div>
           </div>
           <div style="flex-shrink:0;font-size:1.1rem">
@@ -291,7 +291,7 @@
       <div v-if="!detailLoading && detailEssay.length" class="mt-5">
         <h3 class="text-sm font-bold mb-3 tracking-wide" style="color:var(--muted)">SOAL ESSAY</h3>
         <div v-for="(j,i) in detailEssay" :key="'essay-'+i" class="jawab-row" style="flex-direction:column;align-items:stretch">
-          <div class="mb-2 font-semibold" style="font-size:0.9rem">{{ j.no ? j.no + '. ' : '' }}{{ j.soal }}</div>
+          <div class="mb-2 font-semibold" style="font-size:0.9rem;white-space:pre-wrap">{{ j.no ? j.no + '. ' : '' }}{{ j.soal }}</div>
           <div class="text-sm" style="white-space:pre-wrap;line-height:1.6;color:var(--text)">
             {{ j.jawabanUser || '(tidak dijawab)' }}
           </div>
@@ -314,7 +314,7 @@ const LS_THEME = 'qm_theme';
 const REFRESH_MS = 5 * 60 * 1000; // auto-load setiap 5 menit
 
 (function() {
-  const t = localStorage.getItem(LS_THEME) || 'dark';
+  const t = localStorage.getItem(LS_THEME) || 'light';
   document.documentElement.setAttribute('data-theme', t);
 })();
 document.getElementById('themeBtn').addEventListener('click', function() {
