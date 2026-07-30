@@ -499,8 +499,8 @@ new Vue({
       return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     },
     // Persentase progress bar pengiriman detail jawaban (0-100).
-    // Bertambah sedikit demi sedikit tiap 1 soal berhasil terkirim, sampai 100%
-    // ketika semua soal sudah terkirim.
+    // Bertambah sedikit demi sedikit tiap 1 baris berhasil terkirim, sampai 100%
+    // ketika semua baris sudah terkirim.
     testDetailProgressPct() {
       if (!this.testDetailTotal) return 0;
       return Math.round((this.testDetailSentCount / this.testDetailTotal) * 100);
@@ -883,6 +883,14 @@ new Vue({
       return s.slice(0, maxLen) + `... (dipotong, lihat lengkap di sheet detailHasil)`;
     },
 
+    // Memecah teks panjang jadi beberapa potongan kecil supaya tidak pernah
+    // bikin 1 baris/1 URL kepanjangan, seberapa pun panjang jawabannya.
+    _chunkText(text, size = 500) {
+      const chunks = [];
+      for (let i = 0; i < text.length; i += size) chunks.push(text.slice(i, i + size));
+      return chunks.length ? chunks : [text];
+    },
+
     _buildHasilRow() {
       const r = this.testResultData;
       const essayItem = this.testQuestions.find(q => q.tipe === 'essay');
@@ -984,43 +992,56 @@ new Vue({
       }
     },
 
-    // Mengirim detail jawaban PER SOAL ke sheet "detailHasil", 1 request kecil per
-    // baris (bukan 1 request besar berisi JSON semua soal seperti detailPG dulu) —
-    // supaya tidak kena masalah URL kepanjangan. Semua baris terhubung ke satu baris
-    // di "hasill" lewat kolom id yang sama.
+    // Mengirim detail jawaban PER SOAL ke sheet "detailHasil". Jawaban PANJANG
+    // (biasanya essay) dipecah otomatis jadi beberapa baris kecil (chunk) bertanda
+    // chunkKe/dariChunk — gabungkan lagi berdasarkan itu (urutkan chunkKe) untuk
+    // membaca teks lengkapnya di spreadsheet. Ini yang bikin jawaban essay panjang
+    // apa pun akhirnya tetap masuk utuh, bukan cuma dipotong seperti di "hasill".
     async _sendDetailToServer() {
       if (this.testDetailSending) return;
       const hasilId = this.testResultData.mulai || Date.now(); // sama dengan id di _buildHasilRow
+      const CHUNK_SIZE = 500;
 
-      const rows = this.testQuestions.map(q => {
+      const rows = [];
+      this.testQuestions.forEach(q => {
         const isEssay = q.tipe === 'essay';
         const ans = this.testAnswers[q.no] || '';
-        return {
-          id:           hasilId,
-          no:           q.no,
-          tipe:         isEssay ? 'Essay' : 'PG',
-          soal:         q.soal,
-          jawabanUser:  ans || (isEssay ? '(tidak dijawab)' : '-'),
-          kunciJawaban: isEssay ? '-' : (q.kunci || '-'),
-          dijawab:      ans ? 'Ya' : 'Tidak',
-          benar:        isEssay ? '-' : (ans && ans === q.kunci ? 'Ya' : 'Tidak'),
-        };
+        const jawabanFinal = ans || (isEssay ? '(tidak dijawab)' : '-');
+        const dijawab = ans ? 'Ya' : 'Tidak';
+        const benar   = isEssay ? '-' : (ans && ans === q.kunci ? 'Ya' : 'Tidak');
+        const kunci   = isEssay ? '-' : (q.kunci || '-');
+
+        const chunks = jawabanFinal.length > CHUNK_SIZE ? this._chunkText(jawabanFinal, CHUNK_SIZE) : [jawabanFinal];
+        chunks.forEach((chunk, idx) => {
+          rows.push({
+            id:           hasilId,
+            no:           q.no,
+            tipe:         isEssay ? 'Essay' : 'PG',
+            soal:         idx === 0 ? q.soal : `(lanjutan jawaban soal #${q.no})`,
+            jawabanUser:  chunk,
+            kunciJawaban: kunci,
+            dijawab,
+            benar,
+            chunkKe:      idx + 1,
+            dariChunk:    chunks.length,
+          });
+        });
       });
 
       this.testDetailSending  = true;
       this.testDetailTotal    = rows.length;
       this.testDetailSentCount = 0;
 
-      console.log(`%c=== MENGIRIM ${rows.length} DETAIL SOAL KE SHEET "detailHasil" ===`, 'font-weight:bold;color:#00a896');
+      console.log(`%c=== MENGIRIM ${rows.length} BARIS DETAIL KE SHEET "detailHasil" ===`, 'font-weight:bold;color:#00a896');
 
       for (const row of rows) {
         const url = DB_URL + '?action=insert&table=' + DETAIL_TABLE + '&data=' + encodeURIComponent(JSON.stringify(row));
         try {
           await fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true });
           this.testDetailSentCount++;
-          console.log(`✅ Detail soal #${row.no} terkirim (${this.testDetailSentCount}/${rows.length})`);
+          console.log(`✅ Soal #${row.no} chunk ${row.chunkKe}/${row.dariChunk} terkirim (${this.testDetailSentCount}/${rows.length})`);
         } catch(e) {
-          console.error(`❌ Gagal kirim detail soal #${row.no}:`, e.message);
+          console.error(`❌ Gagal kirim soal #${row.no} chunk ${row.chunkKe}/${row.dariChunk}:`, e.message);
           console.log('📋 URL yang gagal — copy-paste ke tab baru untuk coba manual:');
           console.log(url);
         }
