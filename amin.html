@@ -365,13 +365,15 @@ new Vue({
       const autoSubmitCount = this.rows.filter(r => r.autoSubmit === 'Ya').length;
       return { avgSkor, lulus, rendah, autoSubmitCount };
     },
-    // Soal tipe pilihan ganda, urut berdasarkan nomor
+    // Soal tipe pilihan ganda, urut berdasarkan nomor. detailRows di sini sudah
+    // digabung per-chunk (lihat openDetail), jadi 1 entri = 1 soal utuh.
     detailPG() {
       return this.detailRows
         .filter(j => (j.tipe || '').toLowerCase().indexOf('essay') === -1)
         .sort((a,b) => (Number(a.no)||0) - (Number(b.no)||0));
     },
-    // Soal tipe essay, urut berdasarkan nomor
+    // Soal tipe essay, urut berdasarkan nomor. Jawaban yang tadinya kepecah jadi
+    // beberapa baris (chunkKe/dariChunk) sudah digabung utuh di openDetail.
     detailEssay() {
       return this.detailRows
         .filter(j => (j.tipe || '').toLowerCase().indexOf('essay') !== -1)
@@ -507,7 +509,11 @@ new Vue({
           return s === 'ya' || s === 'true' || s === '1' || s === 'benar';
         };
 
-        this.detailRows = arr
+        // Ambil semua baris mentah milik peserta ini. Jawaban panjang (essay)
+        // bisa terpecah jadi beberapa baris (chunkKe/dariChunk) — lihat
+        // _sendDetailToServer di test.html. Default chunkKe=1, dariChunk=1
+        // untuk baris lama yang belum punya kolom ini (soal PG selalu begini).
+        const rawRows = arr
           .filter(r => strip(get(r,'id')) === String(row.id))
           .map(r => ({
             no:           get(r,'no') || 0,
@@ -517,7 +523,35 @@ new Vue({
             kunciJawaban: strip(get(r,'kunciJawaban','kuncijawaban')),
             dijawab:      toBool(get(r,'dijawab')),
             benar:        toBool(get(r,'benar')),
+            chunkKe:      Number(get(r,'chunkKe','chunkke')) || 1,
+            dariChunk:    Number(get(r,'dariChunk','darichunk')) || 1,
           }));
+
+        // Gabungkan baris-baris yang merupakan potongan (chunk) dari jawaban yang
+        // sama (no yang sama) jadi 1 entri utuh per soal: urutkan per chunkKe,
+        // sambung teks jawabanUser-nya. Chunk pertama selalu punya teks soal
+        // aslinya; chunk berikutnya cuma placeholder "(lanjutan jawaban soal #N)"
+        // jadi diabaikan dan dipakai soal dari chunk pertama saja.
+        const grouped = {};
+        rawRows.forEach(r => {
+          const key = String(r.no);
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(r);
+        });
+
+        this.detailRows = Object.values(grouped).map(chunks => {
+          chunks.sort((a, b) => a.chunkKe - b.chunkKe);
+          const first = chunks[0];
+          return {
+            no:           first.no,
+            tipe:         first.tipe,
+            soal:         first.soal,
+            jawabanUser:  chunks.map(c => c.jawabanUser).join(''),
+            kunciJawaban: first.kunciJawaban,
+            dijawab:      first.dijawab,
+            benar:        first.benar,
+          };
+        });
       } catch(e) {
         if (myRequestId !== this.detailRequestId) return;
         this.detailError = e.message;
