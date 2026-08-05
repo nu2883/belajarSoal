@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -317,6 +316,14 @@
   }
   .suggest-chip:hover { border-color: var(--neon2); color: var(--neon2); border-style: solid; }
   .suggest-chip.active { border-color: var(--neon); color: var(--neon); background: rgba(0,245,212,0.08); border-style: solid; }
+  /* Nama user badge on home */
+  .username-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: var(--muted); margin-bottom: 10px;
+  }
+  .username-badge .change-link {
+    color: var(--neon); cursor: pointer; text-decoration: underline;
+  }
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -332,12 +339,38 @@
 
 <div id="app" class="page-wrap">
 
+  <!-- ══════════ NAME PROMPT (overlay) ══════════ -->
+<div v-if="showNamePrompt" class="page-center" style="position:fixed;inset:0;z-index:1000;background:var(--bg)">
+  <div class="card w-full slide-up" style="max-width:400px;padding:32px">
+    
+    <h2 class="text-xl font-bold mb-2" style="color:var(--neon)">Masukkan Nama Anda</h2>
+
+
+    <input 
+      type="text" 
+      v-model="userName" 
+      @keyup.enter="saveUserName"
+      placeholder="Nama lengkap..." 
+      class="mb-4 w-full" 
+      autofocus 
+    />
+    
+    <button @click="saveUserName" class="btn-solid w-full py-3 font-semibold">
+      Simpan
+    </button>
+    
+  </div>
+</div>
+
   <!-- ══════════ HOME ══════════ -->
   <div v-if="screen==='home'" class="page-center">
     <div class="text-center mb-6 slide-up">
       <div class="tag tag-neon mb-3" style="font-size:0.65rem">⚡ dari soal menjadi pintar</div>
       <h1 class="text-5xl font-extrabold glow mb-2" style="color:var(--neon)">Belajar Soal</h1>
       <p style="color:var(--muted)">Belajar Cerdas · Belajar Tuntas</p>
+      <div v-if="userName" class="username-badge justify-center">
+        👤 {{userName}} &nbsp;·&nbsp; <span class="change-link" @click="showNamePrompt=true">ganti nama</span>
+      </div>
     </div>
 
     <div class="card w-full slide-up" style="max-width:560px;padding:28px;animation-delay:0.08s">
@@ -850,6 +883,7 @@ const LS_THEME      = 'qm_theme';
 const LS_DONE       = 'qm_completed';
 const LS_SETTINGS   = 'qm_settings';
 const LS_LOADED_KW  = 'qm_loaded_kw';
+const LS_USER       = 'qm_username';
 
 /* ─── Theme bootstrap ─── */
 (function() {
@@ -892,6 +926,10 @@ new Vue({
     lastLoadedKeyword: null,   // null = belum pernah load, '' = semua, 'xyz' = keyword
     allQuestions: [],
     loadingDB: false,
+
+    // Nama user
+    userName: '',
+    showNamePrompt: false,
 
     // Daftar Isi (suggestion untuk input Load DB)
     daftarIsiList: [],
@@ -999,6 +1037,7 @@ new Vue({
     if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => {};
     this._loadLS();
     this.fetchDaftarIsiList();
+    if (!this.userName) this.showNamePrompt = true;
   },
 
   methods: {
@@ -1008,6 +1047,10 @@ new Vue({
       try {
         const kw = localStorage.getItem(LS_LOADED_KW);
         if (kw !== null) this.lastLoadedKeyword = kw;
+      } catch(e) {}
+      try {
+        const u = localStorage.getItem(LS_USER);
+        if (u) this.userName = u;
       } catch(e) {}
       try {
         const w = localStorage.getItem(LS_WRONG);
@@ -1031,6 +1074,16 @@ new Vue({
     _saveWrong()    { localStorage.setItem(LS_WRONG, JSON.stringify(this.wrongData)); },
     _saveDone()     { localStorage.setItem(LS_DONE,  JSON.stringify(this.completedLevels)); },
     _saveSettings() { localStorage.setItem(LS_SETTINGS, JSON.stringify({ mute: this.muteSound, rate: this.speechRate })); },
+
+    /* ── Nama user ── */
+    saveUserName() {
+      const name = this.userName.trim();
+      if (!name) { showToast('Nama tidak boleh kosong', 'red'); return; }
+      this.userName = name;
+      localStorage.setItem(LS_USER, name);
+      this.showNamePrompt = false;
+      showToast(`Halo, ${name}! 👋`, 'green');
+    },
 
     /* ── Daftar Isi (suggestion) ── */
     async fetchDaftarIsiList() {
@@ -1105,7 +1158,13 @@ new Vue({
     async doLoadDB() {
       this.loadingDB = true;
       const now = this._now();
-      const payload = { no: now.ts, tanggal: now.date, waktu: now.time, noHalaman: this.dbKeyword.trim() };
+      const payload = {
+        no: now.ts,
+        tanggal: now.date,
+        waktu: now.time,
+        noHalaman: this.dbKeyword.trim(),
+        namaUser: this.userName || ''
+      };
       const enc = encodeURIComponent(JSON.stringify(payload));
       try {
         const r1 = await fetch(`${DB_URL}?action=insert&table=request&data=${enc}`);
